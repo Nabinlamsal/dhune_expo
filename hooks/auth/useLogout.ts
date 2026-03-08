@@ -1,20 +1,11 @@
-"use client";
-
-import { useRouter } from "next/navigation";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQueryClient } from "@tanstack/react-query";
 
 export const useLogout = () => {
-    const router = useRouter();
     const queryClient = useQueryClient();
 
-    return () => {
-        // Clear session
-        localStorage.removeItem("token");
-
-        // Clear cache
+    return async () => {
+        await AsyncStorage.removeItem("token");
         queryClient.clear();
-
-        // Go to login
-        router.replace("/auth/login");
     };
 };

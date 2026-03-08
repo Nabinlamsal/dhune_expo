@@ -1,14 +1,8 @@
-import { me } from "@/src/services/auth/auth.service";
-import { UserIdentity } from "@/src/types/auth/identity";
+import { me } from "@/services/auth/auth.service";
 import { useQuery } from "@tanstack/react-query";
 
 export const useMe = () => {
-    const token =
-        typeof window !== "undefined"
-            ? localStorage.getItem("token")
-            : null;
-
-    return useQuery<UserIdentity>({
+    return useQuery({
         queryKey: ["me"],
         queryFn: me,
         retry: false,

@@ -1,7 +1,7 @@
-import { LoginRequest, LoginResponse } from "../../types/auth/login";
 import { api } from "../../libs/api";
-import { SignupResponse } from "../../types/auth/signup";
 import { UserIdentity } from "../../types/auth/identity";
+import { LoginRequest, LoginResponse } from "../../types/auth/login";
+import { SignupResponse } from "../../types/auth/signup";
 
 export const login = async (
     payload: LoginRequest
