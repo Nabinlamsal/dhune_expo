@@ -36,7 +36,7 @@ export default function GetStartedScreen() {
 
                 <Pressable
                     style={styles.signupButton}
-                // onPress={() => router.push("/signup")}
+                    onPress={() => router.push("/(auth)/signup")}
                 >
                     <Ionicons name="person-add-outline" size={20} color="white" />
                     <Text style={styles.signupText}>Create Account</Text>
