@@ -17,12 +17,23 @@ export default function LoginScreen() {
     const [password, setPassword] = useState("");
 
     const handleLogin = () => {
+        console.log("Login button pressed");
+
         const payload: LoginRequest = {
             email_or_phone: emailOrPhone,
             password,
         };
 
-        mutate(payload);
+        console.log("Payload:", payload);
+
+        mutate(payload, {
+            onSuccess: (res) => {
+                console.log("SUCCESS:", res);
+            },
+            onError: (err) => {
+                console.log("ERROR:", err);
+            },
+        });
     };
 
     return (
