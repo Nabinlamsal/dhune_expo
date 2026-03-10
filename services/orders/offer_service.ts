@@ -1,41 +1,11 @@
-import { api } from "@/src/libs/api";
+import { api } from "@/libs/api";
 import {
-    CreateOfferPayload,
-    UpdateOfferPayload,
-    ListOffersResponse,
-    OfferResponse,
     AcceptResponse,
+    ListOffersResponse,
     OfferStatsResponse
-} from "@/src/types/orders/offers";
-import { OfferStatus } from "@/src/types/orders/orders-enums";
+} from "@/types/orders/offers";
+import { OfferStatus } from "@/types/orders/orders-enums";
 
-//vendor
-export const createOffer = async (
-    payload: CreateOfferPayload
-): Promise<OfferResponse> => {
-    return api<OfferResponse>("/offers/", {
-        method: "POST",
-        data: payload,
-    });
-};
-
-export const updateOffer = async (
-    id: string,
-    payload: UpdateOfferPayload
-): Promise<OfferResponse> => {
-    return api<OfferResponse>(`/offers/${id}`, {
-        method: "PUT",
-        data: payload,
-    });
-};
-
-export const withdrawOffer = async (
-    id: string
-) => {
-    return api(`/offers/${id}`, {
-        method: "DELETE",
-    });
-};
 
 export const getMyOffers = async (
     options?: {
@@ -84,31 +54,6 @@ export const acceptOffer = async (
     });
 };
 
-//admin
-export const getAdminOffers = async (
-    status?: OfferStatus,
-    vendorId?: string,
-    requestId?: string,
-    limit = 10,
-    offset = 0
-): Promise<ListOffersResponse> => {
-    let url = `/admin/offers?limit=${limit}&offset=${offset}`;
-
-    if (status) url += `&status=${status}`;
-    if (vendorId) url += `&vendor_id=${vendorId}`;
-    if (requestId) url += `&request_id=${requestId}`;
-
-    return api<ListOffersResponse>(url, {
-        method: "GET",
-    });
-};
-
-export const getAdminOfferStats = async (): Promise<OfferStatsResponse> => {
-    return api<OfferStatsResponse>(
-        "/admin/offers/stats",
-        { method: "GET" }
-    );
-};
 
 export const getVendorOfferStats = async (): Promise<OfferStatsResponse> => {
     return api<OfferStatsResponse>(

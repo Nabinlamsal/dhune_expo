@@ -1,6 +1,4 @@
 "use client";
-
-import { cancelRequest, createRequest, getAdminRequests, getAdminRequestStats, getMarketplaceRequests, getMyRequests, getMyRequestStats, getRequestById } from "@/src/services/orders/request_service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 //create req
@@ -48,49 +46,10 @@ export const useCancelRequest = () => {
     });
 };
 
-//vendor requests
-export const useMarketplaceRequests = ({
-    categoryId,
-    limit = 10,
-    offset = 0,
-}: {
-    categoryId?: string;
-    limit?: number;
-    offset?: number;
-}) => {
-    return useQuery({
-        queryKey: ["marketplace-requests", categoryId, limit, offset],
-        queryFn: async () => {
-            const res = await getMarketplaceRequests({
-                categoryId,
-                limit,
-                offset,
-            });
 
-            return res.data;
-        },
-    });
-};
-//admin requests
-export const useAdminRequests = (
-    status?: string,
-    limit = 10,
-    offset = 0
-) => {
-    return useQuery({
-        queryKey: ["admin-requests", status, limit, offset],
-        queryFn: () => getAdminRequests(status, limit, offset),
-    });
-};
 
 export const useMyRequestStats = () =>
     useQuery({
         queryKey: ["requests", "my", "stats"],
         queryFn: getMyRequestStats,
-    });
-
-export const useAdminRequestStats = () =>
-    useQuery({
-        queryKey: ["requests", "admin", "stats"],
-        queryFn: getAdminRequestStats,
     });
