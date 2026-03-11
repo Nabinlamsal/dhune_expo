@@ -1,151 +1,430 @@
+import { useMyOrderStats, useMyOrders } from "@/hooks/orders/useOrder";
+import { useMyRequestStats, useMyRequests } from "@/hooks/orders/useRequest";
+import { RequestStatus } from "@/types/orders/orders-enums";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { useEffect, useRef } from "react";
+import { Animated, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+
+const REQUEST_STATUS_COLOR: Record<RequestStatus, string> = {
+    OPEN: "#ebbc01",
+    ORDER_CREATED: "#22c55e",
+    CANCELLED: "#ef4444",
+    EXPIRED: "#9ca3af",
+};
+
+const ORDER_STATUS_COLOR: Record<string, string> = {
+    ACCEPTED: "#ebbc01",
+    PICKED_UP: "#f97316",
+    IN_PROGRESS: "#3b82f6",
+    DELIVERING: "#8b5cf6",
+    COMPLETED: "#22c55e",
+    CANCELLED: "#ef4444",
+    ALL: "#9ca3af",
+};
+
+const formatStatus = (s: string) => s.replace(/_/g, " ");
+
+const formatDate = (iso?: string) => {
+    if (!iso) return "-";
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
+
+const getRequestCategoryName = (request: any) => {
+    const firstService = request?.services?.[0];
+    if (firstService?.category_name) return firstService.category_name;
+    if (typeof request?.category_name === "string") return request.category_name;
+    if (Array.isArray(request?.category_names) && request.category_names.length > 0) {
+        return String(request.category_names[0]);
+    }
+    return request?.pickup_address ?? "Laundry Request";
+};
+
+const getOrderCategoryName = (order: any) => {
+    if (Array.isArray(order?.services) && order.services.length > 0) {
+        const firstCategory = order.services[0]?.category_name;
+        if (firstCategory) return firstCategory;
+    }
+    return order?.pickup_address ?? "Laundry Order";
+};
+
+function StatCard({
+    label,
+    value,
+    icon,
+    accent,
+}: {
+    label: string;
+    value: number | string;
+    icon: keyof typeof Ionicons.glyphMap;
+    accent?: boolean;
+}) {
+    return (
+        <View style={[styles.statCard, accent && styles.statCardAccent]}>
+            <View style={[styles.statIcon, accent && styles.statIconAccent]}>
+                <Ionicons name={icon} size={16} color={accent ? "#040947" : "#ebbc01"} />
+            </View>
+            <Text style={[styles.statValue, accent && styles.statValueAccent]}>{value ?? "-"}</Text>
+            <Text style={[styles.statLabel, accent && styles.statLabelAccent]}>{label}</Text>
+        </View>
+    );
+}
+
+function StatusPill({ status, type }: { status: string; type: "request" | "order" }) {
+    const color =
+        type === "request"
+            ? REQUEST_STATUS_COLOR[status as RequestStatus] ?? "#9ca3af"
+            : ORDER_STATUS_COLOR[status] ?? "#9ca3af";
+    return (
+        <View style={[styles.pill, { backgroundColor: `${color}22` }]}>
+            <View style={[styles.pillDot, { backgroundColor: color }]} />
+            <Text style={[styles.pillText, { color }]}>{formatStatus(status)}</Text>
+        </View>
+    );
+}
+
+function SectionHeader({ title, onPress }: { title: string; onPress?: () => void }) {
+    return (
+        <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{title}</Text>
+            {onPress && (
+                <Pressable onPress={onPress}>
+                    <Text style={styles.seeAll}>See all</Text>
+                </Pressable>
+            )}
+        </View>
+    );
+}
+
+function EmptyState({ label }: { label: string }) {
+    return (
+        <View style={styles.emptyState}>
+            <Ionicons name="folder-open-outline" size={28} color="#d1d5db" />
+            <Text style={styles.emptyText}>{label}</Text>
+        </View>
+    );
+}
 
 export default function HomeScreen() {
+    const router = useRouter();
+    const { data: requestStats } = useMyRequestStats();
+    const { data: orderStats } = useMyOrderStats();
+    const { data: requestsData } = useMyRequests(3, 0);
+    const { data: ordersData } = useMyOrders(3, 0);
+
+    const recentRequests = requestsData?.data?.slice(0, 3) ?? [];
+    const recentOrders = ordersData?.slice(0, 3) ?? [];
+
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(16)).current;
+
+    useEffect(() => {
+        Animated.parallel([
+            Animated.timing(fadeAnim, { toValue: 1, duration: 420, useNativeDriver: true }),
+            Animated.timing(slideAnim, { toValue: 0, duration: 420, useNativeDriver: true }),
+        ]).start();
+    }, [fadeAnim, slideAnim]);
+
     return (
-        <SafeAreaView style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-
-                {/* Welcome */}
-                <View style={styles.header}>
-                    <Text style={styles.welcome}>Welcome to</Text>
-                    <Text style={styles.brand}>Dhune.np</Text>
-                </View>
-
-                {/* Quick Action */}
-                <Pressable style={styles.createRequest}>
-                    <Ionicons name="add-circle-outline" size={26} color="#fff" />
-                    <Text style={styles.createText}>Create Laundry Request</Text>
-                </Pressable>
-
-                {/* Stats Section */}
-                <View style={styles.statsRow}>
-                    <View style={styles.statCard}>
-                        <Text style={styles.statNumber}>3</Text>
-                        <Text style={styles.statLabel}>Active Requests</Text>
+        <SafeAreaView style={styles.safe}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+                <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+                    <View style={styles.header}>
+                        <Text style={styles.greeting}>Good morning</Text>
+                        <Text style={styles.brand}>Dhune.np</Text>
                     </View>
 
-                    <View style={styles.statCard}>
-                        <Text style={styles.statNumber}>2</Text>
-                        <Text style={styles.statLabel}>Orders</Text>
+                    <Pressable
+                        style={({ pressed }) => [styles.ctaCard, pressed && { opacity: 0.9 }]}
+                        onPress={() => router.push("/(tabs)/requests")}
+                    >
+                        <View style={styles.ctaLeft}>
+                            <Text style={styles.ctaLabel}>Ready for laundry?</Text>
+                            <Text style={styles.ctaTitle}>Create a Request</Text>
+                            <Text style={styles.ctaSub}>Vendors bid, you choose the best offer.</Text>
+                        </View>
+                        <View style={styles.ctaIconWrap}>
+                            <Ionicons name="add-circle" size={42} color="#ebbc01" />
+                        </View>
+                    </Pressable>
+
+                    <View style={styles.statsGrid}>
+                        <StatCard
+                            label="Open Requests"
+                            value={requestStats?.open_requests ?? 0}
+                            icon="file-tray-outline"
+                            accent
+                        />
+                        <StatCard
+                            label="Total Requests"
+                            value={requestStats?.total_requests ?? 0}
+                            icon="document-text-outline"
+                        />
+                        <StatCard
+                            label="Active Orders"
+                            value={
+                                (orderStats?.data?.accepted_orders ?? 0) +
+                                (orderStats?.data?.in_progress_orders ?? 0) +
+                                (orderStats?.data?.picked_up_orders ?? 0)
+                            }
+                            icon="receipt-outline"
+                            accent
+                        />
+                        <StatCard
+                            label="Completed"
+                            value={orderStats?.data?.completed_orders ?? 0}
+                            icon="checkmark-circle-outline"
+                        />
                     </View>
-                </View>
 
-                {/* Recent Requests */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Recent Requests</Text>
+                    <SectionHeader title="Recent Requests" onPress={() => router.push("/(tabs)/requests")} />
+                    {recentRequests.length === 0 ? (
+                        <EmptyState label="No requests yet" />
+                    ) : (
+                        recentRequests.map((req: any, index) => (
+                            <Pressable
+                                key={String(req.id)}
+                                style={({ pressed }) => [styles.listCard, pressed && styles.listCardPressed]}
+                                onPress={() =>
+                                    router.push(`/requests/${req.id}?ref=${encodeURIComponent(`Rq${index + 1}`)}` as any)
+                                }
+                            >
+                                <View style={styles.listCardIcon}>
+                                    <Ionicons name="shirt-outline" size={20} color="#040947" />
+                                </View>
+                                <View style={styles.listCardBody}>
+                                    <Text style={styles.listCardTitle} numberOfLines={1}>
+                                        {getRequestCategoryName(req)}
+                                    </Text>
+                                    <Text style={styles.listCardMeta}>{formatDate(req.created_at)}</Text>
+                                </View>
+                                <StatusPill status={String(req.status)} type="request" />
+                            </Pressable>
+                        ))
+                    )}
 
-                    <View style={styles.card}>
-                        <Text style={styles.cardTitle}>Laundry Pickup</Text>
-                        <Text style={styles.cardSubtitle}>Waiting for vendor offers</Text>
-                    </View>
-                </View>
-
-                {/* Recent Orders */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Recent Orders</Text>
-
-                    <View style={styles.card}>
-                        <Text style={styles.cardTitle}>Order #1023</Text>
-                        <Text style={styles.cardSubtitle}>In progress</Text>
-                    </View>
-                </View>
-
+                    <SectionHeader title="Recent Orders" onPress={() => router.push("/(tabs)/orders")} />
+                    {recentOrders.length === 0 ? (
+                        <EmptyState label="No orders yet" />
+                    ) : (
+                        recentOrders.map((order, index) => (
+                            <Pressable
+                                key={order.id}
+                                style={({ pressed }) => [styles.listCard, pressed && styles.listCardPressed]}
+                                onPress={() =>
+                                    router.push(`/orders/${order.id}?ref=${encodeURIComponent(`Or${index + 1}`)}` as any)
+                                }
+                            >
+                                <View style={styles.listCardIcon}>
+                                    <Ionicons name="bag-handle-outline" size={20} color="#040947" />
+                                </View>
+                                <View style={styles.listCardBody}>
+                                    <Text style={styles.listCardTitle} numberOfLines={1}>
+                                        {getOrderCategoryName(order)}
+                                    </Text>
+                                    <Text style={styles.listCardMeta}>
+                                        {`Or${index + 1}`} · {formatDate(order.created_at)} ·{" "}
+                                        <Text style={styles.price}>Rs {order.final_price}</Text>
+                                    </Text>
+                                </View>
+                                <StatusPill status={order.order_status} type="order" />
+                            </Pressable>
+                        ))
+                    )}
+                    <View style={{ height: 24 }} />
+                </Animated.View>
             </ScrollView>
         </SafeAreaView>
     );
 }
+
 const styles = StyleSheet.create({
-    container: {
+    safe: {
         flex: 1,
-        backgroundColor: "#f8fafc",
-        paddingHorizontal: 20,
+        backgroundColor: "#f5f6fa",
     },
-
+    scroll: {
+        paddingHorizontal: 16,
+        paddingTop: 10,
+    },
     header: {
-        marginTop: 20,
-        marginBottom: 20,
+        marginBottom: 16,
     },
-
-    welcome: {
-        fontSize: 18,
+    greeting: {
+        fontSize: 12,
         color: "#6b7280",
+        marginBottom: 2,
     },
-
     brand: {
-        fontSize: 28,
-        fontWeight: "700",
+        fontSize: 24,
+        fontWeight: "800",
         color: "#040947",
+        letterSpacing: -0.4,
     },
-
-    createRequest: {
+    ctaCard: {
+        backgroundColor: "#040947",
+        borderRadius: 16,
+        padding: 18,
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#040947",
-        paddingVertical: 16,
-        borderRadius: 12,
-        marginBottom: 25,
-        gap: 8,
-    },
-
-    createText: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "600",
-    },
-
-    statsRow: {
-        flexDirection: "row",
         justifyContent: "space-between",
-        marginBottom: 25,
+        marginBottom: 18,
     },
-
+    ctaLeft: {
+        flex: 1,
+    },
+    ctaLabel: {
+        fontSize: 10,
+        color: "#ebbc0190",
+        fontWeight: "600",
+        letterSpacing: 0.8,
+        textTransform: "uppercase",
+        marginBottom: 4,
+    },
+    ctaTitle: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#fff",
+        marginBottom: 4,
+    },
+    ctaSub: {
+        fontSize: 12,
+        color: "#ffffff90",
+        lineHeight: 17,
+    },
+    ctaIconWrap: {
+        marginLeft: 12,
+    },
+    statsGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        marginBottom: 20,
+    },
     statCard: {
         flex: 1,
+        minWidth: "47%",
         backgroundColor: "#fff",
-        marginHorizontal: 5,
-        padding: 16,
         borderRadius: 12,
+        padding: 12,
+        alignItems: "flex-start",
+    },
+    statCardAccent: {
+        backgroundColor: "#040947",
+    },
+    statIcon: {
+        width: 30,
+        height: 30,
+        borderRadius: 9,
+        backgroundColor: "#04094712",
         alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 8,
     },
-
-    statNumber: {
-        fontSize: 22,
-        fontWeight: "700",
+    statIconAccent: {
+        backgroundColor: "#ffffff20",
+    },
+    statValue: {
+        fontSize: 19,
+        fontWeight: "800",
         color: "#040947",
     },
-
+    statValueAccent: {
+        color: "#ebbc01",
+    },
     statLabel: {
-        fontSize: 13,
-        color: "#6b7280",
+        fontSize: 10,
+        color: "#9ca3af",
+        marginTop: 2,
     },
-
-    section: {
-        marginBottom: 20,
+    statLabelAccent: {
+        color: "#ffffff70",
     },
-
+    sectionHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 10,
+    },
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: "600",
-        marginBottom: 10,
-        color: "#040947",
+        fontSize: 15,
+        fontWeight: "700",
+        color: "#111827",
     },
-
-    card: {
+    seeAll: {
+        fontSize: 12,
+        color: "#ebbc01",
+        fontWeight: "700",
+    },
+    listCard: {
         backgroundColor: "#fff",
-        padding: 16,
         borderRadius: 12,
-        marginBottom: 10,
+        padding: 12,
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 9,
     },
-
-    cardTitle: {
-        fontSize: 16,
-        fontWeight: "600",
+    listCardPressed: {
+        opacity: 0.85,
+        transform: [{ scale: 0.99 }],
     },
-
-    cardSubtitle: {
+    listCardIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 10,
+        backgroundColor: "#ebbc0115",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 10,
+    },
+    listCardBody: {
+        flex: 1,
+    },
+    listCardTitle: {
         fontSize: 13,
-        color: "#6b7280",
+        fontWeight: "600",
+        color: "#111827",
+    },
+    listCardMeta: {
+        fontSize: 11,
+        color: "#9ca3af",
+        marginTop: 2,
+    },
+    price: {
+        color: "#040947",
+        fontWeight: "700",
+    },
+    pill: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 20,
+        gap: 4,
+        marginLeft: 8,
+    },
+    pillDot: {
+        width: 5,
+        height: 5,
+        borderRadius: 3,
+    },
+    pillText: {
+        fontSize: 9,
+        fontWeight: "700",
+    },
+    emptyState: {
+        backgroundColor: "#fff",
+        borderRadius: 12,
+        paddingVertical: 24,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 10,
+        gap: 6,
+    },
+    emptyText: {
+        fontSize: 12,
+        color: "#d1d5db",
+        fontWeight: "500",
     },
 });

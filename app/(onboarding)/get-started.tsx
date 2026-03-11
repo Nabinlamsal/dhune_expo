@@ -28,7 +28,7 @@ export default function GetStartedScreen() {
 
                 <Pressable
                     style={styles.loginButton}
-                    onPress={() => router.push("/login")}
+                    onPress={() => router.push("/(auth)/login")}
                 >
                     <Ionicons name="log-in-outline" size={20} color="white" />
                     <Text style={styles.loginText}>Login</Text>

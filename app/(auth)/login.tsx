@@ -107,7 +107,7 @@ export default function LoginScreen() {
                             onPress={() => router.replace("/(auth)/signup")}
                         >
                             <Text style={styles.signupText}>
-                                Don't have an account?{" "}
+                                Don&apos;t have an account?{" "}
                                 <Text style={styles.signupHighlight}>Sign Up</Text>
                             </Text>
                         </Pressable>

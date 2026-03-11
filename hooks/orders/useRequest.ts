@@ -1,4 +1,4 @@
-"use client";
+import { cancelRequest, createRequest, getMyRequests, getMyRequestStats, getRequestById } from "@/services/orders/request_service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 //create req
@@ -14,7 +14,6 @@ export const useCreateRequest = () => {
         },
     });
 };
-
 //my requests
 export const useMyRequests = (limit = 10, offset = 0) => {
     return useQuery({
@@ -51,5 +50,8 @@ export const useCancelRequest = () => {
 export const useMyRequestStats = () =>
     useQuery({
         queryKey: ["requests", "my", "stats"],
-        queryFn: getMyRequestStats,
+        queryFn: async () => {
+            const res = await getMyRequestStats();
+            return res.data;
+        },
     });
