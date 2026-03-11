@@ -1,8 +1,6 @@
-import NotificationButton from "@/components/ui/NotificationButton";
 import { useOrderDetail } from "@/hooks/orders/useOrder";
-import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 type DetailRowProps = {
     label: string;
@@ -25,7 +23,6 @@ const compactId = (prefix: string, value?: string | null) => {
 };
 
 export default function OrderDetailScreen() {
-    const router = useRouter();
     const { id, ref } = useLocalSearchParams<{ id: string; ref?: string }>();
     const { data: order, isLoading } = useOrderDetail(String(id ?? ""));
 
@@ -47,13 +44,6 @@ export default function OrderDetailScreen() {
 
     return (
         <SafeAreaView style={styles.safe}>
-            <View style={styles.topBar}>
-                <Pressable onPress={() => router.back()} style={styles.backBtn}>
-                    <Ionicons name="arrow-back" size={20} color="#040947" />
-                </Pressable>
-                <NotificationButton />
-            </View>
-
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 <Text style={styles.title}>Order Details</Text>
 
@@ -114,24 +104,9 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#f5f6fa",
     },
-    topBar: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: 12,
-        paddingTop: 8,
-    },
-    backBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: "#fff",
-        alignItems: "center",
-        justifyContent: "center",
-    },
     scroll: {
         padding: 16,
-        paddingTop: 8,
+        paddingTop: 12,
     },
     centerText: {
         marginTop: 24,
