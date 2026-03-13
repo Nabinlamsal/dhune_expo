@@ -61,12 +61,12 @@ function StatCard({
     accent?: boolean;
 }) {
     return (
-        <View style={[styles.statCard, accent && styles.statCardAccent]}>
+        <View style={styles.statCard}>
             <View style={[styles.statIcon, accent && styles.statIconAccent]}>
-                <Ionicons name={icon} size={16} color={accent ? "#040947" : "#ebbc01"} />
+                <Ionicons name={icon} size={16} color={accent ? "#040947" : "#475569"} />
             </View>
-            <Text style={[styles.statValue, accent && styles.statValueAccent]}>{value ?? "-"}</Text>
-            <Text style={[styles.statLabel, accent && styles.statLabelAccent]}>{label}</Text>
+            <Text style={styles.statValue}>{value ?? "-"}</Text>
+            <Text style={styles.statLabel}>{label}</Text>
         </View>
     );
 }
@@ -137,7 +137,7 @@ export default function HomeScreen() {
 
                     <Pressable
                         style={({ pressed }) => [styles.ctaCard, pressed && { opacity: 0.9 }]}
-                        onPress={() => router.push("/(tabs)/requests")}
+                        onPress={() => router.push("/(tabs)/requests/create")}
                     >
                         <View style={styles.ctaLeft}>
                             <Text style={styles.ctaLabel}>Ready for laundry?</Text>
@@ -305,41 +305,34 @@ const styles = StyleSheet.create({
     statCard: {
         flex: 1,
         minWidth: "47%",
-        backgroundColor: "#fff",
+        backgroundColor: "#ffffff",
         borderRadius: 12,
         padding: 12,
         alignItems: "flex-start",
-    },
-    statCardAccent: {
-        backgroundColor: "#040947",
+        borderWidth: 1,
+        borderColor: "#e5e7eb",
     },
     statIcon: {
         width: 30,
         height: 30,
         borderRadius: 9,
-        backgroundColor: "#04094712",
+        backgroundColor: "#f1f5f9",
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 8,
     },
     statIconAccent: {
-        backgroundColor: "#ffffff20",
+        backgroundColor: "#ebf2ff",
     },
     statValue: {
         fontSize: 19,
         fontWeight: "800",
         color: "#040947",
     },
-    statValueAccent: {
-        color: "#ebbc01",
-    },
     statLabel: {
         fontSize: 10,
-        color: "#9ca3af",
+        color: "#64748b",
         marginTop: 2,
-    },
-    statLabelAccent: {
-        color: "#ffffff70",
     },
     sectionHeader: {
         flexDirection: "row",

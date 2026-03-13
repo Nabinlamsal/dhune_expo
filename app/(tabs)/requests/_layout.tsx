@@ -1,5 +1,11 @@
 import { Stack } from "expo-router";
 
 export default function RequestsLayout() {
-    return <Stack />;
+    return (
+        <Stack>
+            <Stack.Screen name="index" options={{ title: "Requests" }} />
+            <Stack.Screen name="create" options={{ title: "Create Request" }} />
+            <Stack.Screen name="[id]" options={{ title: "Request Details" }} />
+        </Stack>
+    );
 }

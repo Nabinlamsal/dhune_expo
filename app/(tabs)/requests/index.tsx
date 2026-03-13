@@ -37,6 +37,20 @@ export default function RequestsScreen() {
     return (
         <SafeAreaView style={styles.safe}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+                <Pressable
+                    style={({ pressed }) => [styles.createCard, pressed && styles.pressed]}
+                    onPress={() => router.push("/(tabs)/requests/create")}
+                >
+                    <View style={styles.createLeft}>
+                        <Text style={styles.createLabel}>New Request</Text>
+                        <Text style={styles.createTitle}>Create Laundry Request</Text>
+                        <Text style={styles.createSub}>
+                            Add one or more service categories with units and item details.
+                        </Text>
+                    </View>
+                    <Ionicons name="add-circle" size={36} color="#ebbc01" />
+                </Pressable>
+
                 {isLoading ? (
                     <Text style={styles.emptyText}>Loading requests...</Text>
                 ) : requests.length === 0 ? (
@@ -90,6 +104,37 @@ const styles = StyleSheet.create({
         textAlign: "center",
         color: "#6b7280",
         marginTop: 24,
+    },
+    createCard: {
+        backgroundColor: "#040947",
+        borderRadius: 12,
+        padding: 14,
+        marginBottom: 12,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    createLeft: {
+        flex: 1,
+        paddingRight: 10,
+    },
+    createLabel: {
+        color: "#ebbc0199",
+        fontSize: 10,
+        fontWeight: "700",
+        textTransform: "uppercase",
+        marginBottom: 2,
+    },
+    createTitle: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "700",
+        marginBottom: 4,
+    },
+    createSub: {
+        color: "#ffffff9e",
+        fontSize: 12,
+        lineHeight: 17,
     },
     card: {
         backgroundColor: "#fff",
