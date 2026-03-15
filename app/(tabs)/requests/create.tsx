@@ -1,4 +1,3 @@
-import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useActiveCategories } from "@/hooks/catalog/useCategory";
 import { useCreateRequest } from "@/hooks/orders/useRequest";
@@ -6,10 +5,24 @@ import { Category } from "@/types/catalog/category";
 import { PricingUnit } from "@/types/catalog/category-enums";
 import { PaymentMethod } from "@/types/orders/orders-enums";
 import { CreateRequestPayload } from "@/types/orders/requests";
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
-import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    Modal,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
+import MapView, { Marker, Region } from "react-native-maps";
 
 type ServiceItemField = {
     id: string;
@@ -26,6 +39,7 @@ type ServiceForm = {
     description: string;
     items: ServiceItemField[];
 };
+type PickupRangeKey = "EARLY" | "MORNING" | "AFTERNOON" | "EVENING";
 
 const PAYMENT_OPTIONS: PaymentMethod[] = ["CASH", "ONLINE"];
 
@@ -34,6 +48,23 @@ const UNIT_LABELS: Record<PricingUnit, string> = {
     ITEMS: "Item-based",
     SQFT: "Square Feet",
 };
+const DEFAULT_REGION: Region = {
+    latitude: 27.7172,
+    longitude: 85.324,
+    latitudeDelta: 0.02,
+    longitudeDelta: 0.02,
+};
+const PICKUP_RANGES: {
+    key: PickupRangeKey;
+    label: string;
+    startHour: number;
+    endHour: number;
+}[] = [
+    { key: "EARLY", label: "8:00 AM - 10:00 AM", startHour: 8, endHour: 10 },
+    { key: "MORNING", label: "10:00 AM - 12:00 PM", startHour: 10, endHour: 12 },
+    { key: "AFTERNOON", label: "1:00 PM - 3:00 PM", startHour: 13, endHour: 15 },
+    { key: "EVENING", label: "4:00 PM - 6:00 PM", startHour: 16, endHour: 18 },
+];
 
 const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -58,10 +89,17 @@ const toNumber = (value: string) => {
     return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const toIsoString = (value: string) => {
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return "";
-    return parsed.toISOString();
+const formatDateLabel = (value: Date) =>
+    value.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+
+const buildDateWithHour = (datePart: Date, hour: number) => {
+    const value = new Date(datePart);
+    value.setHours(hour, 0, 0, 0);
+    return value;
 };
 
 export default function CreateRequestScreen() {
@@ -71,16 +109,89 @@ export default function CreateRequestScreen() {
     const createRequestMutation = useCreateRequest();
 
     const [pickupAddress, setPickupAddress] = useState("");
-    const [pickupTimeFrom, setPickupTimeFrom] = useState("");
-    const [pickupTimeTo, setPickupTimeTo] = useState("");
+    const [pickupLat, setPickupLat] = useState<number | null>(null);
+    const [pickupLng, setPickupLng] = useState<number | null>(null);
+    const [region, setRegion] = useState<Region>(DEFAULT_REGION);
+    const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+    const [pickupDate, setPickupDate] = useState(new Date());
+    const [pickupRange, setPickupRange] = useState<PickupRangeKey>("MORNING");
+    const [activePicker, setActivePicker] = useState<"date" | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
     const [services, setServices] = useState<ServiceForm[]>([createEmptyService()]);
+    const [openCategoryFor, setOpenCategoryFor] = useState<string | null>(null);
 
     const categoryMap = useMemo(() => {
         const map = new Map<string, Category>();
         categories.forEach((category) => map.set(category.id, category));
         return map;
     }, [categories]);
+
+    const updateAddressFromCoordinates = useCallback(async (lat: number, lng: number) => {
+        try {
+            const geocoded = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+            const first = geocoded[0];
+            if (!first) return;
+
+            const parts = [first.name, first.street, first.city, first.region, first.country].filter(
+                (part) => typeof part === "string" && part.trim().length > 0
+            );
+            if (parts.length > 0) {
+                setPickupAddress(parts.join(", "));
+            }
+        } catch {
+            // Keep manual address if reverse geocoding fails.
+        }
+    }, []);
+
+    useEffect(() => {
+        let mounted = true;
+
+        const initLocation = async () => {
+            setIsLoadingLocation(true);
+            try {
+                const permission = await Location.requestForegroundPermissionsAsync();
+                if (permission.status !== "granted") {
+                    Alert.alert(
+                        "Location access denied",
+                        "You can still choose location by dragging the marker on the map."
+                    );
+                    return;
+                }
+
+                const current = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.Balanced,
+                });
+                if (!mounted) return;
+
+                const lat = current.coords.latitude;
+                const lng = current.coords.longitude;
+                setPickupLat(lat);
+                setPickupLng(lng);
+                setRegion((prev) => ({ ...prev, latitude: lat, longitude: lng }));
+                void updateAddressFromCoordinates(lat, lng);
+            } catch {
+                Alert.alert("Location unavailable", "Could not detect current location.");
+            } finally {
+                if (mounted) setIsLoadingLocation(false);
+            }
+        };
+
+        void initLocation();
+
+        return () => {
+            mounted = false;
+        };
+    }, [updateAddressFromCoordinates]);
+
+    const setCoordinates = useCallback(
+        (lat: number, lng: number) => {
+            setPickupLat(lat);
+            setPickupLng(lng);
+            setRegion((prev) => ({ ...prev, latitude: lat, longitude: lng }));
+            void updateAddressFromCoordinates(lat, lng);
+        },
+        [updateAddressFromCoordinates]
+    );
 
     const updateService = (serviceId: string, patch: Partial<ServiceForm>) => {
         setServices((current) =>
@@ -157,15 +268,16 @@ export default function CreateRequestScreen() {
             return null;
         }
 
-        const fromIso = toIsoString(pickupTimeFrom.trim());
-        const toIso = toIsoString(pickupTimeTo.trim());
-
-        if (!fromIso || !toIso) {
-            Alert.alert("Invalid time", "Use a valid date-time, e.g. 2026-03-15T10:30:00+05:45");
+        if (pickupLat == null || pickupLng == null) {
+            Alert.alert("Missing location", "Please pick a location on the map.");
             return null;
         }
 
-        if (new Date(fromIso).getTime() >= new Date(toIso).getTime()) {
+        const selectedRange = PICKUP_RANGES.find((range) => range.key === pickupRange)!;
+        const fromDateTime = buildDateWithHour(pickupDate, selectedRange.startHour);
+        const toDateTime = buildDateWithHour(pickupDate, selectedRange.endHour);
+
+        if (fromDateTime.getTime() >= toDateTime.getTime()) {
             Alert.alert("Invalid time range", "Pickup time from must be earlier than pickup time to.");
             return null;
         }
@@ -237,8 +349,10 @@ export default function CreateRequestScreen() {
 
         return {
             pickup_address: pickupAddress.trim(),
-            pickup_time_from: fromIso,
-            pickup_time_to: toIso,
+            pickup_lat: pickupLat,
+            pickup_lng: pickupLng,
+            pickup_time_from: fromDateTime.toISOString(),
+            pickup_time_to: toDateTime.toISOString(),
             payment_method: paymentMethod,
             services: payloadServices,
         };
@@ -252,9 +366,6 @@ export default function CreateRequestScreen() {
             await createRequestMutation.mutateAsync(payload);
             Alert.alert("Request created", "Your request was submitted successfully.");
 
-            setPickupAddress("");
-            setPickupTimeFrom("");
-            setPickupTimeTo("");
             setPaymentMethod("CASH");
             setServices([createEmptyService()]);
 
@@ -268,52 +379,7 @@ export default function CreateRequestScreen() {
         <SafeAreaView style={styles.safe}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 <Text style={styles.title}>Create Request</Text>
-                <Text style={styles.subtitle}>Add one or more service categories in the same request.</Text>
-
-                <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>Pickup Details</Text>
-                    <Input
-                        value={pickupAddress}
-                        onChangeText={setPickupAddress}
-                        placeholder="Pickup address"
-                    />
-                    <Input
-                        value={pickupTimeFrom}
-                        onChangeText={setPickupTimeFrom}
-                        placeholder="Pickup from (ISO date-time)"
-                        autoCapitalize="none"
-                    />
-                    <Input
-                        value={pickupTimeTo}
-                        onChangeText={setPickupTimeTo}
-                        placeholder="Pickup to (ISO date-time)"
-                        autoCapitalize="none"
-                    />
-                    <Text style={styles.hint}>Example: 2026-03-15T10:30:00+05:45</Text>
-
-                    <Text style={styles.fieldLabel}>Payment Method</Text>
-                    <View style={styles.chipRow}>
-                        {PAYMENT_OPTIONS.map((method) => (
-                            <Pressable
-                                key={method}
-                                style={[
-                                    styles.chip,
-                                    paymentMethod === method && styles.chipActive,
-                                ]}
-                                onPress={() => setPaymentMethod(method)}
-                            >
-                                <Text
-                                    style={[
-                                        styles.chipText,
-                                        paymentMethod === method && styles.chipTextActive,
-                                    ]}
-                                >
-                                    {method}
-                                </Text>
-                            </Pressable>
-                        ))}
-                    </View>
-                </View>
+                <Text style={styles.subtitle}>Services first, then pickup details, then payment.</Text>
 
                 <View style={styles.servicesHeader}>
                     <Text style={styles.sectionTitle}>Services</Text>
@@ -328,7 +394,7 @@ export default function CreateRequestScreen() {
                     const unitOptions = selectedCategory?.allowed_units ?? [];
 
                     return (
-                        <View key={service.id} style={styles.card}>
+                        <View key={service.id} style={[styles.card, styles.serviceCard]}>
                             <View style={styles.serviceTopRow}>
                                 <Text style={styles.serviceTitle}>Service #{index + 1}</Text>
                                 <Pressable
@@ -346,36 +412,71 @@ export default function CreateRequestScreen() {
                             ) : categories.length === 0 ? (
                                 <Text style={styles.hint}>No active categories available.</Text>
                             ) : (
-                                <View style={styles.chipRow}>
-                                    {categories.map((category) => {
-                                        const active = service.category_id === category.id;
-                                        return (
-                                            <Pressable
-                                                key={category.id}
-                                                style={[styles.chip, active && styles.chipActive]}
-                                                onPress={() => {
-                                                    const defaultUnit = category.allowed_units[0] ?? "";
-                                                    updateService(service.id, {
-                                                        category_id: category.id,
-                                                        selected_unit: defaultUnit,
-                                                        quantity_value: "",
-                                                        sqft: "",
-                                                        items: [createEmptyItem()],
-                                                    });
-                                                }}
-                                            >
-                                                <Text
-                                                    style={[styles.chipText, active && styles.chipTextActive]}
-                                                >
-                                                    {category.name}
-                                                </Text>
-                                            </Pressable>
-                                        );
-                                    })}
+                                <View>
+                                    <Pressable
+                                        style={styles.dropdownTrigger}
+                                        onPress={() =>
+                                            setOpenCategoryFor((current) =>
+                                                current === service.id ? null : service.id
+                                            )
+                                        }
+                                    >
+                                        <Text style={styles.dropdownTriggerText}>
+                                            {selectedCategory?.name ?? "Select a category"}
+                                        </Text>
+                                        <Ionicons
+                                            name={openCategoryFor === service.id ? "chevron-up" : "chevron-down"}
+                                            size={16}
+                                            color="#040947"
+                                        />
+                                    </Pressable>
+
+                                    {openCategoryFor === service.id && (
+                                        <View style={styles.dropdownMenu}>
+                                            {categories.map((category) => {
+                                                const active = service.category_id === category.id;
+                                                return (
+                                                    <Pressable
+                                                        key={category.id}
+                                                        style={[
+                                                            styles.dropdownOption,
+                                                            active && styles.dropdownOptionActive,
+                                                        ]}
+                                                        onPress={() => {
+                                                            const defaultUnit = category.allowed_units[0] ?? "";
+                                                            updateService(service.id, {
+                                                                category_id: category.id,
+                                                                selected_unit: defaultUnit,
+                                                                quantity_value: "",
+                                                                sqft: "",
+                                                                items: [createEmptyItem()],
+                                                            });
+                                                            setOpenCategoryFor(null);
+                                                        }}
+                                                    >
+                                                        <Text
+                                                            style={[
+                                                                styles.dropdownOptionText,
+                                                                active && styles.dropdownOptionTextActive,
+                                                            ]}
+                                                        >
+                                                            {category.name}
+                                                        </Text>
+                                                    </Pressable>
+                                                );
+                                            })}
+                                        </View>
+                                    )}
+
+                                    {!!selectedCategory?.description?.trim() && (
+                                        <Text style={styles.categoryDescription}>
+                                            {selectedCategory.description}
+                                        </Text>
+                                    )}
                                 </View>
                             )}
 
-                            <Text style={styles.fieldLabel}>Unit</Text>
+                            <Text style={styles.fieldLabel}>Service Unit</Text>
                             {service.category_id ? (
                                 unitOptions.length === 0 ? (
                                     <Text style={styles.hint}>No units configured for this category.</Text>
@@ -386,7 +487,7 @@ export default function CreateRequestScreen() {
                                             return (
                                                 <Pressable
                                                     key={unit}
-                                                    style={[styles.chip, active && styles.chipActive]}
+                                                    style={[styles.unitChip, active && styles.unitChipActive]}
                                                     onPress={() =>
                                                         updateService(service.id, {
                                                             selected_unit: unit,
@@ -397,7 +498,7 @@ export default function CreateRequestScreen() {
                                                     }
                                                 >
                                                     <Text
-                                                        style={[styles.chipText, active && styles.chipTextActive]}
+                                                        style={[styles.unitChipText, active && styles.unitChipTextActive]}
                                                     >
                                                         {UNIT_LABELS[unit]}
                                                     </Text>
@@ -493,13 +594,147 @@ export default function CreateRequestScreen() {
                     );
                 })}
 
-                <Button
-                    title={createRequestMutation.isPending ? "Submitting..." : "Submit Request"}
-                    onPress={createRequestMutation.isPending ? undefined : handleCreateRequest}
-                />
+                <View style={styles.card}>
+                    <Text style={styles.sectionTitle}>Pickup Location</Text>
+                    <View style={styles.mapWrap}>
+                        {isLoadingLocation ? (
+                            <View style={styles.mapLoader}>
+                                <ActivityIndicator size="small" color="#040947" />
+                                <Text style={styles.hint}>Loading current location...</Text>
+                            </View>
+                        ) : (
+                            <MapView
+                                style={styles.map}
+                                region={region}
+                                onRegionChangeComplete={setRegion}
+                                onPress={(event) => {
+                                    const coordinate = event.nativeEvent.coordinate;
+                                    setCoordinates(coordinate.latitude, coordinate.longitude);
+                                }}
+                            >
+                                {pickupLat != null && pickupLng != null && (
+                                    <Marker
+                                        coordinate={{ latitude: pickupLat, longitude: pickupLng }}
+                                        draggable
+                                        onDragEnd={(event) => {
+                                            const coordinate = event.nativeEvent.coordinate;
+                                            setCoordinates(coordinate.latitude, coordinate.longitude);
+                                        }}
+                                    />
+                                )}
+                            </MapView>
+                        )}
+                    </View>
+                    <Input
+                        value={pickupAddress}
+                        onChangeText={setPickupAddress}
+                        placeholder="Pickup address"
+                    />
+                    <View style={styles.coordRow}>
+                        <Text style={styles.hint}>
+                            Lat: {pickupLat != null ? pickupLat.toFixed(6) : "-"}
+                        </Text>
+                        <Text style={styles.hint}>
+                            Lng: {pickupLng != null ? pickupLng.toFixed(6) : "-"}
+                        </Text>
+                    </View>
+                </View>
 
-                <View style={{ height: 24 }} />
+                <View style={styles.card}>
+                    <Text style={styles.sectionTitle}>Pickup Window</Text>
+                    <Pressable style={styles.pickerField} onPress={() => setActivePicker("date")}>
+                        <Text style={styles.fieldLabel}>Date</Text>
+                        <Text style={styles.pickerValue}>{formatDateLabel(pickupDate)}</Text>
+                    </Pressable>
+                    <Text style={styles.fieldLabel}>Range</Text>
+                    <View style={styles.rangeRow}>
+                        {PICKUP_RANGES.map((range) => {
+                            const active = pickupRange === range.key;
+                            return (
+                                <Pressable
+                                    key={range.key}
+                                    style={[styles.rangeChip, active && styles.rangeChipActive]}
+                                    onPress={() => setPickupRange(range.key)}
+                                >
+                                    <Ionicons
+                                        name={active ? "checkbox" : "square-outline"}
+                                        size={14}
+                                        color={active ? "#fff" : "#475569"}
+                                    />
+                                    <Text style={[styles.rangeChipText, active && styles.rangeChipTextActive]}>
+                                        {range.label}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+                </View>
+
+                <View style={styles.card}>
+                    <Text style={styles.sectionTitle}>Payment Method</Text>
+                    <View style={styles.paymentRow}>
+                        {PAYMENT_OPTIONS.map((method) => (
+                            <Pressable
+                                key={method}
+                                style={[styles.payCard, paymentMethod === method && styles.payCardActive]}
+                                onPress={() => setPaymentMethod(method)}
+                            >
+                                <Text style={[styles.payText, paymentMethod === method && styles.payTextActive]}>
+                                    {method === "CASH" ? "Cash" : "Online"}
+                                </Text>
+                            </Pressable>
+                        ))}
+                    </View>
+                </View>
+
+                <View style={{ height: 110 }} />
             </ScrollView>
+
+            <View style={styles.footer}>
+                <Pressable
+                    style={[styles.submitBtn, createRequestMutation.isPending && styles.submitBtnDisabled]}
+                    onPress={createRequestMutation.isPending ? undefined : handleCreateRequest}
+                >
+                    <Text style={styles.submitText}>
+                        {createRequestMutation.isPending ? "Submitting..." : "Create Request"}
+                    </Text>
+                </Pressable>
+            </View>
+
+            <Modal
+                visible={activePicker !== null}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setActivePicker(null)}
+            >
+                <View style={styles.modalBackdrop}>
+                    <View style={styles.modalCard}>
+                        {activePicker && (
+                            <DateTimePicker
+                                mode="date"
+                                value={pickupDate}
+                                display={Platform.OS === "ios" ? "spinner" : "default"}
+                                onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                                    if (event.type === "dismissed") {
+                                        setActivePicker(null);
+                                        return;
+                                    }
+                                    if (!selectedDate) return;
+
+                                    setPickupDate(selectedDate);
+
+                                    if (Platform.OS === "android") setActivePicker(null);
+                                }}
+                            />
+                        )}
+                        {Platform.OS === "ios" && (
+                            <Pressable style={styles.doneBtn} onPress={() => setActivePicker(null)}>
+                                <Text style={styles.doneBtnText}>Done</Text>
+                            </Pressable>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -526,46 +761,170 @@ const styles = StyleSheet.create({
     },
     card: {
         backgroundColor: "#fff",
-        borderRadius: 12,
-        padding: 12,
-        marginBottom: 10,
+        borderRadius: 14,
+        padding: 14,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: "#e2e8f0",
+    },
+    serviceCard: {
+        marginBottom: 14,
     },
     sectionTitle: {
         fontSize: 16,
         fontWeight: "700",
-        color: "#111827",
+        color: "#040947",
         marginBottom: 10,
     },
     fieldLabel: {
         fontSize: 12,
         color: "#6b7280",
-        marginTop: 10,
+        marginTop: 8,
         marginBottom: 6,
         fontWeight: "600",
+    },
+    mapWrap: {
+        borderWidth: 1,
+        borderColor: "#cbd5e1",
+        borderRadius: 12,
+        overflow: "hidden",
+        marginBottom: 10,
+    },
+    map: {
+        width: "100%",
+        height: 240,
+    },
+    mapLoader: {
+        height: 240,
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        backgroundColor: "#f1f5f9",
+    },
+    coordRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginTop: 8,
+    },
+    pickerField: {
+        borderWidth: 1,
+        borderColor: "#cbd5e1",
+        borderRadius: 10,
+        backgroundColor: "#eff6ff",
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+    },
+    pickerValue: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: "#0f172a",
+    },
+    timeRow: {
+        flexDirection: "row",
+        gap: 8,
+    },
+    timeField: {
+        flex: 1,
     },
     chipRow: {
         flexDirection: "row",
         flexWrap: "wrap",
         gap: 8,
     },
-    chip: {
+    categoryList: {
+        gap: 8,
+    },
+    dropdownTrigger: {
         borderWidth: 1,
-        borderColor: "#d1d5db",
+        borderColor: "#cbd5e1",
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        backgroundColor: "#fff",
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    dropdownTriggerText: {
+        color: "#111827",
+        fontSize: 14,
+        fontWeight: "600",
+    },
+    dropdownMenu: {
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: "#dbeafe",
+        borderRadius: 10,
+        overflow: "hidden",
+    },
+    dropdownOption: {
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        backgroundColor: "#fff",
+        borderTopWidth: 1,
+        borderTopColor: "#eef2ff",
+    },
+    dropdownOptionActive: {
+        backgroundColor: "#ebf2ff",
+    },
+    dropdownOptionText: {
+        color: "#111827",
+        fontSize: 13,
+        fontWeight: "600",
+    },
+    dropdownOptionTextActive: {
+        color: "#040947",
+    },
+    categoryDescription: {
+        marginTop: 8,
+        color: "#64748b",
+        fontSize: 12,
+        lineHeight: 18,
+    },
+    unitChip: {
+        borderWidth: 1,
+        borderColor: "#cbd5e1",
         borderRadius: 999,
-        paddingHorizontal: 10,
-        paddingVertical: 7,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
         backgroundColor: "#fff",
     },
-    chipActive: {
+    unitChipActive: {
         borderColor: "#040947",
         backgroundColor: "#040947",
     },
-    chipText: {
+    unitChipText: {
         color: "#111827",
+        fontSize: 14,
+        fontWeight: "700",
+    },
+    unitChipTextActive: {
+        color: "#fff",
+    },
+    rangeRow: {
+        gap: 8,
+    },
+    rangeChip: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        borderWidth: 1,
+        borderColor: "#cbd5e1",
+        borderRadius: 999,
+        backgroundColor: "#fff",
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+    },
+    rangeChipActive: {
+        borderColor: "#040947",
+        backgroundColor: "#040947",
+    },
+    rangeChipText: {
         fontSize: 12,
+        color: "#334155",
         fontWeight: "600",
     },
-    chipTextActive: {
+    rangeChipTextActive: {
         color: "#fff",
     },
     hint: {
@@ -598,6 +957,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
+        marginBottom: 6,
     },
     serviceTitle: {
         fontSize: 14,
@@ -649,5 +1009,79 @@ const styles = StyleSheet.create({
     },
     itemPiecesInput: {
         width: 100,
+    },
+    paymentRow: {
+        flexDirection: "row",
+        gap: 8,
+    },
+    payCard: {
+        flex: 1,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#cbd5e1",
+        alignItems: "center",
+        paddingVertical: 12,
+        backgroundColor: "#fff",
+    },
+    payCardActive: {
+        borderColor: "#040947",
+        backgroundColor: "#040947",
+    },
+    payText: {
+        color: "#0f172a",
+        fontWeight: "700",
+        fontSize: 14,
+    },
+    payTextActive: {
+        color: "#fff",
+    },
+    footer: {
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "#f5f6fa",
+        borderTopWidth: 1,
+        borderTopColor: "#e5e7eb",
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    submitBtn: {
+        borderRadius: 10,
+        backgroundColor: "#040947",
+        paddingVertical: 16,
+        alignItems: "center",
+    },
+    submitBtnDisabled: {
+        opacity: 0.6,
+    },
+    submitText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "700",
+    },
+    modalBackdrop: {
+        flex: 1,
+        backgroundColor: "#00000055",
+        justifyContent: "flex-end",
+    },
+    modalCard: {
+        backgroundColor: "#fff",
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        padding: 12,
+    },
+    doneBtn: {
+        alignSelf: "flex-end",
+        marginTop: 8,
+        borderRadius: 999,
+        backgroundColor: "#040947",
+        paddingHorizontal: 14,
+        paddingVertical: 7,
+    },
+    doneBtnText: {
+        color: "#fff",
+        fontSize: 12,
+        fontWeight: "700",
     },
 });

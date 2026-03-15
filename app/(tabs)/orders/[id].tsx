@@ -75,6 +75,8 @@ export default function OrderDetailScreen() {
                 <Text style={styles.sectionTitle}>Request Snapshot</Text>
                 <View style={styles.section}>
                     <DetailRow label="Pickup Address" value={order.request?.pickup_address} />
+                    <DetailRow label="Pickup Latitude" value={order.request?.pickup_lat} />
+                    <DetailRow label="Pickup Longitude" value={order.request?.pickup_lng} />
                     <DetailRow label="Pickup From" value={order.request?.pickup_time_from} />
                     <DetailRow label="Pickup To" value={order.request?.pickup_time_to} />
                     <DetailRow label="Payment Method" value={order.request?.payment_method} />

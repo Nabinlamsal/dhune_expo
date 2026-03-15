@@ -13,6 +13,8 @@ export interface RequestServiceItem {
 //create requests layload
 export interface CreateRequestPayload {
     pickup_address: string;
+    pickup_lat: number;
+    pickup_lng: number;
     pickup_time_from: string;
     pickup_time_to: string;   // ISO string
     payment_method: PaymentMethod;
@@ -23,6 +25,8 @@ export interface CreateRequestPayload {
 export interface RequestSummary {
     id: string;
     pickup_address: string;
+    pickup_lat: number;
+    pickup_lng: number;
     status: RequestStatus;
     created_at: string;
 }
@@ -31,6 +35,8 @@ export interface RequestSummary {
 export interface RequestDetail {
     id: string;
     pickup_address: string;
+    pickup_lat: number;
+    pickup_lng: number;
     pickup_time_from: string;
     pickup_time_to: string;
     payment_method: PaymentMethod;
@@ -50,6 +56,8 @@ export interface MarketplaceServiceItem {
 export interface MarketplaceRequest {
     id: string;
     pickup_address: string;
+    pickup_lat: number;
+    pickup_lng: number;
     pickup_time_from: string;
     pickup_time_to: string;
     expires_at: string;

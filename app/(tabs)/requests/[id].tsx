@@ -53,6 +53,8 @@ export default function RequestDetailScreen() {
                     <DetailRow label="Status" value={request.status} />
                     <DetailRow label="Payment Method" value={request.payment_method} />
                     <DetailRow label="Pickup Address" value={request.pickup_address} />
+                    <DetailRow label="Pickup Latitude" value={request.pickup_lat} />
+                    <DetailRow label="Pickup Longitude" value={request.pickup_lng} />
                     <DetailRow label="Pickup From" value={request.pickup_time_from} />
                     <DetailRow label="Pickup To" value={request.pickup_time_to} />
                     <DetailRow label="Created At" value={request.created_at} />

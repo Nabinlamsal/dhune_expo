@@ -88,6 +88,7 @@ const styles = StyleSheet.create({
 
     buttons: {
         width: "100%",
+        marginHorizontal: 10
     },
 
     loginButton: {
