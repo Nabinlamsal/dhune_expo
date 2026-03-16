@@ -1,10 +1,15 @@
+import IncomingOfferPopup from "@/components/offers/IncomingOfferPopup";
+import { useAcceptOffer, useRejectOffer } from "@/hooks/orders/useOffer";
 import { useMyOrderStats, useMyOrders } from "@/hooks/orders/useOrder";
 import { useMyRequestStats, useMyRequests } from "@/hooks/orders/useRequest";
+import { getOffersByRequest } from "@/services/orders/offer_service";
 import { RequestStatus } from "@/types/orders/orders-enums";
+import { Offer } from "@/types/orders/offers";
 import { Ionicons } from "@expo/vector-icons";
+import { useQueries } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useEffect, useRef } from "react";
-import { Animated, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Animated, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const REQUEST_STATUS_COLOR: Record<RequestStatus, string> = {
     OPEN: "#ebbc01",
@@ -47,6 +52,20 @@ const getOrderCategoryName = (order: any) => {
         if (firstCategory) return firstCategory;
     }
     return order?.pickup_address ?? "Laundry Order";
+};
+
+const getEarliestPendingOffer = (offers: Offer[]) => {
+    const pendingOffers = offers.filter((offer) => offer.status === "PENDING");
+    if (!pendingOffers.length) return null;
+
+    return pendingOffers.reduce((earliest, current) => {
+        const earliestTime = new Date(earliest.created_at ?? "").valueOf();
+        const currentTime = new Date(current.created_at ?? "").valueOf();
+
+        if (Number.isNaN(earliestTime)) return current;
+        if (Number.isNaN(currentTime)) return earliest;
+        return currentTime > earliestTime ? current : earliest;
+    });
 };
 
 function StatCard({
@@ -110,11 +129,53 @@ export default function HomeScreen() {
     const router = useRouter();
     const { data: requestStats } = useMyRequestStats();
     const { data: orderStats } = useMyOrderStats();
-    const { data: requestsData } = useMyRequests(3, 0);
+    const { data: requestsData } = useMyRequests(6, 0);
     const { data: ordersData } = useMyOrders(3, 0);
+    const acceptOfferMutation = useAcceptOffer();
+    const rejectOfferMutation = useRejectOffer();
 
     const recentRequests = requestsData?.data?.slice(0, 3) ?? [];
+    const openRequests = (requestsData?.data ?? []).filter((req: any) => req.status === "OPEN").slice(0, 4);
     const recentOrders = ordersData?.slice(0, 3) ?? [];
+
+    const offerQueries = useQueries({
+        queries: openRequests.map((request: any) => ({
+            queryKey: ["offers", "request", String(request.id)],
+            queryFn: () => getOffersByRequest(String(request.id)),
+        })),
+    });
+
+    const incomingOffer = useMemo(() => {
+        for (let index = 0; index < openRequests.length; index += 1) {
+            const req = openRequests[index];
+            const offers = offerQueries[index]?.data?.data ?? [];
+            const newest = getEarliestPendingOffer(offers);
+            if (newest) {
+                return {
+                    request: req,
+                    offer: newest,
+                };
+            }
+        }
+        return null;
+    }, [offerQueries, openRequests]);
+
+    const [dismissedOfferId, setDismissedOfferId] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (incomingOffer?.offer.id !== dismissedOfferId) {
+            return;
+        }
+
+        const stillAvailable = openRequests.some((req: any, idx: number) => {
+            const offers = offerQueries[idx]?.data?.data ?? [];
+            return offers.some((offer) => offer.id === dismissedOfferId && offer.status === "PENDING");
+        });
+
+        if (!stillAvailable) {
+            setDismissedOfferId(null);
+        }
+    }, [dismissedOfferId, incomingOffer, offerQueries, openRequests]);
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(16)).current;
@@ -125,6 +186,8 @@ export default function HomeScreen() {
             Animated.timing(slideAnim, { toValue: 0, duration: 420, useNativeDriver: true }),
         ]).start();
     }, [fadeAnim, slideAnim]);
+
+    const canShowPopup = Boolean(incomingOffer && incomingOffer.offer.id !== dismissedOfferId);
 
     return (
         <SafeAreaView style={styles.safe}>
@@ -224,7 +287,7 @@ export default function HomeScreen() {
                                         {getOrderCategoryName(order)}
                                     </Text>
                                     <Text style={styles.listCardMeta}>
-                                        {`Or${index + 1}`} Â· {formatDate(order.created_at)} Â·{" "}
+                                        {`Or${index + 1}`} • {formatDate(order.created_at)} •{" "}
                                         <Text style={styles.price}>Rs {order.final_price}</Text>
                                     </Text>
                                 </View>
@@ -232,9 +295,70 @@ export default function HomeScreen() {
                             </Pressable>
                         ))
                     )}
-                    <View style={{ height: 24 }} />
+                    <View style={{ height: 150 }} />
                 </Animated.View>
             </ScrollView>
+
+            {incomingOffer ? (
+                <IncomingOfferPopup
+                    visible={canShowPopup}
+                    requestLabel={getRequestCategoryName(incomingOffer.request)}
+                    offer={incomingOffer.offer}
+                    isAccepting={acceptOfferMutation.isPending && acceptOfferMutation.variables?.offer_id === incomingOffer.offer.id}
+                    isRejecting={rejectOfferMutation.isPending && rejectOfferMutation.variables?.offer_id === incomingOffer.offer.id}
+                    onDismiss={() => setDismissedOfferId(incomingOffer.offer.id)}
+                    onViewRequest={() =>
+                        router.push(`/requests/${incomingOffer.request.id}?ref=${encodeURIComponent("Offer")}` as any)
+                    }
+                    onAccept={() => {
+                        Alert.alert("Accept this offer?", "This creates the order with this vendor.", [
+                            { text: "Cancel", style: "cancel" },
+                            {
+                                text: "Accept",
+                                onPress: () => {
+                                    acceptOfferMutation.mutate(
+                                        { offer_id: incomingOffer.offer.id },
+                                        {
+                                            onSuccess: (response) => {
+                                                const orderId = response.data?.order_id;
+                                                setDismissedOfferId(incomingOffer.offer.id);
+                                                if (orderId) {
+                                                    router.push(`/orders/${orderId}` as any);
+                                                }
+                                            },
+                                            onError: () => {
+                                                Alert.alert("Could not accept", "Please try again.");
+                                            },
+                                        }
+                                    );
+                                },
+                            },
+                        ]);
+                    }}
+                    onReject={() => {
+                        Alert.alert("Reject this offer?", "You can still choose another vendor bid.", [
+                            { text: "Cancel", style: "cancel" },
+                            {
+                                text: "Reject",
+                                style: "destructive",
+                                onPress: () => {
+                                    rejectOfferMutation.mutate(
+                                        { offer_id: incomingOffer.offer.id },
+                                        {
+                                            onSuccess: () => {
+                                                setDismissedOfferId(incomingOffer.offer.id);
+                                            },
+                                            onError: () => {
+                                                Alert.alert("Could not reject", "Please try again.");
+                                            },
+                                        }
+                                    );
+                                },
+                            },
+                        ]);
+                    }}
+                />
+            ) : null}
         </SafeAreaView>
     );
 }

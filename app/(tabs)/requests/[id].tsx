@@ -1,6 +1,9 @@
+import OfferBidCard from "@/components/offers/OfferBidCard";
+import { useAcceptOffer, useOffersByRequest, useRejectOffer } from "@/hooks/orders/useOffer";
 import { useRequestDetail } from "@/hooks/orders/useRequest";
-import { useLocalSearchParams } from "expo-router";
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Offer } from "@/types/orders/offers";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 type DetailRowProps = {
     label: string;
@@ -22,10 +25,89 @@ const compactId = (prefix: string, value?: string | null) => {
     return `${prefix}${(sum % 999) + 1}`;
 };
 
+const getBestPriceOfferId = (offers: Offer[]) => {
+    const pending = offers.filter((offer) => offer.status === "PENDING");
+    if (!pending.length) return null;
+
+    return pending.reduce((best, current) => (current.bid_price < best.bid_price ? current : best)).id;
+};
+
+const getFastestOfferId = (offers: Offer[]) => {
+    const pending = offers.filter((offer) => offer.status === "PENDING");
+    if (!pending.length) return null;
+
+    return pending.reduce((best, current) => {
+        const currentDate = new Date(current.completion_time).valueOf();
+        const bestDate = new Date(best.completion_time).valueOf();
+
+        if (Number.isNaN(currentDate)) return best;
+        if (Number.isNaN(bestDate)) return current;
+        return currentDate < bestDate ? current : best;
+    }).id;
+};
+
 export default function RequestDetailScreen() {
+    const router = useRouter();
     const { id, ref } = useLocalSearchParams<{ id: string; ref?: string }>();
-    const { data, isLoading } = useRequestDetail(String(id ?? ""));
+    const requestId = String(id ?? "");
+
+    const { data, isLoading } = useRequestDetail(requestId);
+    const { data: offersResponse, isLoading: offersLoading } = useOffersByRequest(requestId);
+    const acceptOfferMutation = useAcceptOffer();
+    const rejectOfferMutation = useRejectOffer();
+
     const request = data?.data;
+    const offers = offersResponse?.data ?? [];
+    const pendingOffers = offers.filter((offer) => offer.status === "PENDING");
+    const bestPriceOfferId = getBestPriceOfferId(offers);
+    const fastestOfferId = getFastestOfferId(offers);
+
+    const handleAccept = (offerId: string) => {
+        Alert.alert("Accept this offer?", "This will create the order and close remaining offers.", [
+            { text: "Cancel", style: "cancel" },
+            {
+                text: "Accept",
+                style: "default",
+                onPress: () => {
+                    acceptOfferMutation.mutate(
+                        { offer_id: offerId },
+                        {
+                            onSuccess: (response) => {
+                                const orderId = response.data?.order_id;
+                                Alert.alert("Offer accepted", "Order created successfully.");
+                                if (orderId) {
+                                    router.replace(`/orders/${orderId}` as any);
+                                }
+                            },
+                            onError: () => {
+                                Alert.alert("Could not accept", "Please try again.");
+                            },
+                        }
+                    );
+                },
+            },
+        ]);
+    };
+
+    const handleReject = (offerId: string) => {
+        Alert.alert("Reject this offer?", "You can still choose from other bids.", [
+            { text: "Cancel", style: "cancel" },
+            {
+                text: "Reject",
+                style: "destructive",
+                onPress: () => {
+                    rejectOfferMutation.mutate(
+                        { offer_id: offerId },
+                        {
+                            onError: () => {
+                                Alert.alert("Could not reject", "Please try again.");
+                            },
+                        }
+                    );
+                },
+            },
+        ]);
+    };
 
     if (isLoading) {
         return (
@@ -59,6 +141,36 @@ export default function RequestDetailScreen() {
                     <DetailRow label="Pickup To" value={request.pickup_time_to} />
                     <DetailRow label="Created At" value={request.created_at} />
                 </View>
+
+                <Text style={styles.sectionTitle}>Vendor Offers</Text>
+                {offersLoading ? (
+                    <Text style={styles.emptyText}>Loading bids...</Text>
+                ) : pendingOffers.length ? (
+                    <View style={styles.offerStack}>
+                        {pendingOffers.map((offer) => {
+                            const highlight =
+                                offer.id === bestPriceOfferId
+                                    ? "best_price"
+                                    : offer.id === fastestOfferId
+                                        ? "fastest"
+                                        : null;
+
+                            return (
+                                <OfferBidCard
+                                    key={offer.id}
+                                    offer={offer}
+                                    highlight={highlight}
+                                    onAccept={() => handleAccept(offer.id)}
+                                    onReject={() => handleReject(offer.id)}
+                                    isAccepting={acceptOfferMutation.isPending && acceptOfferMutation.variables?.offer_id === offer.id}
+                                    isRejecting={rejectOfferMutation.isPending && rejectOfferMutation.variables?.offer_id === offer.id}
+                                />
+                            );
+                        })}
+                    </View>
+                ) : (
+                    <Text style={styles.emptyText}>No active offers yet. Vendors will appear here once they bid.</Text>
+                )}
 
                 <Text style={styles.sectionTitle}>Services</Text>
                 {request.services?.length ? (
@@ -94,6 +206,7 @@ const styles = StyleSheet.create({
     scroll: {
         padding: 16,
         paddingTop: 12,
+        paddingBottom: 32,
     },
     centerText: {
         marginTop: 24,
@@ -118,6 +231,10 @@ const styles = StyleSheet.create({
         padding: 12,
         marginBottom: 10,
     },
+    offerStack: {
+        gap: 10,
+        marginBottom: 4,
+    },
     detailRow: {
         marginBottom: 10,
     },
@@ -134,5 +251,6 @@ const styles = StyleSheet.create({
     emptyText: {
         color: "#9ca3af",
         fontSize: 13,
+        marginBottom: 10,
     },
 });

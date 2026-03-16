@@ -29,10 +29,17 @@ export interface AcceptOfferPayload {
     offer_id: string;
 }
 
+export interface RejectOfferPayload {
+    offer_id: string;
+}
+
 export interface AcceptOfferResponse {
     order_id: string;
 }
 
+export interface RejectOfferResponse {
+    message: string;
+}
 
 export interface OfferStats {
     total_offers: number;
@@ -46,4 +53,5 @@ export interface OfferStats {
 export type ListOffersResponse = ApiResponse<Offer[]>;
 export type OfferResponse = ApiResponse<Offer>;
 export type AcceptResponse = ApiResponse<AcceptOfferResponse>;
+export type RejectResponse = ApiResponse<RejectOfferResponse>;
 export type OfferStatsResponse = ApiResponse<OfferStats>;

@@ -1,8 +1,13 @@
+import OfferBidCard from "@/components/offers/OfferBidCard";
+import { useAcceptOffer, useRejectOffer } from "@/hooks/orders/useOffer";
 import { useMyRequests } from "@/hooks/orders/useRequest";
+import { getOffersByRequest } from "@/services/orders/offer_service";
 import { RequestStatus } from "@/types/orders/orders-enums";
+import { Offer } from "@/types/orders/offers";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useQueries } from "@tanstack/react-query";
+import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const REQUEST_STATUS_COLOR: Record<RequestStatus, string> = {
     OPEN: "#ebbc01",
@@ -32,7 +37,58 @@ const getCategoryLabel = (request: any) => {
 export default function RequestsScreen() {
     const router = useRouter();
     const { data, isLoading } = useMyRequests(20, 0);
+    const acceptOfferMutation = useAcceptOffer();
+    const rejectOfferMutation = useRejectOffer();
+
     const requests = data?.data ?? [];
+    const openRequests = requests.filter((req: any) => req.status === "OPEN").slice(0, 8);
+
+    const offerQueries = useQueries({
+        queries: openRequests.map((request: any) => ({
+            queryKey: ["offers", "request", String(request.id)],
+            queryFn: () => getOffersByRequest(String(request.id)),
+        })),
+    });
+
+    const offersMap = new Map<string, Offer[]>();
+    openRequests.forEach((req: any, index: number) => {
+        offersMap.set(String(req.id), offerQueries[index]?.data?.data ?? []);
+    });
+
+    const handleAccept = (offerId: string) => {
+        Alert.alert("Accept this offer?", "This creates your order immediately.", [
+            { text: "Cancel", style: "cancel" },
+            {
+                text: "Accept",
+                onPress: () => {
+                    acceptOfferMutation.mutate(
+                        { offer_id: offerId },
+                        {
+                            onError: () => Alert.alert("Could not accept", "Please try again."),
+                        }
+                    );
+                },
+            },
+        ]);
+    };
+
+    const handleReject = (offerId: string) => {
+        Alert.alert("Reject this offer?", "This bid will be removed from your options.", [
+            { text: "Cancel", style: "cancel" },
+            {
+                text: "Reject",
+                style: "destructive",
+                onPress: () => {
+                    rejectOfferMutation.mutate(
+                        { offer_id: offerId },
+                        {
+                            onError: () => Alert.alert("Could not reject", "Please try again."),
+                        }
+                    );
+                },
+            },
+        ]);
+    };
 
     return (
         <SafeAreaView style={styles.safe}>
@@ -59,31 +115,52 @@ export default function RequestsScreen() {
                     requests.map((req: any, index) => {
                         const statusColor = REQUEST_STATUS_COLOR[req.status as RequestStatus] ?? "#9ca3af";
                         const requestRef = `Rq${index + 1}`;
+                        const offers = offersMap.get(String(req.id)) ?? [];
+                        const pendingOffers = offers.filter((offer) => offer.status === "PENDING");
+                        const firstOffer = pendingOffers[0];
+
                         return (
-                            <Pressable
-                                key={String(req.id)}
-                                style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-                                onPress={() =>
-                                    router.push(`/requests/${req.id}?ref=${encodeURIComponent(requestRef)}` as any)
-                                }
-                            >
-                                <View style={styles.iconWrap}>
-                                    <Ionicons name="shirt-outline" size={18} color="#040947" />
-                                </View>
-                                <View style={styles.body}>
-                                    <Text style={styles.title} numberOfLines={1}>
-                                        {getCategoryLabel(req)}
-                                    </Text>
-                                    <Text style={styles.meta}>
-                                        {requestRef} Â· {formatDate(req.created_at)}
-                                    </Text>
-                                </View>
-                                <View style={[styles.pill, { backgroundColor: `${statusColor}22` }]}>
-                                    <Text style={[styles.pillText, { color: statusColor }]}>
-                                        {formatStatus(String(req.status ?? ""))}
-                                    </Text>
-                                </View>
-                            </Pressable>
+                            <View key={String(req.id)}>
+                                <Pressable
+                                    style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+                                    onPress={() =>
+                                        router.push(`/requests/${req.id}?ref=${encodeURIComponent(requestRef)}` as any)
+                                    }
+                                >
+                                    <View style={styles.iconWrap}>
+                                        <Ionicons name="shirt-outline" size={18} color="#040947" />
+                                    </View>
+                                    <View style={styles.body}>
+                                        <Text style={styles.title} numberOfLines={1}>
+                                            {getCategoryLabel(req)}
+                                        </Text>
+                                        <Text style={styles.meta}>
+                                            {requestRef} · {formatDate(req.created_at)}
+                                        </Text>
+                                        {req.status === "OPEN" ? (
+                                            <Text style={styles.bidCount}>
+                                                {pendingOffers.length} active {pendingOffers.length === 1 ? "bid" : "bids"}
+                                            </Text>
+                                        ) : null}
+                                    </View>
+                                    <View style={[styles.pill, { backgroundColor: `${statusColor}22` }]}>
+                                        <Text style={[styles.pillText, { color: statusColor }]}>
+                                            {formatStatus(String(req.status ?? ""))}
+                                        </Text>
+                                    </View>
+                                </Pressable>
+
+                                {firstOffer ? (
+                                    <OfferBidCard
+                                        compact
+                                        offer={firstOffer}
+                                        onAccept={() => handleAccept(firstOffer.id)}
+                                        onReject={() => handleReject(firstOffer.id)}
+                                        isAccepting={acceptOfferMutation.isPending && acceptOfferMutation.variables?.offer_id === firstOffer.id}
+                                        isRejecting={rejectOfferMutation.isPending && rejectOfferMutation.variables?.offer_id === firstOffer.id}
+                                    />
+                                ) : null}
+                            </View>
                         );
                     })
                 )}
@@ -99,6 +176,8 @@ const styles = StyleSheet.create({
     },
     scroll: {
         padding: 16,
+        paddingBottom: 26,
+        gap: 8,
     },
     emptyText: {
         textAlign: "center",
@@ -142,7 +221,7 @@ const styles = StyleSheet.create({
         padding: 12,
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: 10,
+        marginBottom: 4,
     },
     pressed: {
         opacity: 0.86,
@@ -168,6 +247,12 @@ const styles = StyleSheet.create({
         marginTop: 2,
         fontSize: 12,
         color: "#9ca3af",
+    },
+    bidCount: {
+        marginTop: 2,
+        fontSize: 11,
+        color: "#0f766e",
+        fontWeight: "700",
     },
     pill: {
         borderRadius: 999,

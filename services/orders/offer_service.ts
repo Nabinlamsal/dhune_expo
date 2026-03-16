@@ -2,7 +2,8 @@ import { api } from "@/libs/api";
 import {
     AcceptResponse,
     ListOffersResponse,
-    OfferStatsResponse
+    OfferStatsResponse,
+    RejectResponse,
 } from "@/types/orders/offers";
 import { OfferStatus } from "@/types/orders/orders-enums";
 
@@ -49,6 +50,15 @@ export const acceptOffer = async (
     payload: { offer_id: string }
 ): Promise<AcceptResponse> => {
     return api<AcceptResponse>("/offers/accept", {
+        method: "POST",
+        data: payload,
+    });
+};
+
+export const rejectOffer = async (
+    payload: { offer_id: string }
+): Promise<RejectResponse> => {
+    return api<RejectResponse>("/offers/reject", {
         method: "POST",
         data: payload,
     });
