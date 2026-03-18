@@ -5,8 +5,8 @@ import { Category } from "@/types/catalog/category";
 import { PricingUnit } from "@/types/catalog/category-enums";
 import { PaymentMethod } from "@/types/orders/orders-enums";
 import { CreateRequestPayload } from "@/types/orders/requests";
-import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -60,11 +60,11 @@ const PICKUP_RANGES: {
     startHour: number;
     endHour: number;
 }[] = [
-    { key: "EARLY", label: "8:00 AM - 10:00 AM", startHour: 8, endHour: 10 },
-    { key: "MORNING", label: "10:00 AM - 12:00 PM", startHour: 10, endHour: 12 },
-    { key: "AFTERNOON", label: "1:00 PM - 3:00 PM", startHour: 13, endHour: 15 },
-    { key: "EVENING", label: "4:00 PM - 6:00 PM", startHour: 16, endHour: 18 },
-];
+        { key: "EARLY", label: "8:00 AM - 10:00 AM", startHour: 8, endHour: 10 },
+        { key: "MORNING", label: "10:00 AM - 12:00 PM", startHour: 10, endHour: 12 },
+        { key: "AFTERNOON", label: "1:00 PM - 3:00 PM", startHour: 13, endHour: 15 },
+        { key: "EVENING", label: "4:00 PM - 6:00 PM", startHour: 16, endHour: 18 },
+    ];
 
 const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -198,9 +198,9 @@ export default function CreateRequestScreen() {
             current.map((service) =>
                 service.id === serviceId
                     ? {
-                          ...service,
-                          ...patch,
-                      }
+                        ...service,
+                        ...patch,
+                    }
                     : service
             )
         );
@@ -222,9 +222,9 @@ export default function CreateRequestScreen() {
             current.map((service) =>
                 service.id === serviceId
                     ? {
-                          ...service,
-                          items: [...service.items, createEmptyItem()],
-                      }
+                        ...service,
+                        items: [...service.items, createEmptyItem()],
+                    }
                     : service
             )
         );
@@ -252,9 +252,9 @@ export default function CreateRequestScreen() {
                     items: service.items.map((item) =>
                         item.id === itemId
                             ? {
-                                  ...item,
-                                  ...patch,
-                              }
+                                ...item,
+                                ...patch,
+                            }
                             : item
                     ),
                 };
@@ -1020,7 +1020,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#cbd5e1",
         alignItems: "center",
-        paddingVertical: 12,
+        paddingVertical: 5,
         backgroundColor: "#fff",
     },
     payCardActive: {
