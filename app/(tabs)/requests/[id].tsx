@@ -2,19 +2,26 @@ import OfferBidCard from "@/components/offers/OfferBidCard";
 import { useAcceptOffer, useOffersByRequest, useRejectOffer } from "@/hooks/orders/useOffer";
 import { useRequestDetail } from "@/hooks/orders/useRequest";
 import { Offer } from "@/types/orders/offers";
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 type DetailRowProps = {
     label: string;
     value?: string | number | null;
+    icon: keyof typeof Ionicons.glyphMap;
 };
 
-function DetailRow({ label, value }: DetailRowProps) {
+function DetailRow({ label, value, icon }: DetailRowProps) {
     return (
         <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>{label}</Text>
-            <Text style={styles.detailValue}>{value ?? "-"}</Text>
+            <View style={styles.detailLabelWrap}>
+                <Ionicons name={icon} size={12} color="#64748b" />
+                <Text style={styles.detailLabel}>{label}</Text>
+            </View>
+            <Text style={styles.detailValue} numberOfLines={3}>
+                {value ?? "-"}
+            </Text>
         </View>
     );
 }
@@ -44,6 +51,18 @@ const getFastestOfferId = (offers: Offer[]) => {
         if (Number.isNaN(bestDate)) return current;
         return currentDate < bestDate ? current : best;
     }).id;
+};
+
+const formatDateTime = (value?: string | null) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.valueOf())) return value;
+    return date.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    });
 };
 
 export default function RequestDetailScreen() {
@@ -128,18 +147,33 @@ export default function RequestDetailScreen() {
     return (
         <SafeAreaView style={styles.safe}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-                <Text style={styles.title}>Request Details</Text>
+                <View style={styles.heroCard}>
+                    <View style={styles.heroTop}>
+                        <Text style={styles.heroTitle}>Request Details</Text>
+                        <View style={styles.statusPill}>
+                            <Text style={styles.statusText}>{request.status ?? "Unknown"}</Text>
+                        </View>
+                    </View>
+                    <View style={styles.heroMetaRow}>
+                        <View style={styles.heroMetaChip}>
+                            <Ionicons name="document-text-outline" size={12} color="#0f172a" />
+                            <Text style={styles.heroMetaText}>{ref ?? compactId("Rq", request.id)}</Text>
+                        </View>
+                        <View style={styles.heroMetaChip}>
+                            <Ionicons name="wallet-outline" size={12} color="#0f172a" />
+                            <Text style={styles.heroMetaText}>{request.payment_method ?? "-"}</Text>
+                        </View>
+                    </View>
+                </View>
 
+                <Text style={styles.sectionTitle}>Pickup Details</Text>
                 <View style={styles.section}>
-                    <DetailRow label="Request Ref" value={ref ?? compactId("Rq", request.id)} />
-                    <DetailRow label="Status" value={request.status} />
-                    <DetailRow label="Payment Method" value={request.payment_method} />
-                    <DetailRow label="Pickup Address" value={request.pickup_address} />
-                    <DetailRow label="Pickup Latitude" value={request.pickup_lat} />
-                    <DetailRow label="Pickup Longitude" value={request.pickup_lng} />
-                    <DetailRow label="Pickup From" value={request.pickup_time_from} />
-                    <DetailRow label="Pickup To" value={request.pickup_time_to} />
-                    <DetailRow label="Created At" value={request.created_at} />
+                    <DetailRow label="Pickup Address" value={request.pickup_address} icon="location-outline" />
+                    <DetailRow label="Pickup Latitude" value={request.pickup_lat} icon="navigate-outline" />
+                    <DetailRow label="Pickup Longitude" value={request.pickup_lng} icon="navigate-outline" />
+                    <DetailRow label="Pickup From" value={formatDateTime(request.pickup_time_from)} icon="time-outline" />
+                    <DetailRow label="Pickup To" value={formatDateTime(request.pickup_time_to)} icon="time-outline" />
+                    <DetailRow label="Created At" value={formatDateTime(request.created_at)} icon="calendar-outline" />
                 </View>
 
                 <Text style={styles.sectionTitle}>Vendor Offers</Text>
@@ -176,10 +210,14 @@ export default function RequestDetailScreen() {
                 {request.services?.length ? (
                     request.services.map((service, idx) => (
                         <View style={styles.section} key={`${service.category_id}-${idx}`}>
-                            <DetailRow label="Category Ref" value={`Ct${idx + 1}`} />
-                            <DetailRow label="Selected Unit" value={service.selected_unit} />
-                            <DetailRow label="Quantity" value={service.quantity_value} />
-                            <DetailRow label="Description" value={service.description ?? "-"} />
+                            <View style={styles.serviceTitleRow}>
+                                <Ionicons name="construct-outline" size={14} color="#0f172a" />
+                                <Text style={styles.serviceTitle}>Service {idx + 1}</Text>
+                            </View>
+                            <DetailRow label="Category Ref" value={`Ct${idx + 1}`} icon="pricetag-outline" />
+                            <DetailRow label="Selected Unit" value={service.selected_unit} icon="cube-outline" />
+                            <DetailRow label="Quantity" value={service.quantity_value} icon="layers-outline" />
+                            <DetailRow label="Description" value={service.description ?? "-"} icon="reader-outline" />
                             <DetailRow
                                 label="Items JSON"
                                 value={
@@ -187,6 +225,7 @@ export default function RequestDetailScreen() {
                                         ? JSON.stringify(service.items_json)
                                         : "-"
                                 }
+                                icon="code-slash-outline"
                             />
                         </View>
                     ))
@@ -213,23 +252,76 @@ const styles = StyleSheet.create({
         textAlign: "center",
         color: "#6b7280",
     },
-    title: {
-        fontSize: 22,
-        fontWeight: "700",
-        color: "#040947",
+    heroCard: {
+        backgroundColor: "#eef2ff",
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: "#dbeafe",
+        padding: 12,
         marginBottom: 12,
     },
-    sectionTitle: {
-        fontSize: 16,
+    heroTop: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 10,
+    },
+    heroTitle: {
+        fontSize: 18,
         fontWeight: "700",
         color: "#111827",
+    },
+    statusPill: {
+        backgroundColor: "#dcfce7",
+        borderRadius: 999,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+    },
+    statusText: {
+        fontSize: 10,
+        fontWeight: "700",
+        color: "#14532d",
+        textTransform: "capitalize",
+    },
+    heroMetaRow: {
+        flexDirection: "row",
+        gap: 8,
+        flexWrap: "wrap",
+    },
+    heroMetaChip: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        backgroundColor: "#ffffff",
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: "#e2e8f0",
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+    },
+    heroMetaText: {
+        fontSize: 11,
+        color: "#1e293b",
+        fontWeight: "600",
+    },
+    sectionTitle: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: "#0f172a",
         marginVertical: 10,
     },
     section: {
         backgroundColor: "#fff",
-        borderRadius: 12,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: "#e2e8f0",
         padding: 12,
         marginBottom: 10,
+        shadowColor: "#0f172a",
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 1,
     },
     offerStack: {
         gap: 10,
@@ -237,20 +329,39 @@ const styles = StyleSheet.create({
     },
     detailRow: {
         marginBottom: 10,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#f1f5f9",
+    },
+    detailLabelWrap: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        marginBottom: 3,
     },
     detailLabel: {
-        fontSize: 12,
-        color: "#6b7280",
-        marginBottom: 2,
+        fontSize: 11,
+        color: "#64748b",
     },
     detailValue: {
-        fontSize: 14,
-        color: "#111827",
+        fontSize: 13,
+        color: "#0f172a",
         fontWeight: "600",
+    },
+    serviceTitleRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        marginBottom: 8,
+    },
+    serviceTitle: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: "#1e293b",
     },
     emptyText: {
         color: "#9ca3af",
-        fontSize: 13,
+        fontSize: 12,
         marginBottom: 10,
     },
 });

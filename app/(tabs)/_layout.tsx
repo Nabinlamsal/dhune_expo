@@ -101,6 +101,7 @@ export default function TabsLayout() {
                 name="orders"
                 options={{
                     title: "Orders",
+                    popToTopOnBlur: true,
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
                             name={focused ? "receipt" : "receipt-outline"}
