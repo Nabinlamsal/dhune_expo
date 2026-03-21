@@ -1,10 +1,18 @@
 import OfferBidCard from "@/components/offers/OfferBidCard";
 import { useAcceptOffer, useOffersByRequest, useRejectOffer } from "@/hooks/orders/useOffer";
-import { useRequestDetail } from "@/hooks/orders/useRequest";
+import { useCancelRequest, useRequestDetail } from "@/hooks/orders/useRequest";
 import { Offer } from "@/types/orders/offers";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import type { ReactNode } from "react";
+import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+
+const PRIMARY = "#0b2457";
+const PRIMARY_ACCENT = "#6ee7d8";
+const SECTION_BG = "#f7fbff";
+const SECTION_BORDER = "#d7e4ff";
+const SURFACE_BG = "#eaf2ff";
+const MUTED = "#5b6b86";
 
 type DetailRowProps = {
     label: string;
@@ -16,12 +24,21 @@ function DetailRow({ label, value, icon }: DetailRowProps) {
     return (
         <View style={styles.detailRow}>
             <View style={styles.detailLabelWrap}>
-                <Ionicons name={icon} size={12} color="#64748b" />
+                <Ionicons name={icon} size={12} color={PRIMARY} />
                 <Text style={styles.detailLabel}>{label}</Text>
             </View>
-            <Text style={styles.detailValue} numberOfLines={3}>
+            <Text style={styles.detailValue} numberOfLines={2}>
                 {value ?? "-"}
             </Text>
+        </View>
+    );
+}
+
+function SectionCard({ children }: { children: ReactNode }) {
+    return (
+        <View style={styles.section}>
+            <View style={styles.sectionGloss} />
+            {children}
         </View>
     );
 }
@@ -74,12 +91,21 @@ export default function RequestDetailScreen() {
     const { data: offersResponse, isLoading: offersLoading } = useOffersByRequest(requestId);
     const acceptOfferMutation = useAcceptOffer();
     const rejectOfferMutation = useRejectOffer();
+    const cancelRequestMutation = useCancelRequest();
 
     const request = data?.data;
     const offers = offersResponse?.data ?? [];
     const pendingOffers = offers.filter((offer) => offer.status === "PENDING");
     const bestPriceOfferId = getBestPriceOfferId(offers);
     const fastestOfferId = getFastestOfferId(offers);
+    const isOpen = request?.status === "OPEN";
+
+    const pickupFrom = formatDateTime(request?.pickup_time_from);
+    const pickupTo = formatDateTime(request?.pickup_time_to);
+    const pickupCoords =
+        request?.pickup_lat != null && request?.pickup_lng != null
+            ? `${request.pickup_lat}, ${request.pickup_lng}`
+            : "-";
 
     const handleAccept = (offerId: string) => {
         Alert.alert("Accept this offer?", "This will create the order and close remaining offers.", [
@@ -128,6 +154,27 @@ export default function RequestDetailScreen() {
         ]);
     };
 
+    const handleCancelRequest = () => {
+        if (!request) return;
+        Alert.alert("Cancel request?", "This request will be marked as cancelled.", [
+            { text: "Keep", style: "cancel" },
+            {
+                text: "Cancel Request",
+                style: "destructive",
+                onPress: () => {
+                    cancelRequestMutation.mutate(request.id, {
+                        onSuccess: () => {
+                            Alert.alert("Request cancelled", "Your request is now cancelled.");
+                        },
+                        onError: () => {
+                            Alert.alert("Could not cancel", "Please try again.");
+                        },
+                    });
+                },
+            },
+        ]);
+    };
+
     if (isLoading) {
         return (
             <SafeAreaView style={styles.safe}>
@@ -156,78 +203,95 @@ export default function RequestDetailScreen() {
                     </View>
                     <View style={styles.heroMetaRow}>
                         <View style={styles.heroMetaChip}>
-                            <Ionicons name="document-text-outline" size={12} color="#0f172a" />
+                            <Ionicons name="document-text-outline" size={12} color="#ffffff" />
                             <Text style={styles.heroMetaText}>{ref ?? compactId("Rq", request.id)}</Text>
                         </View>
                         <View style={styles.heroMetaChip}>
-                            <Ionicons name="wallet-outline" size={12} color="#0f172a" />
+                            <Ionicons name="wallet-outline" size={12} color={PRIMARY_ACCENT} />
                             <Text style={styles.heroMetaText}>{request.payment_method ?? "-"}</Text>
                         </View>
                     </View>
                 </View>
 
-                <Text style={styles.sectionTitle}>Pickup Details</Text>
-                <View style={styles.section}>
-                    <DetailRow label="Pickup Address" value={request.pickup_address} icon="location-outline" />
-                    <DetailRow label="Pickup Latitude" value={request.pickup_lat} icon="navigate-outline" />
-                    <DetailRow label="Pickup Longitude" value={request.pickup_lng} icon="navigate-outline" />
-                    <DetailRow label="Pickup From" value={formatDateTime(request.pickup_time_from)} icon="time-outline" />
-                    <DetailRow label="Pickup To" value={formatDateTime(request.pickup_time_to)} icon="time-outline" />
-                    <DetailRow label="Created At" value={formatDateTime(request.created_at)} icon="calendar-outline" />
-                </View>
-
-                <Text style={styles.sectionTitle}>Vendor Offers</Text>
-                {offersLoading ? (
-                    <Text style={styles.emptyText}>Loading bids...</Text>
-                ) : pendingOffers.length ? (
-                    <View style={styles.offerStack}>
-                        {pendingOffers.map((offer) => {
-                            const highlight =
-                                offer.id === bestPriceOfferId
-                                    ? "best_price"
-                                    : offer.id === fastestOfferId
-                                        ? "fastest"
-                                        : null;
-
-                            return (
-                                <OfferBidCard
-                                    key={offer.id}
-                                    offer={offer}
-                                    highlight={highlight}
-                                    onAccept={() => handleAccept(offer.id)}
-                                    onReject={() => handleReject(offer.id)}
-                                    isAccepting={acceptOfferMutation.isPending && acceptOfferMutation.variables?.offer_id === offer.id}
-                                    isRejecting={rejectOfferMutation.isPending && rejectOfferMutation.variables?.offer_id === offer.id}
-                                />
-                            );
-                        })}
+                {isOpen ? (
+                    <View style={styles.actionRow}>
+                        <Pressable
+                            onPress={handleCancelRequest}
+                            disabled={cancelRequestMutation.isPending}
+                            style={({ pressed }) => [styles.cancelBtn, pressed && styles.pressed, cancelRequestMutation.isPending && styles.disabled]}
+                        >
+                            <Text style={styles.cancelBtnText}>{cancelRequestMutation.isPending ? "Cancelling..." : "Cancel Request"}</Text>
+                        </Pressable>
                     </View>
-                ) : (
-                    <Text style={styles.emptyText}>No active offers yet. Vendors will appear here once they bid.</Text>
-                )}
+                ) : null}
+
+                <Text style={styles.sectionTitle}>Offers & Bids</Text>
+                <SectionCard>
+                    {offersLoading ? (
+                        <Text style={styles.emptyText}>Loading bids...</Text>
+                    ) : pendingOffers.length ? (
+                        <View style={styles.offerStack}>
+                            {pendingOffers.map((offer) => {
+                                const highlight =
+                                    offer.id === bestPriceOfferId
+                                        ? "best_price"
+                                        : offer.id === fastestOfferId
+                                            ? "fastest"
+                                            : null;
+
+                                return (
+                                    <OfferBidCard
+                                        key={offer.id}
+                                        offer={offer}
+                                        highlight={highlight}
+                                        onAccept={() => handleAccept(offer.id)}
+                                        onReject={() => handleReject(offer.id)}
+                                        isAccepting={acceptOfferMutation.isPending && acceptOfferMutation.variables?.offer_id === offer.id}
+                                        isRejecting={rejectOfferMutation.isPending && rejectOfferMutation.variables?.offer_id === offer.id}
+                                    />
+                                );
+                            })}
+                        </View>
+                    ) : (
+                        <Text style={styles.emptyText}>No active offers yet. Vendors will appear here once they bid.</Text>
+                    )}
+                </SectionCard>
+
+                <Text style={styles.sectionTitle}>Pickup Window</Text>
+                <SectionCard>
+                    <View style={styles.windowRow}>
+                        <View style={styles.windowCol}>
+                            <Text style={styles.windowLabel}>From</Text>
+                            <Text style={styles.windowValue}>{pickupFrom}</Text>
+                        </View>
+                        <View style={styles.windowDivider} />
+                        <View style={styles.windowCol}>
+                            <Text style={styles.windowLabel}>To</Text>
+                            <Text style={styles.windowValue}>{pickupTo}</Text>
+                        </View>
+                    </View>
+                </SectionCard>
+
+                <Text style={styles.sectionTitle}>Pickup Details</Text>
+                <SectionCard>
+                    <DetailRow label="Address" value={request.pickup_address} icon="location-outline" />
+                    <DetailRow label="Coordinates" value={pickupCoords} icon="navigate-outline" />
+                    <DetailRow label="Created" value={formatDateTime(request.created_at)} icon="calendar-outline" />
+                </SectionCard>
 
                 <Text style={styles.sectionTitle}>Services</Text>
                 {request.services?.length ? (
                     request.services.map((service, idx) => (
-                        <View style={styles.section} key={`${service.category_id}-${idx}`}>
+                        <SectionCard key={`${service.category_id}-${idx}`}>
                             <View style={styles.serviceTitleRow}>
-                                <Ionicons name="construct-outline" size={14} color="#0f172a" />
+                                <Ionicons name="construct-outline" size={14} color={PRIMARY} />
                                 <Text style={styles.serviceTitle}>Service {idx + 1}</Text>
                             </View>
-                            <DetailRow label="Category Ref" value={`Ct${idx + 1}`} icon="pricetag-outline" />
-                            <DetailRow label="Selected Unit" value={service.selected_unit} icon="cube-outline" />
+                            <DetailRow label="Category" value={`Ct${idx + 1}`} icon="pricetag-outline" />
+                            <DetailRow label="Unit" value={service.selected_unit} icon="cube-outline" />
                             <DetailRow label="Quantity" value={service.quantity_value} icon="layers-outline" />
                             <DetailRow label="Description" value={service.description ?? "-"} icon="reader-outline" />
-                            <DetailRow
-                                label="Items JSON"
-                                value={
-                                    service.items_json != null
-                                        ? JSON.stringify(service.items_json)
-                                        : "-"
-                                }
-                                icon="code-slash-outline"
-                            />
-                        </View>
+                        </SectionCard>
                     ))
                 ) : (
                     <Text style={styles.emptyText}>No services in this request.</Text>
@@ -240,7 +304,7 @@ export default function RequestDetailScreen() {
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: "#f5f6fa",
+        backgroundColor: SURFACE_BG,
     },
     scroll: {
         padding: 16,
@@ -250,15 +314,20 @@ const styles = StyleSheet.create({
     centerText: {
         marginTop: 24,
         textAlign: "center",
-        color: "#6b7280",
+        color: MUTED,
     },
     heroCard: {
-        backgroundColor: "#eef2ff",
-        borderRadius: 14,
+        backgroundColor: PRIMARY,
+        borderRadius: 16,
         borderWidth: 1,
-        borderColor: "#dbeafe",
-        padding: 12,
+        borderColor: "#264286",
+        padding: 14,
         marginBottom: 12,
+        shadowColor: "#132f6f",
+        shadowOpacity: 0.18,
+        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 4,
     },
     heroTop: {
         flexDirection: "row",
@@ -269,10 +338,10 @@ const styles = StyleSheet.create({
     heroTitle: {
         fontSize: 18,
         fontWeight: "700",
-        color: "#111827",
+        color: "#ffffff",
     },
     statusPill: {
-        backgroundColor: "#dcfce7",
+        backgroundColor: PRIMARY_ACCENT,
         borderRadius: 999,
         paddingHorizontal: 10,
         paddingVertical: 4,
@@ -280,7 +349,7 @@ const styles = StyleSheet.create({
     statusText: {
         fontSize: 10,
         fontWeight: "700",
-        color: "#14532d",
+        color: "#073b3a",
         textTransform: "capitalize",
     },
     heroMetaRow: {
@@ -292,61 +361,116 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 6,
-        backgroundColor: "#ffffff",
+        backgroundColor: "#16377a",
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: "#e2e8f0",
+        borderColor: "#3157a9",
         paddingHorizontal: 10,
         paddingVertical: 6,
     },
     heroMetaText: {
         fontSize: 11,
-        color: "#1e293b",
+        color: "#ffffff",
         fontWeight: "600",
+    },
+    actionRow: {
+        alignItems: "flex-end",
+        marginBottom: 8,
+    },
+    cancelBtn: {
+        backgroundColor: "#b4232f",
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+    },
+    cancelBtnText: {
+        color: "#ffffff",
+        fontSize: 11,
+        fontWeight: "700",
     },
     sectionTitle: {
         fontSize: 14,
         fontWeight: "700",
-        color: "#0f172a",
-        marginVertical: 10,
+        color: PRIMARY,
+        marginVertical: 8,
     },
     section: {
-        backgroundColor: "#fff",
+        backgroundColor: SECTION_BG,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: "#e2e8f0",
+        borderColor: SECTION_BORDER,
         padding: 12,
         marginBottom: 10,
-        shadowColor: "#0f172a",
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 1,
+        shadowColor: "#173b82",
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 2,
+        overflow: "hidden",
+        position: "relative",
+    },
+    sectionGloss: {
+        position: "absolute",
+        top: -10,
+        left: -18,
+        right: -18,
+        height: 24,
+        backgroundColor: "#ffffffb8",
+        transform: [{ rotate: "-2deg" }],
     },
     offerStack: {
         gap: 10,
-        marginBottom: 4,
+    },
+    windowRow: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    windowCol: {
+        flex: 1,
+    },
+    windowDivider: {
+        width: 1,
+        backgroundColor: "#c7d8f8",
+        marginHorizontal: 10,
+        height: 34,
+    },
+    windowLabel: {
+        fontSize: 11,
+        color: MUTED,
+        marginBottom: 2,
+        fontWeight: "600",
+    },
+    windowValue: {
+        fontSize: 12,
+        color: PRIMARY,
+        fontWeight: "700",
     },
     detailRow: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
         marginBottom: 10,
         paddingBottom: 10,
         borderBottomWidth: 1,
-        borderBottomColor: "#f1f5f9",
+        borderBottomColor: "#e4edff",
+        gap: 10,
     },
     detailLabelWrap: {
         flexDirection: "row",
         alignItems: "center",
         gap: 6,
-        marginBottom: 3,
+        flex: 0.95,
     },
     detailLabel: {
         fontSize: 11,
-        color: "#64748b",
+        color: MUTED,
     },
     detailValue: {
-        fontSize: 13,
-        color: "#0f172a",
-        fontWeight: "600",
+        flex: 1.35,
+        textAlign: "right",
+        fontSize: 12,
+        color: PRIMARY,
+        fontWeight: "700",
     },
     serviceTitleRow: {
         flexDirection: "row",
@@ -357,11 +481,16 @@ const styles = StyleSheet.create({
     serviceTitle: {
         fontSize: 12,
         fontWeight: "700",
-        color: "#1e293b",
+        color: PRIMARY,
     },
     emptyText: {
-        color: "#9ca3af",
+        color: MUTED,
         fontSize: 12,
-        marginBottom: 10,
+    },
+    pressed: {
+        opacity: 0.86,
+    },
+    disabled: {
+        opacity: 0.65,
     },
 });

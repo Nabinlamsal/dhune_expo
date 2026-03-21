@@ -23,8 +23,8 @@ function CenterTabButton({
             >
                 <Ionicons
                     name={selected ? "home" : "home-outline"}
-                    color={selected ? "#ebbc01" : "#111827"}
-                    size={26}
+                    color={selected ? "#ebbc01" : "#ffffff"}
+                    size={24}
                 />
             </Pressable>
         </View>
@@ -41,14 +41,18 @@ export default function TabsLayout() {
                 tabBarInactiveTintColor: "#111827",
 
                 tabBarStyle: {
-                    height: 70,
+                    height: 76,
                     paddingTop: 8,
-                    paddingBottom: 8,
+                    paddingBottom: 10,
                     borderTopWidth: 0,
                     backgroundColor: "#ffffff",
-                    borderTopLeftRadius: 20,
-                    borderTopRightRadius: 20,
-                    elevation: 10,
+                    borderTopLeftRadius: 22,
+                    borderTopRightRadius: 22,
+                    elevation: 12,
+                    shadowColor: "#040947",
+                    shadowOpacity: 0.12,
+                    shadowRadius: 14,
+                    shadowOffset: { width: 0, height: -3 },
                 },
                 tabBarLabelStyle: {
                     fontSize: 11,
@@ -137,18 +141,23 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     centerBtn: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: "#ebbc01",
-        shadowOpacity: 0.8,
-        shadowRadius: 8,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: "#040947",
+        borderWidth: 3,
+        borderColor: "#ffffff",
+        shadowColor: "#040947",
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 6 },
         alignItems: "center",
         justifyContent: "center",
-        elevation: 10,
+        elevation: 12,
     },
     centerBtnActive: {
         backgroundColor: "#040947",
+        transform: [{ scale: 1.03 }],
     },
     centerPressed: {
         transform: [{ scale: 0.96 }],
