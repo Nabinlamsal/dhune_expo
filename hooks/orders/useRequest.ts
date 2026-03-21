@@ -41,6 +41,9 @@ export const useCancelRequest = () => {
             queryClient.invalidateQueries({ queryKey: ["my-requests"] });
             queryClient.invalidateQueries({ queryKey: ["marketplace-requests"] });
             queryClient.invalidateQueries({ queryKey: ["admin-requests"] });
+            queryClient.invalidateQueries({ queryKey: ["request-detail"] });
+            queryClient.invalidateQueries({ queryKey: ["offers"] });
+            queryClient.invalidateQueries({ queryKey: ["requests"] });
         },
     });
 };
