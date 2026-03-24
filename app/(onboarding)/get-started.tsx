@@ -83,12 +83,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: "#6b7280",
         textAlign: "center",
+        marginHorizontal: 30,
         lineHeight: 22,
     },
 
     buttons: {
         width: "100%",
-        marginHorizontal: 10
     },
 
     loginButton: {
@@ -96,6 +96,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#040947",
+        marginHorizontal: 25,
         paddingVertical: 16,
         borderRadius: 12,
         marginBottom: 16,
@@ -106,6 +107,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
+        marginHorizontal: 25,
         backgroundColor: "#14b8c4",
         paddingVertical: 16,
         borderRadius: 12,

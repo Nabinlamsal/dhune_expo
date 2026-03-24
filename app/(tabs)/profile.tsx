@@ -1,5 +1,5 @@
 import { useLogout } from "@/hooks/auth/useLogout";
-import { useMe } from "@/hooks/auth/useMe";
+import { useMyProfile } from "@/hooks/users/useMyProfile";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
@@ -17,48 +17,12 @@ type ProfileDetail = {
     value: string;
 };
 
-type MockProfile = {
+type ScreenProfile = {
     displayName: string;
     role: ProfileRole;
     joinedAt: string;
     stats: ProfileStat[];
     details: ProfileDetail[];
-};
-
-const USER_PROFILE: MockProfile = {
-    displayName: "Riya Sharma",
-    role: "user",
-    joinedAt: "2025-06-12T09:00:00Z",
-    stats: [
-        { label: "Requests", value: "14" },
-        { label: "Orders", value: "9" },
-        { label: "Reviews", value: "6" },
-    ],
-    details: [
-        { label: "Email", value: "riya.sharma@gmail.com" },
-        { label: "Phone", value: "+977 98XXXXXXXX" },
-        { label: "City", value: "Kathmandu" },
-    ],
-};
-
-const BUSINESS_PROFILE: MockProfile = {
-    displayName: "Everest Laundry Pvt. Ltd.",
-    role: "business",
-    joinedAt: "2024-10-03T09:00:00Z",
-    stats: [
-        { label: "Orders", value: "182" },
-        { label: "Customers", value: "96" },
-        { label: "Rating", value: "4.8" },
-    ],
-    details: [
-        { label: "Owner", value: "Suman Karki" },
-        { label: "Business Type", value: "Commercial Laundry" },
-        { label: "Registration No.", value: "REG-24-8832" },
-        { label: "Approval", value: "Approved" },
-        { label: "Address", value: "Baneshwor, Kathmandu" },
-        { label: "Support Email", value: "support@everestlaundry.com" },
-        { label: "Contact", value: "+977 98XXXXXXXX" },
-    ],
 };
 
 function formatDate(isoDate: string): string {
@@ -73,8 +37,13 @@ function formatDate(isoDate: string): string {
     });
 }
 
-function isBusinessLikeRole(role?: string): role is "business" | "vendor" {
-    return role === "business" || role === "vendor";
+function formatBoolean(value: boolean): string {
+    return value ? "Yes" : "No";
+}
+
+function formatStatus(value?: string | null): string {
+    if (!value) return "-";
+    return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
 
 function DetailRow({ label, value }: ProfileDetail) {
@@ -96,25 +65,50 @@ function StatItem({ label, value }: ProfileStat) {
 }
 
 export default function ProfileScreen() {
-    const { data } = useMe();
+    const { data, isLoading, isError, refetch, isFetching } = useMyProfile();
     const logout = useLogout();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const profile = useMemo(() => {
-        const identity = (data ?? {}) as {
-            display_name?: string;
-            role?: string;
-        };
+        if (!data) return null;
 
-        const base = isBusinessLikeRole(identity.role) ? BUSINESS_PROFILE : USER_PROFILE;
-        const finalRole = (identity.role as ProfileRole | undefined) ?? base.role;
-        const finalName = identity.display_name?.trim() ? identity.display_name : base.displayName;
+        const role = data.Role as ProfileRole;
+        const details: ProfileDetail[] = [
+            { label: "Email", value: data.Email || "-" },
+            { label: "Phone", value: data.Phone || "-" },
+            { label: "Active", value: formatBoolean(data.IsActive) },
+            { label: "Verified", value: formatBoolean(data.IsVerified) },
+        ];
+
+        if (data.BusinessProfile) {
+            details.push(
+                { label: "Owner", value: data.BusinessProfile.OwnerName || "-" },
+                { label: "Business Type", value: data.BusinessProfile.BusinessType || "-" },
+                { label: "Registration No.", value: data.BusinessProfile.RegistrationNumber || "-" },
+                { label: "Approval", value: formatStatus(data.BusinessProfile.ApprovalStatus) },
+            );
+        }
+
+        if (data.VendorProfile) {
+            details.push(
+                { label: "Owner", value: data.VendorProfile.OwnerName || "-" },
+                { label: "Address", value: data.VendorProfile.Address || "-" },
+                { label: "Registration No.", value: data.VendorProfile.RegistrationNumber || "-" },
+                { label: "Approval", value: formatStatus(data.VendorProfile.ApprovalStatus) },
+            );
+        }
 
         return {
-            ...base,
-            displayName: finalName,
-            role: finalRole,
-        };
+            displayName: data.DisplayName || "Profile",
+            role,
+            joinedAt: data.CreatedAt,
+            stats: [
+                { label: "Role", value: data.Role || "-" },
+                { label: "Status", value: data.IsActive ? "Active" : "Inactive" },
+                { label: "Docs", value: String(data.Documents?.length ?? 0) },
+            ],
+            details,
+        } satisfies ScreenProfile;
     }, [data]);
 
     const handleLogout = async () => {
@@ -132,34 +126,56 @@ export default function ProfileScreen() {
     return (
         <SafeAreaView style={styles.safe}>
             <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-                <View style={styles.headerCard}>
-                    <View style={styles.avatar}>
-                        <Ionicons name="person-outline" size={44} color="#9ca3af" />
+                {isLoading ? (
+                    <View style={styles.stateCard}>
+                        <Text style={styles.stateTitle}>Loading profile...</Text>
                     </View>
-                    <Text style={styles.name}>{profile.displayName}</Text>
-                    <Text style={styles.role}>{profile.role}</Text>
-                    <Text style={styles.joined}>Joined {formatDate(profile.joinedAt)}</Text>
-                </View>
+                ) : null}
 
-                <View style={styles.statsCard}>
-                    {profile.stats.map((item) => (
-                        <StatItem key={item.label} label={item.label} value={item.value} />
-                    ))}
-                </View>
+                {isError ? (
+                    <View style={styles.stateCard}>
+                        <Text style={styles.stateTitle}>Could not load profile</Text>
+                        <Pressable
+                            style={({ pressed }) => [styles.retryBtn, pressed && styles.logoutBtnPressed]}
+                            onPress={() => refetch()}
+                        >
+                            <Text style={styles.retryText}>{isFetching ? "Retrying..." : "Try again"}</Text>
+                        </Pressable>
+                    </View>
+                ) : null}
 
-                <View style={styles.detailsCard}>
-                    {profile.details.map((item) => (
-                        <DetailRow key={item.label} label={item.label} value={item.value} />
-                    ))}
-                </View>
+                {profile ? (
+                    <>
+                        <View style={styles.headerCard}>
+                            <View style={styles.avatar}>
+                                <Ionicons name="person-outline" size={44} color="#9ca3af" />
+                            </View>
+                            <Text style={styles.name}>{profile.displayName}</Text>
+                            <Text style={styles.role}>{profile.role}</Text>
+                            <Text style={styles.joined}>Joined {formatDate(profile.joinedAt)}</Text>
+                        </View>
 
-                <Pressable
-                    style={({ pressed }) => [styles.logoutBtn, pressed && styles.logoutBtnPressed]}
-                    onPress={handleLogout}
-                >
-                    <Ionicons name="log-out-outline" size={17} color="#1f2937" />
-                    <Text style={styles.logoutText}>{isLoggingOut ? "Logging out..." : "Log out"}</Text>
-                </Pressable>
+                        <View style={styles.statsCard}>
+                            {profile.stats.map((item) => (
+                                <StatItem key={item.label} label={item.label} value={item.value} />
+                            ))}
+                        </View>
+
+                        <View style={styles.detailsCard}>
+                            {profile.details.map((item) => (
+                                <DetailRow key={item.label} label={item.label} value={item.value} />
+                            ))}
+                        </View>
+
+                        <Pressable
+                            style={({ pressed }) => [styles.logoutBtn, pressed && styles.logoutBtnPressed]}
+                            onPress={handleLogout}
+                        >
+                            <Ionicons name="log-out-outline" size={17} color="#1f2937" />
+                            <Text style={styles.logoutText}>{isLoggingOut ? "Logging out..." : "Log out"}</Text>
+                        </Pressable>
+                    </>
+                ) : null}
             </ScrollView>
         </SafeAreaView>
     );
@@ -173,6 +189,30 @@ const styles = StyleSheet.create({
     container: {
         padding: 16,
         paddingBottom: 30,
+        gap: 12,
+    },
+    stateCard: {
+        backgroundColor: "#040947",
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: "#eceff3",
+        padding: 16,
+        alignItems: "center",
+        gap: 10,
+    },
+    stateTitle: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#111827",
+    },
+    retryBtn: {
+        minWidth: 110,
+        height: 40,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#d1d5db",
+        alignItems: "center",
+        justifyContent: "center",
     },
     headerCard: {
         backgroundColor: "#ffffff",
@@ -180,7 +220,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingVertical: 20,
         paddingHorizontal: 16,
-        marginBottom: 12,
         borderWidth: 1,
         borderColor: "#eceff3",
     },
@@ -217,7 +256,6 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         borderWidth: 1,
         borderColor: "#eceff3",
-        marginBottom: 12,
         flexDirection: "row",
         paddingVertical: 14,
     },
@@ -243,7 +281,6 @@ const styles = StyleSheet.create({
         borderColor: "#eceff3",
         paddingHorizontal: 14,
         paddingVertical: 6,
-        marginBottom: 12,
     },
     row: {
         paddingVertical: 10,
@@ -262,7 +299,7 @@ const styles = StyleSheet.create({
     },
     logoutBtn: {
         height: 46,
-        backgroundColor: "#ffffff",
+        backgroundColor: "#ffcccb",
         borderRadius: 12,
         borderWidth: 1,
         borderColor: "#d1d5db",
@@ -272,9 +309,14 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     logoutBtnPressed: {
-        backgroundColor: "#f8fafc",
+        backgroundColor: "#ffcccb",
     },
     logoutText: {
+        fontSize: 14,
+        color: "#1f2937",
+        fontWeight: "600",
+    },
+    retryText: {
         fontSize: 14,
         color: "#1f2937",
         fontWeight: "600",
