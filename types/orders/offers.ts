@@ -10,6 +10,12 @@ export interface Offer {
     status: OfferStatus;
     description?: string;
     created_at?: string;
+    vendor_name?: string;
+    average_rating?: number;
+    total_ratings?: number;
+    vendor_rating?: number;
+    vendor_completed_jobs?: number;
+    vendor_distance_km?: number;
 }
 
 export interface CreateOfferPayload {

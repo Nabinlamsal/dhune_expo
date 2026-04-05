@@ -12,6 +12,8 @@ type OfferPopupProps = {
         completion_time: string;
         description?: string;
         vendor_name?: string;
+        average_rating?: number;
+        total_ratings?: number;
         vendor_rating?: number;
         vendor_completed_jobs?: number;
         vendor_distance_km?: number;

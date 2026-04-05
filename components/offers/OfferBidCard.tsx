@@ -9,6 +9,8 @@ type OfferLike = {
     created_at?: string;
     status?: string;
     vendor_name?: string;
+    average_rating?: number;
+    total_ratings?: number;
     vendor_rating?: number;
     vendor_completed_jobs?: number;
     vendor_distance_km?: number;
@@ -48,8 +50,11 @@ export default function OfferBidCard({
     highlight,
 }: OfferBidCardProps) {
     const vendorName = offer.vendor_name ?? "Verified Vendor";
-    const vendorRating = typeof offer.vendor_rating === "number" ? offer.vendor_rating.toFixed(1) : "4.8";
-    const jobs = typeof offer.vendor_completed_jobs === "number" ? `${offer.vendor_completed_jobs}` : "120+";
+    const hasRatings = typeof offer.total_ratings === "number" && offer.total_ratings > 0;
+    const vendorSub =
+        hasRatings && typeof offer.average_rating === "number"
+            ? `${offer.average_rating.toFixed(1)} (${offer.total_ratings} reviews)`
+            : "New vendor";
     const distance = typeof offer.vendor_distance_km === "number" ? `${offer.vendor_distance_km.toFixed(1)} km away` : "";
     const disabled = Boolean(isAccepting || isRejecting);
 
@@ -65,7 +70,7 @@ export default function OfferBidCard({
                             {vendorName}
                         </Text>
                         <Text style={styles.vendorSub}>
-                            <Ionicons name="star" size={11} color="#f59e0b" /> {vendorRating} • {jobs} jobs
+                            <Ionicons name={hasRatings ? "star" : "star-outline"} size={11} color="#f59e0b" /> {vendorSub}
                         </Text>
                     </View>
                 </View>

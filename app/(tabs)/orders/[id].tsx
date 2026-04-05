@@ -1,8 +1,12 @@
-import { useOrderDetail } from "@/hooks/orders/useOrder";
+import RateVendorModal from "@/components/ratings/RateVendorModal";
+import { useUpsertOrderRating } from "@/hooks/ratings/useRating";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
-import type { ReactNode } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState, type ReactNode } from "react";
+import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+
+import { useOrderDetail } from "@/hooks/orders/useOrder";
 
 const PRIMARY = "#0b2457";
 const PRIMARY_ACCENT = "#6ee7d8";
@@ -10,6 +14,9 @@ const SECTION_BG = "#f7fbff";
 const SECTION_BORDER = "#d7e4ff";
 const SURFACE_BG = "#eaf2ff";
 const MUTED = "#5b6b86";
+
+const getRatedStorageKey = (orderId: string) => `rating_submitted_${orderId}`;
+const getPromptSeenStorageKey = (orderId: string) => `rating_prompt_seen_${orderId}`;
 
 type DetailRowProps = {
     label: string;
@@ -61,6 +68,13 @@ const formatDateTime = (value?: string | null) => {
 export default function OrderDetailScreen() {
     const { id, ref } = useLocalSearchParams<{ id: string; ref?: string }>();
     const { data: order, isLoading } = useOrderDetail(String(id ?? ""));
+    const upsertRatingMutation = useUpsertOrderRating();
+
+    const [showRatingModal, setShowRatingModal] = useState(false);
+    const [hasRated, setHasRated] = useState(false);
+
+    const orderId = String(order?.id ?? "");
+    const isCompleted = order?.order_status === "COMPLETED";
 
     const pickupFrom = formatDateTime(order?.request?.pickup_time_from);
     const pickupTo = formatDateTime(order?.request?.pickup_time_to);
@@ -68,6 +82,69 @@ export default function OrderDetailScreen() {
         order?.request?.pickup_lat != null && order?.request?.pickup_lng != null
             ? `${order.request.pickup_lat}, ${order.request.pickup_lng}`
             : "-";
+
+    useEffect(() => {
+        if (!orderId) return;
+
+        let active = true;
+
+        (async () => {
+            const ratedFlag = await AsyncStorage.getItem(getRatedStorageKey(orderId));
+            if (!active) return;
+            setHasRated(ratedFlag === "1");
+        })();
+
+        return () => {
+            active = false;
+        };
+    }, [orderId]);
+
+    useEffect(() => {
+        if (!isCompleted || !orderId || hasRated) return;
+
+        let active = true;
+
+        (async () => {
+            const promptSeen = await AsyncStorage.getItem(getPromptSeenStorageKey(orderId));
+            if (!active || promptSeen === "1") return;
+
+            setShowRatingModal(true);
+            await AsyncStorage.setItem(getPromptSeenStorageKey(orderId), "1");
+        })();
+
+        return () => {
+            active = false;
+        };
+    }, [isCompleted, orderId, hasRated]);
+
+    const handleOpenRating = async () => {
+        if (!orderId) return;
+        setShowRatingModal(true);
+        await AsyncStorage.setItem(getPromptSeenStorageKey(orderId), "1");
+    };
+
+    const handleSubmitRating = ({ rating, review }: { rating: number; review: string }) => {
+        if (!orderId) return;
+
+        upsertRatingMutation.mutate(
+            {
+                order_id: orderId,
+                rating,
+                review,
+            },
+            {
+                onSuccess: async () => {
+                    await AsyncStorage.setItem(getRatedStorageKey(orderId), "1");
+                    setHasRated(true);
+                    setShowRatingModal(false);
+                    Alert.alert("Thanks for your rating", "Your feedback helps us improve vendor quality.");
+                },
+                onError: () => {
+                    Alert.alert("Could not save rating", "Please try again in a moment.");
+                },
+            }
+        );
+    };
 
     if (isLoading) {
         return (
@@ -106,6 +183,23 @@ export default function OrderDetailScreen() {
                         </View>
                     </View>
                 </View>
+
+                {isCompleted ? (
+                    <View style={styles.ratingCard}>
+                        <View style={styles.ratingContent}>
+                            <Ionicons name={hasRated ? "checkmark-done-circle" : "star"} size={18} color={hasRated ? "#16a34a" : "#f59e0b"} />
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.ratingTitle}>{hasRated ? "Vendor already rated" : "Rate your vendor"}</Text>
+                                <Text style={styles.ratingSubtitle}>
+                                    {hasRated ? "You can submit again to update your rating anytime." : "Order completed. Share your review and star rating."}
+                                </Text>
+                            </View>
+                        </View>
+                        <Pressable style={({ pressed }) => [styles.rateBtn, pressed && styles.pressed]} onPress={handleOpenRating}>
+                            <Text style={styles.rateBtnText}>{hasRated ? "Update Rating" : "Rate Vendor"}</Text>
+                        </Pressable>
+                    </View>
+                ) : null}
 
                 <Text style={styles.sectionTitle}>Order Summary</Text>
                 <SectionCard>
@@ -164,6 +258,14 @@ export default function OrderDetailScreen() {
                     <Text style={styles.emptyText}>No services in this order.</Text>
                 )}
             </ScrollView>
+
+            <RateVendorModal
+                visible={showRatingModal}
+                vendorName={order.vendor?.name}
+                isSubmitting={upsertRatingMutation.isPending}
+                onClose={() => setShowRatingModal(false)}
+                onSubmit={handleSubmitRating}
+            />
         </SafeAreaView>
     );
 }
@@ -238,6 +340,42 @@ const styles = StyleSheet.create({
         fontSize: 11,
         color: "#ffffff",
         fontWeight: "600",
+    },
+    ratingCard: {
+        marginBottom: 10,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: "#fde68a",
+        backgroundColor: "#fffdf5",
+        padding: 12,
+    },
+    ratingContent: {
+        flexDirection: "row",
+        gap: 8,
+        alignItems: "center",
+        marginBottom: 10,
+    },
+    ratingTitle: {
+        fontSize: 13,
+        color: "#111827",
+        fontWeight: "700",
+    },
+    ratingSubtitle: {
+        marginTop: 2,
+        fontSize: 11,
+        color: "#6b7280",
+    },
+    rateBtn: {
+        alignSelf: "flex-start",
+        backgroundColor: "#0b2457",
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+    },
+    rateBtnText: {
+        color: "#ffffff",
+        fontSize: 12,
+        fontWeight: "700",
     },
     sectionTitle: {
         fontSize: 14,
@@ -334,5 +472,8 @@ const styles = StyleSheet.create({
     emptyText: {
         color: MUTED,
         fontSize: 12,
+    },
+    pressed: {
+        opacity: 0.86,
     },
 });

@@ -50,7 +50,9 @@ function DetailRow({ label, value }: ProfileDetail) {
     return (
         <View style={styles.row}>
             <Text style={styles.rowLabel}>{label}</Text>
-            <Text style={styles.rowValue}>{value}</Text>
+            <Text style={styles.rowValue} numberOfLines={2}>
+                {value}
+            </Text>
         </View>
     );
 }
@@ -147,11 +149,15 @@ export default function ProfileScreen() {
                 {profile ? (
                     <>
                         <View style={styles.headerCard}>
+                            <View style={styles.headerBlobOne} />
+                            <View style={styles.headerBlobTwo} />
                             <View style={styles.avatar}>
-                                <Ionicons name="person-outline" size={44} color="#9ca3af" />
+                                <Ionicons name="person-outline" size={36} color="#0b2457" />
                             </View>
                             <Text style={styles.name}>{profile.displayName}</Text>
-                            <Text style={styles.role}>{profile.role}</Text>
+                            <View style={styles.rolePill}>
+                                <Text style={styles.role}>{profile.role}</Text>
+                            </View>
                             <Text style={styles.joined}>Joined {formatDate(profile.joinedAt)}</Text>
                         </View>
 
@@ -162,8 +168,8 @@ export default function ProfileScreen() {
                         </View>
 
                         <View style={styles.detailsCard}>
-                            {profile.details.map((item) => (
-                                <DetailRow key={item.label} label={item.label} value={item.value} />
+                            {profile.details.map((item, index) => (
+                                <DetailRow key={`${item.label}-${index}`} label={item.label} value={item.value} />
                             ))}
                         </View>
 
@@ -184,141 +190,177 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: "#f5f6fa",
+        backgroundColor: "#edf4ff",
     },
     container: {
-        padding: 16,
-        paddingBottom: 30,
-        gap: 12,
-    },
-    stateCard: {
-        backgroundColor: "#040947",
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: "#eceff3",
-        padding: 16,
-        alignItems: "center",
+        paddingHorizontal: 14,
+        paddingTop: 10,
+        paddingBottom: 20,
         gap: 10,
     },
+    stateCard: {
+        backgroundColor: "#ffffff",
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: "#dbe7ff",
+        padding: 14,
+        alignItems: "center",
+        gap: 8,
+    },
     stateTitle: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: "600",
-        color: "#111827",
+        color: "#1e3a8a",
     },
     retryBtn: {
         minWidth: 110,
-        height: 40,
+        height: 38,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: "#d1d5db",
+        borderColor: "#c5d4f5",
+        backgroundColor: "#f8fbff",
         alignItems: "center",
         justifyContent: "center",
     },
     headerCard: {
-        backgroundColor: "#ffffff",
+        backgroundColor: "#dff5ff",
         borderRadius: 16,
         alignItems: "center",
-        paddingVertical: 20,
-        paddingHorizontal: 16,
+        paddingVertical: 14,
+        paddingHorizontal: 12,
         borderWidth: 1,
-        borderColor: "#eceff3",
+        borderColor: "#cbe8fa",
+        overflow: "hidden",
+        position: "relative",
+    },
+    headerBlobOne: {
+        position: "absolute",
+        width: 120,
+        height: 120,
+        borderRadius: 80,
+        right: -45,
+        top: -45,
+        backgroundColor: "#bae6fd",
+    },
+    headerBlobTwo: {
+        position: "absolute",
+        width: 120,
+        height: 120,
+        borderRadius: 80,
+        left: -55,
+        bottom: -74,
+        backgroundColor: "#bfdbfe",
     },
     avatar: {
-        width: 96,
-        height: 96,
-        borderRadius: 48,
+        width: 78,
+        height: 78,
+        borderRadius: 39,
         borderWidth: 1,
-        borderColor: "#d1d5db",
-        backgroundColor: "#fafafa",
+        borderColor: "#bbd8ee",
+        backgroundColor: "#f8fcff",
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: 12,
+        marginBottom: 8,
     },
     name: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: "700",
-        color: "#111827",
+        color: "#0f172a",
         textAlign: "center",
     },
+    rolePill: {
+        marginTop: 4,
+        borderRadius: 999,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        backgroundColor: "#0b2457",
+    },
     role: {
-        marginTop: 2,
-        fontSize: 13,
-        color: "#6b7280",
+        fontSize: 11,
+        color: "#ffffff",
+        fontWeight: "700",
         textTransform: "capitalize",
     },
     joined: {
         marginTop: 5,
-        fontSize: 12,
-        color: "#9ca3af",
+        fontSize: 11,
+        color: "#1f3a7a",
+        fontWeight: "500",
     },
     statsCard: {
-        backgroundColor: "#ffffff",
+        backgroundColor: "transparent",
         borderRadius: 16,
-        borderWidth: 1,
-        borderColor: "#eceff3",
         flexDirection: "row",
-        paddingVertical: 14,
+        gap: 8,
     },
     statItem: {
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
+        borderRadius: 12,
+        backgroundColor: "#ffffff",
+        borderWidth: 1,
+        borderColor: "#dbe7ff",
+        paddingVertical: 10,
+        paddingHorizontal: 4,
     },
     statValue: {
-        fontSize: 18,
+        fontSize: 15,
         fontWeight: "700",
-        color: "#0f172a",
+        color: "#0b2457",
     },
     statLabel: {
-        marginTop: 2,
-        fontSize: 11,
-        color: "#64748b",
+        marginTop: 1,
+        fontSize: 10,
+        color: "#5b6b86",
     },
     detailsCard: {
         backgroundColor: "#ffffff",
-        borderRadius: 16,
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: "#eceff3",
-        paddingHorizontal: 14,
-        paddingVertical: 6,
+        borderColor: "#dbe7ff",
+        paddingHorizontal: 12,
+        paddingVertical: 4,
     },
     row: {
-        paddingVertical: 10,
+        paddingVertical: 8,
         borderBottomWidth: 1,
-        borderBottomColor: "#f1f5f9",
+        borderBottomColor: "#edf2ff",
     },
     rowLabel: {
-        fontSize: 11,
-        color: "#64748b",
-        marginBottom: 2,
+        fontSize: 10,
+        color: "#5b6b86",
+        marginBottom: 1,
+        textTransform: "uppercase",
+        letterSpacing: 0.3,
     },
     rowValue: {
-        fontSize: 15,
-        color: "#111827",
+        fontSize: 13,
+        color: "#0f172a",
         fontWeight: "500",
     },
     logoutBtn: {
-        height: 46,
-        backgroundColor: "#ffcccb",
+        height: 44,
+        backgroundColor: "#ffe4e6",
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#d1d5db",
+        borderColor: "#fecdd3",
         alignItems: "center",
         justifyContent: "center",
         flexDirection: "row",
         gap: 6,
     },
     logoutBtnPressed: {
-        backgroundColor: "#ffcccb",
+        opacity: 0.85,
     },
     logoutText: {
-        fontSize: 14,
-        color: "#1f2937",
+        fontSize: 13,
+        color: "#be123c",
         fontWeight: "600",
     },
     retryText: {
-        fontSize: 14,
-        color: "#1f2937",
+        fontSize: 13,
+        color: "#1d4ed8",
         fontWeight: "600",
     },
 });
