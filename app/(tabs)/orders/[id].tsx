@@ -1,4 +1,6 @@
+import ReportDisputeModal from "@/components/disputes/ReportDisputeModal";
 import RateVendorModal from "@/components/ratings/RateVendorModal";
+import { useCreateDispute } from "@/hooks/disputes/useDispute";
 import { useUpsertOrderRating } from "@/hooks/ratings/useRating";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
@@ -69,8 +71,10 @@ export default function OrderDetailScreen() {
     const { id, ref } = useLocalSearchParams<{ id: string; ref?: string }>();
     const { data: order, isLoading } = useOrderDetail(String(id ?? ""));
     const upsertRatingMutation = useUpsertOrderRating();
+    const createDisputeMutation = useCreateDispute();
 
     const [showRatingModal, setShowRatingModal] = useState(false);
+    const [showDisputeModal, setShowDisputeModal] = useState(false);
     const [hasRated, setHasRated] = useState(false);
 
     const orderId = String(order?.id ?? "");
@@ -141,6 +145,39 @@ export default function OrderDetailScreen() {
                 },
                 onError: () => {
                     Alert.alert("Could not save rating", "Please try again in a moment.");
+                },
+            }
+        );
+    };
+
+    const handleSubmitDispute = ({
+        dispute_type,
+        description,
+        image,
+    }: {
+        dispute_type: "damage" | "missing";
+        description: string;
+        image?: { uri: string; name: string; mimeType?: string | null } | null;
+    }) => {
+        if (!orderId) {
+            Alert.alert("Missing order", "Please reopen this order and try again.");
+            return;
+        }
+
+        createDisputeMutation.mutate(
+            {
+                order_id: orderId,
+                dispute_type,
+                description: description.trim(),
+                image,
+            },
+            {
+                onSuccess: () => {
+                    setShowDisputeModal(false);
+                    Alert.alert("Dispute submitted", "Your report has been sent for review.");
+                },
+                onError: (error: any) => {
+                    Alert.alert("Could not submit dispute", error?.message ?? "Please try again in a moment.");
                 },
             }
         );
@@ -257,6 +294,21 @@ export default function OrderDetailScreen() {
                 ) : (
                     <Text style={styles.emptyText}>No services in this order.</Text>
                 )}
+
+                <View style={styles.disputeCard}>
+                    <View style={styles.disputeContent}>
+                        <Ionicons name="shield-checkmark-outline" size={18} color="#b45309" />
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.disputeTitle}>Issue with this order?</Text>
+                            <Text style={styles.disputeSubtitle}>
+                                Report torn, damaged, missing, or lost clothes for admin review.
+                            </Text>
+                        </View>
+                    </View>
+                    <Pressable style={({ pressed }) => [styles.disputeBtn, pressed && styles.pressed]} onPress={() => setShowDisputeModal(true)}>
+                        <Text style={styles.disputeBtnText}>Report Dispute</Text>
+                    </Pressable>
+                </View>
             </ScrollView>
 
             <RateVendorModal
@@ -265,6 +317,13 @@ export default function OrderDetailScreen() {
                 isSubmitting={upsertRatingMutation.isPending}
                 onClose={() => setShowRatingModal(false)}
                 onSubmit={handleSubmitRating}
+            />
+            <ReportDisputeModal
+                visible={showDisputeModal}
+                orderRef={String(ref ?? compactId("Or", order.id))}
+                isSubmitting={createDisputeMutation.isPending}
+                onClose={() => setShowDisputeModal(false)}
+                onSubmit={handleSubmitDispute}
             />
         </SafeAreaView>
     );
@@ -349,7 +408,21 @@ const styles = StyleSheet.create({
         backgroundColor: "#fffdf5",
         padding: 12,
     },
+    disputeCard: {
+        marginBottom: 10,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: "#fed7aa",
+        backgroundColor: "#fff7ed",
+        padding: 12,
+    },
     ratingContent: {
+        flexDirection: "row",
+        gap: 8,
+        alignItems: "center",
+        marginBottom: 10,
+    },
+    disputeContent: {
         flexDirection: "row",
         gap: 8,
         alignItems: "center",
@@ -365,6 +438,16 @@ const styles = StyleSheet.create({
         fontSize: 11,
         color: "#6b7280",
     },
+    disputeTitle: {
+        fontSize: 13,
+        color: "#111827",
+        fontWeight: "700",
+    },
+    disputeSubtitle: {
+        marginTop: 2,
+        fontSize: 11,
+        color: "#6b7280",
+    },
     rateBtn: {
         alignSelf: "flex-start",
         backgroundColor: "#0b2457",
@@ -372,7 +455,19 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 8,
     },
+    disputeBtn: {
+        alignSelf: "flex-start",
+        backgroundColor: "#0b2457",
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+    },
     rateBtnText: {
+        color: "#ffffff",
+        fontSize: 12,
+        fontWeight: "700",
+    },
+    disputeBtnText: {
         color: "#ffffff",
         fontSize: 12,
         fontWeight: "700",

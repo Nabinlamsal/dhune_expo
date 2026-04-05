@@ -50,11 +50,22 @@ export default function OfferBidCard({
     highlight,
 }: OfferBidCardProps) {
     const vendorName = offer.vendor_name ?? "Verified Vendor";
-    const hasRatings = typeof offer.total_ratings === "number" && offer.total_ratings > 0;
-    const vendorSub =
-        hasRatings && typeof offer.average_rating === "number"
-            ? `${offer.average_rating.toFixed(1)} (${offer.total_ratings} reviews)`
-            : "New vendor";
+    const ratingValue =
+        typeof offer.average_rating === "number"
+            ? offer.average_rating
+            : typeof offer.vendor_rating === "number"
+                ? offer.vendor_rating
+                : null;
+    const ratingCount =
+        typeof offer.total_ratings === "number" && offer.total_ratings > 0
+            ? offer.total_ratings
+            : null;
+    const hasRatings = ratingValue !== null;
+    const vendorSub = hasRatings
+        ? ratingCount !== null
+            ? `${ratingValue.toFixed(1)} (${ratingCount} reviews)`
+            : `${ratingValue.toFixed(1)} rating`
+        : "New vendor";
     const distance = typeof offer.vendor_distance_km === "number" ? `${offer.vendor_distance_km.toFixed(1)} km away` : "";
     const disabled = Boolean(isAccepting || isRejecting);
 
