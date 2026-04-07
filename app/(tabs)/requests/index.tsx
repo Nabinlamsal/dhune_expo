@@ -7,7 +7,10 @@ import { Offer } from "@/types/orders/offers";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useQueries } from "@tanstack/react-query";
+import { useState } from "react";
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+
+const PAGE_SIZE = 10;
 
 const REQUEST_STATUS_COLOR: Record<RequestStatus, string> = {
     OPEN: "#ebbc01",
@@ -36,11 +39,15 @@ const getCategoryLabel = (request: any) => {
 
 export default function RequestsScreen() {
     const router = useRouter();
-    const { data, isLoading } = useMyRequests(20, 0);
+    const [page, setPage] = useState(0);
+    const offset = page * PAGE_SIZE;
+    const { data, isLoading, isFetching } = useMyRequests(PAGE_SIZE, offset);
     const acceptOfferMutation = useAcceptOffer();
     const rejectOfferMutation = useRejectOffer();
 
     const requests = data?.data ?? [];
+    const canGoBack = page > 0;
+    const canGoNext = requests.length === PAGE_SIZE;
     const openRequests = requests.filter((req: any) => req.status === "OPEN").slice(0, 8);
 
     const offerQueries = useQueries({
@@ -135,7 +142,7 @@ export default function RequestsScreen() {
                                             {getCategoryLabel(req)}
                                         </Text>
                                         <Text style={styles.meta}>
-                                            {requestRef} · {formatDate(req.created_at)}
+                                            {requestRef} Â· {formatDate(req.created_at)}
                                         </Text>
                                         {req.status === "OPEN" ? (
                                             <Text style={styles.bidCount}>
@@ -164,6 +171,37 @@ export default function RequestsScreen() {
                         );
                     })
                 )}
+
+                {!isLoading && requests.length > 0 ? (
+                    <View style={styles.paginationFooter}>
+                        <Pressable
+                            disabled={!canGoBack || isFetching}
+                            onPress={() => setPage((current) => Math.max(0, current - 1))}
+                            style={({ pressed }) => [
+                                styles.pageBtn,
+                                pressed && styles.pressed,
+                                (!canGoBack || isFetching) && styles.disabled,
+                            ]}
+                        >
+                            <Text style={styles.pageBtnText}>Previous</Text>
+                        </Pressable>
+                        <Text style={styles.paginationText}>
+                            Page {page + 1}
+                            {isFetching ? " ..." : ""}
+                        </Text>
+                        <Pressable
+                            disabled={!canGoNext || isFetching}
+                            onPress={() => setPage((current) => current + 1)}
+                            style={({ pressed }) => [
+                                styles.pageBtn,
+                                pressed && styles.pressed,
+                                (!canGoNext || isFetching) && styles.disabled,
+                            ]}
+                        >
+                            <Text style={styles.pageBtnText}>Next</Text>
+                        </Pressable>
+                    </View>
+                ) : null}
             </ScrollView>
         </SafeAreaView>
     );
@@ -178,6 +216,30 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingBottom: 26,
         gap: 8,
+    },
+    paginationFooter: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        marginTop: 6,
+    },
+    pageBtn: {
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 7,
+        backgroundColor: "#eef2f7",
+    },
+    pageBtnText: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: "#334155",
+    },
+    paginationText: {
+        minWidth: 68,
+        textAlign: "center",
+        fontSize: 12,
+        color: "#6b7280",
     },
     emptyText: {
         textAlign: "center",
@@ -226,6 +288,9 @@ const styles = StyleSheet.create({
     pressed: {
         opacity: 0.86,
     },
+    disabled: {
+        opacity: 0.5,
+    },
     iconWrap: {
         width: 38,
         height: 38,
@@ -264,3 +329,4 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
 });
+

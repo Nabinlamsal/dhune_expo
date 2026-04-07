@@ -3,6 +3,8 @@ import { OrderStatus, PaymentStatus } from "./orders-enums";
 import { RequestDetail } from "./requests";
 
 export interface OrderListItem {
+    user: any;
+    vendor: any;
     id: string;
     request_id: string;
     final_price: number;
@@ -27,6 +29,7 @@ export interface OrderListItem {
 }
 
 export interface OrderDetailResponse {
+    data: any;
     id: string;
     request_id: string;
     final_price: number;

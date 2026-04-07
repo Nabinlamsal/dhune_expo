@@ -1,7 +1,10 @@
 import { useMyOrders } from "@/hooks/orders/useOrder";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+
+const PAGE_SIZE = 10;
 
 const STATUS_COLORS: Record<string, string> = {
     ACCEPTED: "#ebbc01",
@@ -30,8 +33,12 @@ const getOrderCategoryLabel = (order: any) => {
 
 export default function OrdersScreen() {
     const router = useRouter();
-    const { data, isLoading } = useMyOrders(20, 0);
+    const [page, setPage] = useState(0);
+    const offset = page * PAGE_SIZE;
+    const { data, isLoading, isFetching } = useMyOrders(PAGE_SIZE, offset);
     const orders = data ?? [];
+    const canGoBack = page > 0;
+    const canGoNext = orders.length === PAGE_SIZE;
 
     return (
         <SafeAreaView style={styles.safe}>
@@ -72,6 +79,37 @@ export default function OrdersScreen() {
                         );
                     })
                 )}
+
+                {!isLoading && orders.length > 0 ? (
+                    <View style={styles.paginationFooter}>
+                        <Pressable
+                            disabled={!canGoBack || isFetching}
+                            onPress={() => setPage((current) => Math.max(0, current - 1))}
+                            style={({ pressed }) => [
+                                styles.pageBtn,
+                                pressed && styles.pressed,
+                                (!canGoBack || isFetching) && styles.disabled,
+                            ]}
+                        >
+                            <Text style={styles.pageBtnText}>Previous</Text>
+                        </Pressable>
+                        <Text style={styles.paginationText}>
+                            Page {page + 1}
+                            {isFetching ? " ..." : ""}
+                        </Text>
+                        <Pressable
+                            disabled={!canGoNext || isFetching}
+                            onPress={() => setPage((current) => current + 1)}
+                            style={({ pressed }) => [
+                                styles.pageBtn,
+                                pressed && styles.pressed,
+                                (!canGoNext || isFetching) && styles.disabled,
+                            ]}
+                        >
+                            <Text style={styles.pageBtnText}>Next</Text>
+                        </Pressable>
+                    </View>
+                ) : null}
             </ScrollView>
         </SafeAreaView>
     );
@@ -84,6 +122,30 @@ const styles = StyleSheet.create({
     },
     scroll: {
         padding: 16,
+    },
+    paginationFooter: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        marginTop: 6,
+    },
+    pageBtn: {
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 7,
+        backgroundColor: "#eef2f7",
+    },
+    pageBtnText: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: "#334155",
+    },
+    paginationText: {
+        minWidth: 68,
+        textAlign: "center",
+        fontSize: 12,
+        color: "#6b7280",
     },
     emptyText: {
         textAlign: "center",
@@ -100,6 +162,9 @@ const styles = StyleSheet.create({
     },
     pressed: {
         opacity: 0.86,
+    },
+    disabled: {
+        opacity: 0.5,
     },
     iconWrap: {
         width: 38,

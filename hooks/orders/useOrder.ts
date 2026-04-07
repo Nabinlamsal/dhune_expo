@@ -1,4 +1,3 @@
-"use client";
 import { cancelOrder, getMyOrderStats, getMyOrders, getOrderById } from "@/services/orders/order_service";
 import { CancelOrderPayload } from "@/types/orders/orders";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
