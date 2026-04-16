@@ -1,4 +1,6 @@
 import IncomingOfferPopup from "@/components/offers/IncomingOfferPopup";
+import NotificationButton from "@/components/ui/NotificationButton";
+import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useAcceptOffer, useRejectOffer } from "@/hooks/orders/useOffer";
 import { useMyOrderStats, useMyOrders } from "@/hooks/orders/useOrder";
 import { useMyRequestStats, useMyRequests } from "@/hooks/orders/useRequest";
@@ -194,8 +196,11 @@ export default function HomeScreen() {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
                 <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
                     <View style={styles.header}>
-                        <Text style={styles.greeting}>Good morning</Text>
-                        <Text style={styles.brand}>Dhune.np</Text>
+                        <ScreenHeader
+                            title="Dhune.np"
+                            subtitle="Your laundry activity, requests, and orders."
+                            rightSlot={<NotificationButton />}
+                        />
                     </View>
 
                     <Pressable
@@ -287,7 +292,7 @@ export default function HomeScreen() {
                                         {getOrderCategoryName(order)}
                                     </Text>
                                     <Text style={styles.listCardMeta}>
-                                        {`Or${index + 1}`} • {formatDate(order.created_at)} •{" "}
+                                        {`Or${index + 1}`} â€¢ {formatDate(order.created_at)} â€¢{" "}
                                         <Text style={styles.price}>Rs {order.final_price}</Text>
                                     </Text>
                                 </View>
@@ -374,17 +379,6 @@ const styles = StyleSheet.create({
     },
     header: {
         marginBottom: 16,
-    },
-    greeting: {
-        fontSize: 12,
-        color: "#6b7280",
-        marginBottom: 2,
-    },
-    brand: {
-        fontSize: 24,
-        fontWeight: "800",
-        color: "#040947",
-        letterSpacing: -0.4,
     },
     ctaCard: {
         backgroundColor: "#040947",
@@ -545,3 +539,4 @@ const styles = StyleSheet.create({
         fontWeight: "500",
     },
 });
+

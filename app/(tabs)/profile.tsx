@@ -1,3 +1,4 @@
+import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useLogout } from "@/hooks/auth/useLogout";
 import { useMyProfile } from "@/hooks/users/useMyProfile";
 import { Ionicons } from "@expo/vector-icons";
@@ -128,6 +129,11 @@ export default function ProfileScreen() {
     return (
         <SafeAreaView style={styles.safe}>
             <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+                <ScreenHeader
+                    title="Profile"
+                    subtitle="Account details, status, and sign-out."
+                />
+
                 {isLoading ? (
                     <View style={styles.stateCard}>
                         <Text style={styles.stateTitle}>Loading profile...</Text>

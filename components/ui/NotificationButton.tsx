@@ -1,14 +1,26 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet } from "react-native";
+import { router } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useNotifications } from "@/hooks/notifications/useNotifications";
 
 export default function NotificationButton() {
+    const { unreadCount } = useNotifications();
+
     return (
         <Pressable
+            onPress={() => router.push("/(tabs)/notifications")}
             style={({ pressed }) => [styles.button, pressed && styles.pressed]}
             accessibilityRole="button"
             accessibilityLabel="Notifications"
         >
             <Ionicons name="notifications-outline" size={20} color="#040947" />
+            {unreadCount > 0 ? (
+                <View style={styles.badge}>
+                    <Text style={styles.badgeText}>
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                    </Text>
+                </View>
+            ) : null}
         </Pressable>
     );
 }
@@ -30,5 +42,24 @@ const styles = StyleSheet.create({
     },
     pressed: {
         opacity: 0.85,
+    },
+    badge: {
+        position: "absolute",
+        top: -3,
+        right: -3,
+        minWidth: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: "#dc2626",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 4,
+        borderWidth: 2,
+        borderColor: "#ffffff",
+    },
+    badgeText: {
+        color: "#ffffff",
+        fontSize: 9,
+        fontWeight: "800",
     },
 });

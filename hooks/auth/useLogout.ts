@@ -1,11 +1,14 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNotifications } from "@/hooks/notifications/useNotifications";
+import { clearAuthSession } from "@/services/auth/session.service";
 import { useQueryClient } from "@tanstack/react-query";
 
 export const useLogout = () => {
     const queryClient = useQueryClient();
+    const { clearForLogout } = useNotifications();
 
     return async () => {
-        await AsyncStorage.removeItem("token");
+        await clearForLogout();
+        await clearAuthSession();
         queryClient.clear();
     };
 };

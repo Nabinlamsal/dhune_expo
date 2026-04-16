@@ -1,4 +1,5 @@
 import Input from "@/components/ui/Input";
+import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useActiveCategories } from "@/hooks/catalog/useCategory";
 import { useCreateRequest } from "@/hooks/orders/useRequest";
 import { Category } from "@/types/catalog/category";
@@ -378,8 +379,11 @@ export default function CreateRequestScreen() {
     return (
         <SafeAreaView style={styles.safe}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-                <Text style={styles.title}>Create Request</Text>
-                <Text style={styles.subtitle}>Services first, then pickup details, then payment.</Text>
+                <ScreenHeader
+                    title="Create Request"
+                    subtitle="Services first, then pickup, then payment."
+                    backHref="/(tabs)/requests"
+                />
 
                 <View style={styles.servicesHeader}>
                     <Text style={styles.sectionTitle}>Services</Text>
@@ -742,30 +746,19 @@ export default function CreateRequestScreen() {
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: "#f5f6fa",
+        backgroundColor: "#edf4ff",
     },
     scroll: {
         padding: 16,
         paddingBottom: 32,
     },
-    title: {
-        fontSize: 22,
-        fontWeight: "700",
-        color: "#040947",
-    },
-    subtitle: {
-        marginTop: 4,
-        color: "#6b7280",
-        fontSize: 13,
-        marginBottom: 12,
-    },
     card: {
         backgroundColor: "#fff",
-        borderRadius: 14,
+        borderRadius: 16,
         padding: 14,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: "#e2e8f0",
+        borderColor: "#dbe7ff",
     },
     serviceCard: {
         marginBottom: 14,
@@ -1040,15 +1033,15 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: "#f5f6fa",
+        backgroundColor: "#edf4ff",
         borderTopWidth: 1,
-        borderTopColor: "#e5e7eb",
+        borderTopColor: "#dbe7ff",
         paddingHorizontal: 16,
         paddingVertical: 12,
     },
     submitBtn: {
-        borderRadius: 10,
-        backgroundColor: "#040947",
+        borderRadius: 14,
+        backgroundColor: "#0b2457",
         paddingVertical: 16,
         alignItems: "center",
     },

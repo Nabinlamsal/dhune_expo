@@ -1,3 +1,4 @@
+import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useMyOrders } from "@/hooks/orders/useOrder";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -43,6 +44,11 @@ export default function OrdersScreen() {
     return (
         <SafeAreaView style={styles.safe}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+                <ScreenHeader
+                    title="Orders"
+                    subtitle="Follow active deliveries and completed drops."
+                />
+
                 {isLoading ? (
                     <Text style={styles.emptyText}>Loading orders...</Text>
                 ) : orders.length === 0 ? (
@@ -118,7 +124,7 @@ export default function OrdersScreen() {
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: "#f5f6fa",
+        backgroundColor: "#edf4ff",
     },
     scroll: {
         padding: 16,
@@ -131,10 +137,12 @@ const styles = StyleSheet.create({
         marginTop: 6,
     },
     pageBtn: {
-        borderRadius: 10,
+        borderRadius: 999,
         paddingHorizontal: 10,
         paddingVertical: 7,
-        backgroundColor: "#eef2f7",
+        backgroundColor: "#ffffff",
+        borderWidth: 1,
+        borderColor: "#dbe7ff",
     },
     pageBtnText: {
         fontSize: 12,
@@ -154,11 +162,13 @@ const styles = StyleSheet.create({
     },
     card: {
         backgroundColor: "#fff",
-        borderRadius: 12,
+        borderRadius: 16,
         padding: 12,
         flexDirection: "row",
         alignItems: "center",
         marginBottom: 10,
+        borderWidth: 1,
+        borderColor: "#dbe7ff",
     },
     pressed: {
         opacity: 0.86,
@@ -169,10 +179,10 @@ const styles = StyleSheet.create({
     iconWrap: {
         width: 38,
         height: 38,
-        borderRadius: 10,
+        borderRadius: 12,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#ebbc0115",
+        backgroundColor: "#e8f0ff",
     },
     body: {
         flex: 1,

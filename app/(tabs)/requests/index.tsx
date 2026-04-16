@@ -1,4 +1,5 @@
 import OfferBidCard from "@/components/offers/OfferBidCard";
+import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useAcceptOffer, useRejectOffer } from "@/hooks/orders/useOffer";
 import { useMyRequests } from "@/hooks/orders/useRequest";
 import { getOffersByRequest } from "@/services/orders/offer_service";
@@ -100,6 +101,11 @@ export default function RequestsScreen() {
     return (
         <SafeAreaView style={styles.safe}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+                <ScreenHeader
+                    title="Requests"
+                    subtitle="Track open pickups and incoming bids."
+                />
+
                 <Pressable
                     style={({ pressed }) => [styles.createCard, pressed && styles.pressed]}
                     onPress={() => router.push("/(tabs)/requests/create")}
@@ -210,7 +216,7 @@ export default function RequestsScreen() {
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: "#f5f6fa",
+        backgroundColor: "#edf4ff",
     },
     scroll: {
         padding: 16,
@@ -225,10 +231,12 @@ const styles = StyleSheet.create({
         marginTop: 6,
     },
     pageBtn: {
-        borderRadius: 10,
+        borderRadius: 999,
         paddingHorizontal: 10,
         paddingVertical: 7,
-        backgroundColor: "#eef2f7",
+        backgroundColor: "#ffffff",
+        borderWidth: 1,
+        borderColor: "#dbe7ff",
     },
     pageBtnText: {
         fontSize: 12,
@@ -247,13 +255,18 @@ const styles = StyleSheet.create({
         marginTop: 24,
     },
     createCard: {
-        backgroundColor: "#040947",
-        borderRadius: 12,
-        padding: 14,
+        backgroundColor: "#0b2457",
+        borderRadius: 16,
+        padding: 16,
         marginBottom: 12,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
+        shadowColor: "#0b2457",
+        shadowOpacity: 0.12,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 4,
     },
     createLeft: {
         flex: 1,
@@ -279,11 +292,13 @@ const styles = StyleSheet.create({
     },
     card: {
         backgroundColor: "#fff",
-        borderRadius: 12,
+        borderRadius: 16,
         padding: 12,
         flexDirection: "row",
         alignItems: "center",
         marginBottom: 4,
+        borderWidth: 1,
+        borderColor: "#dbe7ff",
     },
     pressed: {
         opacity: 0.86,
@@ -294,10 +309,10 @@ const styles = StyleSheet.create({
     iconWrap: {
         width: 38,
         height: 38,
-        borderRadius: 10,
+        borderRadius: 12,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#ebbc0115",
+        backgroundColor: "#e8f0ff",
     },
     body: {
         flex: 1,

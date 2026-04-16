@@ -1,4 +1,5 @@
 import OfferBidCard from "@/components/offers/OfferBidCard";
+import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useAcceptOffer, useOffersByRequest, useRejectOffer } from "@/hooks/orders/useOffer";
 import { useCancelRequest, useRequestDetail } from "@/hooks/orders/useRequest";
 import { Offer } from "@/types/orders/offers";
@@ -194,6 +195,12 @@ export default function RequestDetailScreen() {
     return (
         <SafeAreaView style={styles.safe}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+                <ScreenHeader
+                    title="Request Details"
+                    subtitle={ref ? `Reference ${ref}` : "Open request, bids, and pickup info."}
+                    backHref="/(tabs)/requests"
+                />
+
                 <View style={styles.heroCard}>
                     <View style={styles.heroTop}>
                         <Text style={styles.heroTitle}>Request Details</Text>
@@ -318,7 +325,7 @@ const styles = StyleSheet.create({
     },
     heroCard: {
         backgroundColor: PRIMARY,
-        borderRadius: 16,
+        borderRadius: 20,
         borderWidth: 1,
         borderColor: "#264286",
         padding: 14,

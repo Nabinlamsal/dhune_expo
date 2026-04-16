@@ -1,5 +1,6 @@
 import ReportDisputeModal from "@/components/disputes/ReportDisputeModal";
 import RateVendorModal from "@/components/ratings/RateVendorModal";
+import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useCreateDispute } from "@/hooks/disputes/useDispute";
 import { useUpsertOrderRating } from "@/hooks/ratings/useRating";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -202,6 +203,12 @@ export default function OrderDetailScreen() {
     return (
         <SafeAreaView style={styles.safe}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+                <ScreenHeader
+                    title="Order Details"
+                    subtitle={ref ? `Reference ${ref}` : "Status, vendor, and service snapshot."}
+                    backHref="/(tabs)/orders"
+                />
+
                 <View style={styles.heroCard}>
                     <View style={styles.heroTop}>
                         <Text style={styles.heroTitle}>Order Details</Text>
@@ -345,7 +352,7 @@ const styles = StyleSheet.create({
     },
     heroCard: {
         backgroundColor: PRIMARY,
-        borderRadius: 16,
+        borderRadius: 20,
         borderWidth: 1,
         borderColor: "#264286",
         padding: 14,

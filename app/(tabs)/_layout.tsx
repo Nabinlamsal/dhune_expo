@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
+import { useNotifications } from "@/hooks/notifications/useNotifications";
 
 function CenterTabButton({
     onPress,
@@ -32,6 +33,8 @@ function CenterTabButton({
 }
 
 export default function TabsLayout() {
+    const { unreadCount } = useNotifications();
+
     return (
         <Tabs
             screenOptions={{
@@ -80,6 +83,13 @@ export default function TabsLayout() {
                 name="notifications"
                 options={{
                     title: "Alerts",
+                    tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? "99+" : unreadCount) : undefined,
+                    tabBarBadgeStyle: {
+                        backgroundColor: "#dc2626",
+                        color: "#ffffff",
+                        fontSize: 10,
+                        fontWeight: "700",
+                    },
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
                             name={focused ? "notifications" : "notifications-outline"}
