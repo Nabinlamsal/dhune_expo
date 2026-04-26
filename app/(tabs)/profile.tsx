@@ -1,10 +1,20 @@
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useLogout } from "@/hooks/auth/useLogout";
 import { useMyProfile } from "@/hooks/users/useMyProfile";
+import { MyProfile } from "@/types/users/my-profile";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+    Alert,
+    Image,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
 
 type ProfileRole = "user" | "business" | "vendor" | "admin";
 
@@ -22,11 +32,20 @@ type ScreenProfile = {
     displayName: string;
     role: ProfileRole;
     joinedAt: string;
+    avatarUrl: string | null;
     stats: ProfileStat[];
     details: ProfileDetail[];
 };
 
-function formatDate(isoDate: string): string {
+type OptionRowProps = {
+    icon: keyof typeof Ionicons.glyphMap;
+    title: string;
+    subtitle: string;
+    onPress: () => void;
+};
+
+function formatDate(isoDate?: string | null): string {
+    if (!isoDate) return "-";
     const parsed = new Date(isoDate);
     if (Number.isNaN(parsed.getTime())) {
         return isoDate;
@@ -47,13 +66,36 @@ function formatStatus(value?: string | null): string {
     return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
 
+function extractProfileImage(profile: MyProfile): string | null {
+    const record = profile as MyProfile & Record<string, unknown>;
+    const candidates = [
+        record.ProfileImageUrl,
+        record.ProfileImage,
+        record.AvatarUrl,
+        record.avatar_url,
+        record.profile_image,
+        record.image_url,
+        record.ImageUrl,
+        record.Image,
+    ];
+
+    for (const candidate of candidates) {
+        if (typeof candidate === "string" && candidate.trim()) {
+            return candidate;
+        }
+    }
+
+    return null;
+}
+
 function DetailRow({ label, value }: ProfileDetail) {
     return (
-        <View style={styles.row}>
-            <Text style={styles.rowLabel}>{label}</Text>
-            <Text style={styles.rowValue} numberOfLines={2}>
-                {value}
-            </Text>
+        <View style={styles.detailRow}>
+            <View style={styles.detailDot} />
+            <View style={styles.detailCopy}>
+                <Text style={styles.detailLabel}>{label}</Text>
+                <Text style={styles.detailValue}>{value}</Text>
+            </View>
         </View>
     );
 }
@@ -64,6 +106,24 @@ function StatItem({ label, value }: ProfileStat) {
             <Text style={styles.statValue}>{value}</Text>
             <Text style={styles.statLabel}>{label}</Text>
         </View>
+    );
+}
+
+function OptionRow({ icon, title, subtitle, onPress }: OptionRowProps) {
+    return (
+        <Pressable
+            style={({ pressed }) => [styles.optionRow, pressed && styles.optionRowPressed]}
+            onPress={onPress}
+        >
+            <View style={styles.optionIcon}>
+                <Ionicons name={icon} size={18} color="#0b2457" />
+            </View>
+            <View style={styles.optionCopy}>
+                <Text style={styles.optionTitle}>{title}</Text>
+                <Text style={styles.optionSubtitle}>{subtitle}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#64748b" />
+        </Pressable>
     );
 }
 
@@ -79,15 +139,15 @@ export default function ProfileScreen() {
         const details: ProfileDetail[] = [
             { label: "Email", value: data.Email || "-" },
             { label: "Phone", value: data.Phone || "-" },
-            { label: "Active", value: formatBoolean(data.IsActive) },
-            { label: "Verified", value: formatBoolean(data.IsVerified) },
+            { label: "Joined", value: formatDate(data.CreatedAt) },
+            { label: "Verification", value: formatBoolean(data.IsVerified) },
         ];
 
         if (data.BusinessProfile) {
             details.push(
                 { label: "Owner", value: data.BusinessProfile.OwnerName || "-" },
                 { label: "Business Type", value: data.BusinessProfile.BusinessType || "-" },
-                { label: "Registration No.", value: data.BusinessProfile.RegistrationNumber || "-" },
+                { label: "Registration", value: data.BusinessProfile.RegistrationNumber || "-" },
                 { label: "Approval", value: formatStatus(data.BusinessProfile.ApprovalStatus) },
             );
         }
@@ -96,7 +156,7 @@ export default function ProfileScreen() {
             details.push(
                 { label: "Owner", value: data.VendorProfile.OwnerName || "-" },
                 { label: "Address", value: data.VendorProfile.Address || "-" },
-                { label: "Registration No.", value: data.VendorProfile.RegistrationNumber || "-" },
+                { label: "Registration", value: data.VendorProfile.RegistrationNumber || "-" },
                 { label: "Approval", value: formatStatus(data.VendorProfile.ApprovalStatus) },
             );
         }
@@ -105,6 +165,7 @@ export default function ProfileScreen() {
             displayName: data.DisplayName || "Profile",
             role,
             joinedAt: data.CreatedAt,
+            avatarUrl: extractProfileImage(data),
             stats: [
                 { label: "Role", value: data.Role || "-" },
                 { label: "Status", value: data.IsActive ? "Active" : "Inactive" },
@@ -114,16 +175,29 @@ export default function ProfileScreen() {
         } satisfies ScreenProfile;
     }, [data]);
 
-    const handleLogout = async () => {
-        try {
-            setIsLoggingOut(true);
-            await logout();
-            router.replace("/(auth)/login");
-        } catch {
-            Alert.alert("Logout failed", "Please try again.");
-        } finally {
-            setIsLoggingOut(false);
-        }
+    const handleLogout = () => {
+        Alert.alert(
+            "Log out",
+            "Are you sure you want to log out?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Log out",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            setIsLoggingOut(true);
+                            await logout();
+                            router.replace("/(auth)/login");
+                        } catch {
+                            Alert.alert("Logout failed", "Please try again.");
+                        } finally {
+                            setIsLoggingOut(false);
+                        }
+                    },
+                },
+            ]
+        );
     };
 
     return (
@@ -131,7 +205,7 @@ export default function ProfileScreen() {
             <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
                     title="Profile"
-                    subtitle="Account details, status, and sign-out."
+                    subtitle="Account details, updates, and privacy settings."
                 />
 
                 {isLoading ? (
@@ -158,7 +232,11 @@ export default function ProfileScreen() {
                             <View style={styles.headerBlobOne} />
                             <View style={styles.headerBlobTwo} />
                             <View style={styles.avatar}>
-                                <Ionicons name="person-outline" size={36} color="#0b2457" />
+                                {profile.avatarUrl ? (
+                                    <Image source={{ uri: profile.avatarUrl }} style={styles.avatarImage} />
+                                ) : (
+                                    <Ionicons name="person-outline" size={36} color="#0b2457" />
+                                )}
                             </View>
                             <Text style={styles.name}>{profile.displayName}</Text>
                             <View style={styles.rolePill}>
@@ -174,16 +252,32 @@ export default function ProfileScreen() {
                         </View>
 
                         <View style={styles.detailsCard}>
+                            <Text style={styles.detailsTitle}>Account Overview</Text>
                             {profile.details.map((item, index) => (
                                 <DetailRow key={`${item.label}-${index}`} label={item.label} value={item.value} />
                             ))}
+                        </View>
+
+                        <View style={styles.optionsCard}>
+                            <OptionRow
+                                icon="create-outline"
+                                title="Update Profile Details"
+                                subtitle="Edit name, phone number, and profile picture."
+                                onPress={() => router.push("/profile/edit")}
+                            />
+                            <OptionRow
+                                icon="settings-outline"
+                                title="Settings & Privacy"
+                                subtitle="Security and accessibility controls."
+                                onPress={() => router.push("/profile/settings")}
+                            />
                         </View>
 
                         <Pressable
                             style={({ pressed }) => [styles.logoutBtn, pressed && styles.logoutBtnPressed]}
                             onPress={handleLogout}
                         >
-                            <Ionicons name="log-out-outline" size={17} color="#1f2937" />
+                            <Ionicons name="log-out-outline" size={17} color="#ffffff" />
                             <Text style={styles.logoutText}>{isLoggingOut ? "Logging out..." : "Log out"}</Text>
                         </Pressable>
                     </>
@@ -232,7 +326,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#dff5ff",
         borderRadius: 16,
         alignItems: "center",
-        paddingVertical: 14,
+        paddingVertical: 16,
         paddingHorizontal: 12,
         borderWidth: 1,
         borderColor: "#cbe8fa",
@@ -258,15 +352,20 @@ const styles = StyleSheet.create({
         backgroundColor: "#bfdbfe",
     },
     avatar: {
-        width: 78,
-        height: 78,
-        borderRadius: 39,
+        width: 82,
+        height: 82,
+        borderRadius: 41,
         borderWidth: 1,
         borderColor: "#bbd8ee",
         backgroundColor: "#f8fcff",
         alignItems: "center",
         justifyContent: "center",
+        overflow: "hidden",
         marginBottom: 8,
+    },
+    avatarImage: {
+        width: "100%",
+        height: "100%",
     },
     name: {
         fontSize: 18,
@@ -325,32 +424,92 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         borderWidth: 1,
         borderColor: "#dbe7ff",
-        paddingHorizontal: 12,
-        paddingVertical: 4,
+        padding: 14,
     },
-    row: {
+    detailsTitle: {
+        fontSize: 14,
+        fontWeight: "800",
+        color: "#0b2457",
+        marginBottom: 10,
+    },
+    detailRow: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: 10,
         paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: "#edf2ff",
     },
-    rowLabel: {
-        fontSize: 10,
+    detailDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: "#93c5fd",
+        marginTop: 6,
+    },
+    detailCopy: {
+        flex: 1,
+    },
+    detailLabel: {
+        fontSize: 11,
         color: "#5b6b86",
-        marginBottom: 1,
+        fontWeight: "700",
+        marginBottom: 2,
         textTransform: "uppercase",
         letterSpacing: 0.3,
     },
-    rowValue: {
+    detailValue: {
         fontSize: 13,
         color: "#0f172a",
         fontWeight: "500",
     },
+    optionsCard: {
+        backgroundColor: "#ffffff",
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: "#dbe7ff",
+        overflow: "hidden",
+    },
+    optionRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: "#edf2ff",
+    },
+    optionRowPressed: {
+        opacity: 0.86,
+    },
+    optionIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: "#eff6ff",
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: 1,
+        borderColor: "#dbe7ff",
+    },
+    optionCopy: {
+        flex: 1,
+    },
+    optionTitle: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: "#0f172a",
+    },
+    optionSubtitle: {
+        marginTop: 2,
+        fontSize: 11,
+        color: "#5b6b86",
+        fontWeight: "500",
+    },
     logoutBtn: {
-        height: 44,
-        backgroundColor: "#ffe4e6",
+        height: 46,
+        backgroundColor: "#991b1b",
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#fecdd3",
+        borderColor: "#7f1d1d",
         alignItems: "center",
         justifyContent: "center",
         flexDirection: "row",
@@ -361,8 +520,8 @@ const styles = StyleSheet.create({
     },
     logoutText: {
         fontSize: 13,
-        color: "#be123c",
-        fontWeight: "600",
+        color: "#ffffff",
+        fontWeight: "700",
     },
     retryText: {
         fontSize: 13,

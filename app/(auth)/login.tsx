@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Image, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
 
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
@@ -76,7 +76,7 @@ export default function LoginScreen() {
                         <View style={styles.field}>
                             <View style={styles.passwordRow}>
                                 <Text style={styles.label}>Password</Text>
-                                <Pressable>
+                                <Pressable onPress={() => router.push("/(auth)/forgot-password")}>
                                     <Text style={styles.forgot}>Forgot?</Text>
                                 </Pressable>
                             </View>
@@ -99,6 +99,12 @@ export default function LoginScreen() {
                         <Button
                             title="Login with Google"
                             variant="secondary"
+                            onPress={() =>
+                                Alert.alert(
+                                    "Google login unavailable",
+                                    "Google client authentication is not configured in this mobile build yet."
+                                )
+                            }
                         />
 
                         {/* Signup */}
