@@ -152,15 +152,6 @@ export default function ProfileScreen() {
             );
         }
 
-        if (data.VendorProfile) {
-            details.push(
-                { label: "Owner", value: data.VendorProfile.OwnerName || "-" },
-                { label: "Address", value: data.VendorProfile.Address || "-" },
-                { label: "Registration", value: data.VendorProfile.RegistrationNumber || "-" },
-                { label: "Approval", value: formatStatus(data.VendorProfile.ApprovalStatus) },
-            );
-        }
-
         return {
             displayName: data.DisplayName || "Profile",
             role,
@@ -245,11 +236,6 @@ export default function ProfileScreen() {
                             <Text style={styles.joined}>Joined {formatDate(profile.joinedAt)}</Text>
                         </View>
 
-                        <View style={styles.statsCard}>
-                            {profile.stats.map((item) => (
-                                <StatItem key={item.label} label={item.label} value={item.value} />
-                            ))}
-                        </View>
 
                         <View style={styles.detailsCard}>
                             <Text style={styles.detailsTitle}>Account Overview</Text>
@@ -427,7 +413,7 @@ const styles = StyleSheet.create({
         padding: 14,
     },
     detailsTitle: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: "800",
         color: "#0b2457",
         marginBottom: 10,
@@ -457,7 +443,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.3,
     },
     detailValue: {
-        fontSize: 13,
+        fontSize: 15,
         color: "#0f172a",
         fontWeight: "500",
     },
