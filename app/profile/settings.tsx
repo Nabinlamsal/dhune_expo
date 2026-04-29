@@ -1,8 +1,10 @@
 import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 import PasswordInput from "@/components/ui/PasswordInput";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useChangePassword } from "@/hooks/auth/useChangePassword";
 import { useForgotPassword } from "@/hooks/auth/useForgotPassword";
+import { useResetPassword } from "@/hooks/auth/useResetPassword";
 import { useMyProfile } from "@/hooks/users/useMyProfile";
 import { Ionicons } from "@expo/vector-icons";
 import { ReactNode, useState } from "react";
@@ -91,9 +93,12 @@ export default function ProfileSettingsScreen() {
     const { data } = useMyProfile();
     const changePassword = useChangePassword();
     const forgotPassword = useForgotPassword();
+    const resetPassword = useResetPassword();
 
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
+    const [resetOtp, setResetOtp] = useState("");
+    const [resetNewPassword, setResetNewPassword] = useState("");
     const [selectedLanguage, setSelectedLanguage] = useState<LanguageOption>("english");
     const [screenMode, setScreenMode] = useState<ModeOption>("light");
     const [expandedSection, setExpandedSection] = useState<
@@ -130,9 +135,36 @@ export default function ProfileSettingsScreen() {
 
         try {
             await forgotPassword.mutateAsync({ email });
-            Alert.alert("Reset link sent", `Password reset instructions were sent to ${email}.`);
+            Alert.alert("OTP sent", `A password reset OTP was sent to ${email}.`);
         } catch {
             Alert.alert("Request failed", "Please try again.");
+        }
+    };
+
+    const handleResetPassword = async () => {
+        const email = data?.Email?.trim();
+
+        if (!email) {
+            Alert.alert("Missing email", "No email is available for this account.");
+            return;
+        }
+
+        if (!resetOtp.trim() || !resetNewPassword) {
+            Alert.alert("Missing fields", "Enter the OTP and your new password.");
+            return;
+        }
+
+        try {
+            await resetPassword.mutateAsync({
+                email,
+                otp: resetOtp.trim(),
+                new_password: resetNewPassword,
+            });
+            setResetOtp("");
+            setResetNewPassword("");
+            Alert.alert("Password reset", "Your password has been reset successfully.");
+        } catch {
+            Alert.alert("Reset failed", "Please check the OTP and try again.");
         }
     };
 
@@ -190,7 +222,7 @@ export default function ProfileSettingsScreen() {
                         <ExpandableSection
                             label="Security"
                             title="Forgot Password"
-                            subtitle="Send a password reset link to your email."
+                            subtitle="Request an OTP and reset your password securely."
                             expanded={expandedSection === "forgotPassword"}
                             onPress={() => toggleSection("forgotPassword")}
                         >
@@ -198,10 +230,32 @@ export default function ProfileSettingsScreen() {
                                 <Ionicons name="mail-outline" size={15} color="#0b2457" />
                                 <Text style={styles.infoText}>{data?.Email || "No email available"}</Text>
                             </View>
+                            <View style={styles.field}>
+                                <Text style={styles.label}>Verification OTP</Text>
+                                <Input
+                                    placeholder="Enter 6-digit OTP"
+                                    value={resetOtp}
+                                    onChangeText={setResetOtp}
+                                    keyboardType="number-pad"
+                                    maxLength={6}
+                                />
+                            </View>
+                            <View style={styles.field}>
+                                <Text style={styles.label}>New Password</Text>
+                                <PasswordInput
+                                    placeholder="Create a new password"
+                                    value={resetNewPassword}
+                                    onChangeText={setResetNewPassword}
+                                />
+                            </View>
                             <Button
-                                title={forgotPassword.isPending ? "Sending..." : "Send Reset Link"}
+                                title={forgotPassword.isPending ? "Sending..." : "Send OTP"}
                                 variant="secondary"
                                 onPress={handleForgotPassword}
+                            />
+                            <Button
+                                title={resetPassword.isPending ? "Resetting..." : "Reset Password"}
+                                onPress={handleResetPassword}
                             />
                         </ExpandableSection>
                     </View>
