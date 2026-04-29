@@ -5,6 +5,7 @@ import {
     ForgotPasswordPayload,
     GoogleLoginPayload,
     GoogleLoginResponse,
+    ResendVerifyEmailOtpPayload,
     ResetPasswordPayload,
     VerifyEmailPayload,
 } from "../../types/auth/account";
@@ -48,8 +49,17 @@ export const verifyEmail = async (
     payload: VerifyEmailPayload
 ): Promise<AuthActionResponse> => {
     return api<AuthActionResponse>("/auth/verify-email", {
-        method: "GET",
-        params: payload,
+        method: "POST",
+        data: payload,
+    });
+};
+
+export const resendVerifyEmailOtp = async (
+    payload: ResendVerifyEmailOtpPayload
+): Promise<AuthActionResponse> => {
+    return api<AuthActionResponse>("/auth/verify-email/send-otp", {
+        method: "POST",
+        data: payload,
     });
 };
 

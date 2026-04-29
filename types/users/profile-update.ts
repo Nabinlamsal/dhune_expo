@@ -15,6 +15,8 @@ export type UploadProfileImagePayload = {
     image: UploadableImageAsset;
 };
 
+export type DeleteProfileImagePayload = void;
+
 export type ProfileMutationResult = {
     message?: string;
     profile?: MyProfile;

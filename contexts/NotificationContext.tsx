@@ -7,16 +7,21 @@ import {
     useRef,
     useState,
 } from "react";
-import { AppState, AppStateStatus, Animated, Pressable, StyleSheet, Text } from "react-native";
+import { AppState, AppStateStatus, Animated, Platform, Pressable, StyleSheet, Text } from "react-native";
 import { router } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
     clearAuthSession,
+    clearStoredPushRegistrationSync,
     getAuthSession,
     getStoredPushRegistration,
+    getStoredPushRegistrationSync,
     setStoredPushRegistration,
+    setStoredPushRegistrationSync,
 } from "@/services/auth/session.service";
+import * as Notifications from "expo-notifications";
+import { getNativePushRegistration } from "@/services/notifications/native-push.service";
 import {
     getNotificationUnreadCount,
     getNotifications,
@@ -87,7 +92,42 @@ const isUnauthorizedError = (error: unknown) =>
     axios.isAxiosError(error) && error.response?.status === 401;
 
 const isEphemeralNotification = (notification: NotificationItem) =>
-    notification.isLive || notification.id.startsWith("live:");
+    notification.isLive ||
+    notification.id.startsWith("live:") ||
+    notification.id.startsWith("push:");
+
+const normalizeNotificationData = (value: unknown) => {
+    if (!value || typeof value !== "object") {
+        return {};
+    }
+
+    return value as Record<string, unknown>;
+};
+
+const createPushNotificationItem = (payload: {
+    title?: string | null;
+    body?: string | null;
+    data?: unknown;
+}): NotificationItem => {
+    const data = normalizeNotificationData(payload.data);
+    const entityType = String(data.entity_type ?? "user") as NotificationEntityType;
+
+    return {
+        id: `push:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
+        type: String(data.type ?? "PUSH_NOTIFICATION"),
+        title: payload.title ?? "New notification",
+        body: payload.body ?? "",
+        entity_type: entityType,
+        entity_id: data.entity_id == null ? "" : String(data.entity_id),
+        actor_user_id:
+            typeof data.actor_user_id === "string" ? data.actor_user_id : null,
+        data,
+        is_read: false,
+        read_at: null,
+        created_at: new Date().toISOString(),
+        isLive: true,
+    };
+};
 
 const roleAllowsEvent = (
     role: StoredAuthSession["role"],
@@ -153,6 +193,10 @@ export function NotificationProvider({ children }: PropsWithChildren) {
     const foregroundStateRef = useRef(AppState.currentState);
     const manualDisconnectRef = useRef(false);
     const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const notificationReceivedListenerRef =
+        useRef<Notifications.EventSubscription | null>(null);
+    const notificationResponseListenerRef =
+        useRef<Notifications.EventSubscription | null>(null);
     const bannerTranslateY = useRef(new Animated.Value(-120)).current;
 
     const clearReconnectTimer = useCallback(() => {
@@ -229,6 +273,30 @@ export function NotificationProvider({ children }: PropsWithChildren) {
         [bannerTranslateY]
     );
 
+    const addIncomingNotification = useCallback(
+        (notification: NotificationItem) => {
+            setNotifications((current) => {
+                const isDuplicate = current.some(
+                    (item) =>
+                        item.type === notification.type &&
+                        item.entity_type === notification.entity_type &&
+                        item.entity_id === notification.entity_id &&
+                        item.title === notification.title &&
+                        item.body === notification.body
+                );
+
+                if (isDuplicate) {
+                    return current;
+                }
+
+                return [notification, ...current];
+            });
+            setUnreadCount((current) => current + 1);
+            showBanner(notification);
+        },
+        [showBanner]
+    );
+
     const refreshUnreadCount = useCallback(async () => {
         const response = await getNotificationUnreadCount();
         const count = Number(
@@ -277,9 +345,7 @@ export function NotificationProvider({ children }: PropsWithChildren) {
                 }
 
                 const nextNotification = formatLiveNotification(message);
-                setNotifications((current) => [nextNotification, ...current]);
-                setUnreadCount((current) => current + 1);
-                showBanner(nextNotification);
+                addIncomingNotification(nextNotification);
             } catch (error) {
                 console.log("WS message parse error", error);
             }
@@ -313,7 +379,59 @@ export function NotificationProvider({ children }: PropsWithChildren) {
                 void connectSocket();
             }, delay);
         };
-    }, [clearReconnectTimer, disconnectSocket, handleUnauthorized, showBanner]);
+    }, [addIncomingNotification, clearReconnectTimer, disconnectSocket, handleUnauthorized]);
+
+    const registerPushToken = useCallback(
+        async (registration: RegisterNotificationDevicePayload) => {
+            const existingRegistration = await getStoredPushRegistration();
+            const shouldPersistRegistration =
+                existingRegistration?.token !== registration.token ||
+                existingRegistration.platform !== registration.platform ||
+                existingRegistration.device_id !== registration.device_id;
+
+            if (shouldPersistRegistration) {
+                await setStoredPushRegistration(registration);
+            }
+
+            if (!sessionRef.current?.token) {
+                return;
+            }
+
+            try {
+                const syncState = await getStoredPushRegistrationSync();
+                if (
+                    syncState?.userId === sessionRef.current.userId &&
+                    syncState.token === registration.token
+                ) {
+                    return;
+                }
+
+                await registerNotificationDevice(registration);
+                await setStoredPushRegistrationSync(
+                    sessionRef.current.userId,
+                    registration.token
+                );
+            } catch (error) {
+                if (isUnauthorizedError(error)) {
+                    await handleUnauthorized();
+                    return;
+                }
+                console.log("Push registration error", error);
+            }
+        },
+        [handleUnauthorized]
+    );
+
+    const registerNativePushToken = useCallback(async () => {
+        try {
+            const registration = await getNativePushRegistration();
+            if (registration) {
+                await registerPushToken(registration);
+            }
+        } catch (error) {
+            console.log("Push permission bootstrap error", error);
+        }
+    }, [registerPushToken]);
 
     const initializeSession = useCallback(
         async (session?: StoredAuthSession | null) => {
@@ -331,10 +449,11 @@ export function NotificationProvider({ children }: PropsWithChildren) {
 
             try {
                 await Promise.all([refreshUnreadCount(), refreshFirstPage(false)]);
+                await registerNativePushToken();
 
                 const storedPush = await getStoredPushRegistration();
                 if (storedPush?.token) {
-                    await registerNotificationDevice(storedPush);
+                    await registerPushToken(storedPush);
                 }
 
                 await connectSocket();
@@ -355,6 +474,8 @@ export function NotificationProvider({ children }: PropsWithChildren) {
             handleUnauthorized,
             refreshFirstPage,
             refreshUnreadCount,
+            registerNativePushToken,
+            registerPushToken,
             resetLocalState,
         ]
     );
@@ -539,27 +660,6 @@ export function NotificationProvider({ children }: PropsWithChildren) {
         [handleUnauthorized, refreshFirstPage, refreshUnreadCount]
     );
 
-    const registerPushToken = useCallback(
-        async (registration: RegisterNotificationDevicePayload) => {
-            await setStoredPushRegistration(registration);
-
-            if (!sessionRef.current?.token) {
-                return;
-            }
-
-            try {
-                await registerNotificationDevice(registration);
-            } catch (error) {
-                if (isUnauthorizedError(error)) {
-                    await handleUnauthorized();
-                    return;
-                }
-                console.log("Push registration error", error);
-            }
-        },
-        [handleUnauthorized]
-    );
-
     const clearForLogout = useCallback(async () => {
         const storedPush = await getStoredPushRegistration();
 
@@ -575,19 +675,63 @@ export function NotificationProvider({ children }: PropsWithChildren) {
                 console.log("Push unregister error", error);
             }
         }
+
+        await clearStoredPushRegistrationSync();
     }, [disconnectSocket, resetLocalState]);
 
     useEffect(() => {
         void initializeSession();
+        void registerNativePushToken();
+
+        notificationReceivedListenerRef.current =
+            Notifications.addNotificationReceivedListener((event) => {
+                const nextNotification = createPushNotificationItem({
+                    title: event.request.content.title,
+                    body: event.request.content.body,
+                    data: event.request.content.data,
+                });
+                addIncomingNotification(nextNotification);
+            });
+
+        notificationResponseListenerRef.current =
+            Notifications.addNotificationResponseReceivedListener((response) => {
+                const nextNotification = createPushNotificationItem({
+                    title: response.notification.request.content.title,
+                    body: response.notification.request.content.body,
+                    data: response.notification.request.content.data,
+                });
+                void handleNotificationPress(nextNotification);
+            });
+
+        void Notifications.getLastNotificationResponseAsync().then((response) => {
+            if (!response) {
+                return;
+            }
+
+            const nextNotification = createPushNotificationItem({
+                title: response.notification.request.content.title,
+                body: response.notification.request.content.body,
+                data: response.notification.request.content.data,
+            });
+            void handleNotificationPress(nextNotification);
+        });
 
         return () => {
             if (bannerTimerRef.current) {
                 clearTimeout(bannerTimerRef.current);
             }
+            notificationReceivedListenerRef.current?.remove();
+            notificationResponseListenerRef.current?.remove();
             manualDisconnectRef.current = true;
             disconnectSocket();
         };
-    }, [disconnectSocket, initializeSession]);
+    }, [
+        addIncomingNotification,
+        disconnectSocket,
+        handleNotificationPress,
+        initializeSession,
+        registerNativePushToken,
+    ]);
 
     useEffect(() => {
         const subscription = AppState.addEventListener(

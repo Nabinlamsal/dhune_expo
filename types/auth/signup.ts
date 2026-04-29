@@ -23,4 +23,6 @@ export type SignupResponse = {
     user_id: string;
     role: Role;
     message: string;
+    verification_required?: boolean;
+    otp_expires_in_seconds?: number;
 };

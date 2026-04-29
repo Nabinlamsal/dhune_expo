@@ -2,6 +2,7 @@ import { api } from "@/libs/api";
 import { ApiResponse } from "@/types/api";
 import { MyProfile } from "@/types/users/my-profile";
 import {
+    DeleteProfileImagePayload,
     ProfileMutationResult,
     UpdateMyProfilePayload,
     UploadProfileImagePayload,
@@ -55,18 +56,28 @@ export const uploadProfileImage = async (
 ): Promise<ProfileMutationResult> => {
     const formData = new FormData();
 
-    formData.append("image", {
+    formData.append("profile_image", {
         uri: payload.image.uri,
         name: payload.image.name,
         type: payload.image.mimeType ?? "image/jpeg",
     } as any);
 
-    const response = await api<ProfileResponseShape>("/user/upload-profile-image", {
-        method: "POST",
+    const response = await api<ProfileResponseShape>("/user/me/photo", {
+        method: "PUT",
         data: formData,
         headers: {
             "Content-type": "multipart/form-data",
         },
+    });
+
+    return extractProfileMutationResult(response);
+};
+
+export const deleteProfileImage = async (
+    _payload?: DeleteProfileImagePayload
+): Promise<ProfileMutationResult> => {
+    const response = await api<ProfileResponseShape>("/user/me/photo", {
+        method: "DELETE",
     });
 
     return extractProfileMutationResult(response);

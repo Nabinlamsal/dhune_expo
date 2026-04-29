@@ -1,9 +1,12 @@
 import { LoginResponse } from "./login";
 
 export type VerifyEmailPayload = {
-    token?: string;
-    code?: string;
-    email?: string;
+    email: string;
+    otp: string;
+};
+
+export type ResendVerifyEmailOtpPayload = {
+    email: string;
 };
 
 export type ForgotPasswordPayload = {
@@ -11,7 +14,8 @@ export type ForgotPasswordPayload = {
 };
 
 export type ResetPasswordPayload = {
-    token: string;
+    email: string;
+    otp: string;
     new_password: string;
 };
 

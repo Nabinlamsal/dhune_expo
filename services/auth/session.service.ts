@@ -13,6 +13,8 @@ const STORAGE_KEYS = {
     pushToken: "notifications.push.token",
     pushPlatform: "notifications.push.platform",
     pushDeviceId: "notifications.push.device_id",
+    pushRegisteredToken: "notifications.push.registered.token",
+    pushRegisteredUserId: "notifications.push.registered.user_id",
 } as const;
 
 export const setAuthSession = async (session: StoredAuthSession) => {
@@ -84,3 +86,39 @@ export const getStoredPushRegistration =
             device_id: map[STORAGE_KEYS.pushDeviceId] || undefined,
         };
     };
+
+export const setStoredPushRegistrationSync = async (
+    userId: string,
+    token: string
+) => {
+    await AsyncStorage.multiSet([
+        [STORAGE_KEYS.pushRegisteredUserId, userId],
+        [STORAGE_KEYS.pushRegisteredToken, token],
+    ]);
+};
+
+export const getStoredPushRegistrationSync = async (): Promise<{
+    userId: string;
+    token: string;
+} | null> => {
+    const entries = await AsyncStorage.multiGet([
+        STORAGE_KEYS.pushRegisteredUserId,
+        STORAGE_KEYS.pushRegisteredToken,
+    ]);
+    const map = Object.fromEntries(entries);
+    const userId = map[STORAGE_KEYS.pushRegisteredUserId];
+    const token = map[STORAGE_KEYS.pushRegisteredToken];
+
+    if (!userId || !token) {
+        return null;
+    }
+
+    return { userId, token };
+};
+
+export const clearStoredPushRegistrationSync = async () => {
+    await AsyncStorage.multiRemove([
+        STORAGE_KEYS.pushRegisteredUserId,
+        STORAGE_KEYS.pushRegisteredToken,
+    ]);
+};
