@@ -1,15 +1,18 @@
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import { useDeleteProfileImage } from "@/hooks/users/useDeleteProfileImage";
 import { useMyProfile } from "@/hooks/users/useMyProfile";
 import { useUpdateMyProfile } from "@/hooks/users/useUpdateMyProfile";
 import { useUploadProfileImage } from "@/hooks/users/useUploadProfileImage";
 import { MyProfile } from "@/types/users/my-profile";
 import { Ionicons } from "@expo/vector-icons";
-import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import {
     Alert,
+    AlertButton,
+    ActionSheetIOS,
     Image,
     KeyboardAvoidingView,
     Platform,
@@ -51,6 +54,7 @@ export default function EditProfileScreen() {
     const { data } = useMyProfile();
     const updateProfile = useUpdateMyProfile();
     const uploadProfileImage = useUploadProfileImage();
+    const deleteProfileImage = useDeleteProfileImage();
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
     const [localAvatarUri, setLocalAvatarUri] = useState<string | null>(null);
@@ -62,25 +66,14 @@ export default function EditProfileScreen() {
         setLocalAvatarUri(extractProfileImage(data));
     }, [data]);
 
-    const handleUploadImage = async () => {
+    const uploadSelectedAsset = async (asset: ImagePicker.ImagePickerAsset) => {
         try {
-            const result = await DocumentPicker.getDocumentAsync({
-                type: ["image/*"],
-                copyToCacheDirectory: true,
-                multiple: false,
-            });
-
-            if (result.canceled) {
-                return;
-            }
-
-            const asset = result.assets[0];
             setLocalAvatarUri(asset.uri);
 
             const response = await uploadProfileImage.mutateAsync({
                 image: {
                     uri: asset.uri,
-                    name: asset.name,
+                    name: asset.fileName ?? `profile-${Date.now()}.jpg`,
                     mimeType: asset.mimeType,
                 },
             });
@@ -94,6 +87,109 @@ export default function EditProfileScreen() {
             setLocalAvatarUri(data ? extractProfileImage(data) : null);
             Alert.alert("Upload failed", "Please try again with another image.");
         }
+    };
+
+    const handlePickFromGallery = async () => {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+            Alert.alert("Permission needed", "Gallery access is required to choose a profile photo.");
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ["images"],
+            quality: 0.85,
+            allowsEditing: true,
+            aspect: [1, 1],
+        });
+
+        if (!result.canceled) {
+            await uploadSelectedAsset(result.assets[0]);
+        }
+    };
+
+    const handleTakePhoto = async () => {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+            Alert.alert("Permission needed", "Camera access is required to take a profile photo.");
+            return;
+        }
+
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ["images"],
+            quality: 0.85,
+            allowsEditing: true,
+            aspect: [1, 1],
+        });
+
+        if (!result.canceled) {
+            await uploadSelectedAsset(result.assets[0]);
+        }
+    };
+
+    const handleDeletePhoto = async () => {
+        if (!localAvatarUri) {
+            Alert.alert("No photo", "There is no profile photo to delete.");
+            return;
+        }
+
+        try {
+            await deleteProfileImage.mutateAsync();
+            setLocalAvatarUri(null);
+            Alert.alert("Photo deleted", "Your profile photo has been removed.");
+        } catch {
+            Alert.alert("Delete failed", "Please try again.");
+        }
+    };
+
+    const openPhotoActions = () => {
+        const options = ["Choose from Gallery", "Take Photo"];
+        const actions = [
+            () => void handlePickFromGallery(),
+            () => void handleTakePhoto(),
+        ];
+
+        if (localAvatarUri) {
+            options.push("Delete Photo");
+            actions.push(() => void handleDeletePhoto());
+        }
+
+        options.push("Cancel");
+
+        if (Platform.OS === "ios") {
+            const cancelButtonIndex = options.length - 1;
+            const destructiveButtonIndex = localAvatarUri ? options.length - 2 : undefined;
+
+            ActionSheetIOS.showActionSheetWithOptions(
+                {
+                    options,
+                    cancelButtonIndex,
+                    destructiveButtonIndex,
+                },
+                (selectedIndex) => {
+                    if (selectedIndex < actions.length) {
+                        actions[selectedIndex]();
+                    }
+                }
+            );
+            return;
+        }
+
+        const menu: AlertButton[] = [
+            { text: "Choose from Gallery", onPress: () => void handlePickFromGallery() },
+            { text: "Take Photo", onPress: () => void handleTakePhoto() },
+        ];
+
+        if (localAvatarUri) {
+            menu.push({
+                text: "Delete Photo",
+                style: "destructive",
+                onPress: () => void handleDeletePhoto(),
+            } as const);
+        }
+
+        menu.push({ text: "Cancel", style: "cancel" } as const);
+        Alert.alert("Profile Photo", "Choose an action.", menu);
     };
 
     const handleSave = async () => {
@@ -139,7 +235,7 @@ export default function EditProfileScreen() {
                         <View style={styles.photoCard}>
                             <Pressable
                                 style={({ pressed }) => [styles.avatarWrap, pressed && styles.pressed]}
-                                onPress={handleUploadImage}
+                                onPress={openPhotoActions}
                             >
                                 <View style={styles.avatar}>
                                     {localAvatarUri ? (
@@ -160,7 +256,9 @@ export default function EditProfileScreen() {
                             <Text style={styles.photoSubtitle}>
                                 {uploadProfileImage.isPending
                                     ? "Uploading selected image..."
-                                    : "Tap the image to change or set your profile picture."}
+                                    : deleteProfileImage.isPending
+                                        ? "Deleting profile image..."
+                                        : "Tap the image to choose from gallery, take a photo, or delete it."}
                             </Text>
                         </View>
 

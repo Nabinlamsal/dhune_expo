@@ -1,16 +1,18 @@
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Alert, Image, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 
+import AuthScreen from "../../components/ui/AuthScreen";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
+import PasswordInput from "../../components/ui/PasswordInput";
 
+import KeyboardWrapper from "@/components/ui/KeyboardWrapper";
+import { extractErrorMessage, isEmailNotVerifiedError } from "@/services/auth/auth-error";
 import { useLogin } from "../../hooks/auth/useLogin";
 import { LoginRequest } from "../../types/auth/login";
 
 export default function LoginScreen() {
-
     const { mutate, isPending } = useLogin();
 
     const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -32,25 +34,28 @@ export default function LoginScreen() {
             },
             onError: (err) => {
                 console.log("ERROR:", err);
+                if (isEmailNotVerifiedError(err)) {
+                    router.push({
+                        pathname: "/(auth)/verify-email" as any,
+                        params: {
+                            email: emailOrPhone.trim(),
+                            source: "login",
+                        },
+                    });
+                    return;
+                }
+
+                Alert.alert("Login failed", extractErrorMessage(err));
             },
         });
     };
 
     return (
-        <SafeAreaView style={styles.safe}>
-
-            {/* Back Button */}
-            <Pressable style={styles.back} onPress={() => router.back()}>
-                <Ionicons name="arrow-back" size={22} color="#040947" />
-                <Text style={styles.backText}>Back</Text>
-            </Pressable>
-
-            <View style={styles.container}>
-
-                {/* Card */}
-                <View style={styles.card}>
-
-                    {/* Logo Section */}
+        <KeyboardWrapper>
+            <AuthScreen
+                title="Welcome Back"
+                subtitle="Sign in to manage pickup requests, track orders, and stay updated in one place."
+                header={
                     <View style={styles.logoContainer}>
                         <Image
                             source={require("../../assets/logo.png")}
@@ -58,170 +63,170 @@ export default function LoginScreen() {
                             resizeMode="contain"
                         />
                         <Text style={styles.logoText}>Dhune.np</Text>
-                        <Text style={styles.subtitle}>Login to your account</Text>
                     </View>
-
-                    {/* Form */}
-                    <View style={styles.form}>
-
-                        <View style={styles.field}>
-                            <Text style={styles.label}>Email or Phone</Text>
-                            <Input
-                                placeholder="example@gmail.com"
-                                value={emailOrPhone}
-                                onChangeText={setEmailOrPhone}
-                            />
-                        </View>
-
-                        <View style={styles.field}>
-                            <View style={styles.passwordRow}>
-                                <Text style={styles.label}>Password</Text>
-                                <Pressable onPress={() => router.push("/(auth)/forgot-password")}>
-                                    <Text style={styles.forgot}>Forgot?</Text>
-                                </Pressable>
-                            </View>
-
-                            <Input
-                                placeholder="Enter password"
-                                secureTextEntry
-                                value={password}
-                                onChangeText={setPassword}
-                            />
-                        </View>
-
-                        {/* Login */}
-                        <Button
-                            title={isPending ? "Logging in..." : "Login"}
-                            onPress={handleLogin}
-                        />
-
-                        {/* Google Login */}
-                        <Button
-                            title="Login with Google"
-                            variant="secondary"
-                            onPress={() =>
-                                Alert.alert(
-                                    "Google login unavailable",
-                                    "Google client authentication is not configured in this mobile build yet."
-                                )
-                            }
-                        />
-
-                        {/* Signup */}
-                        <Pressable
-                            style={styles.signupContainer}
-                            onPress={() => router.replace("/(auth)/signup")}
-                        >
-                            <Text style={styles.signupText}>
-                                Don&apos;t have an account?{" "}
-                                <Text style={styles.signupHighlight}>Sign Up</Text>
-                            </Text>
-                        </Pressable>
-
-                    </View>
+                }
+                footer={
+                    <Pressable
+                        style={styles.signupContainer}
+                        onPress={() => router.replace("/(auth)/signup")}
+                    >
+                        <Text style={styles.signupText}>
+                            Don&apos;t have an account?{" "}
+                            <Text style={styles.signupHighlight}>Sign Up</Text>
+                        </Text>
+                    </Pressable>
+                }
+            >
+                <View style={styles.field}>
+                    <Text style={styles.label}>Email or Phone</Text>
+                    <Input
+                        placeholder="example@gmail.com"
+                        value={emailOrPhone}
+                        onChangeText={setEmailOrPhone}
+                        autoCapitalize="none"
+                    />
                 </View>
-            </View>
-        </SafeAreaView>
+
+                <View style={styles.field}>
+                    <View style={styles.passwordRow}>
+                        <Text style={styles.label}>Password</Text>
+                        <Pressable onPress={() => router.push("/(auth)/forgot-password")}>
+                            <Text style={styles.forgot}>Forgot?</Text>
+                        </Pressable>
+                    </View>
+
+                    <PasswordInput
+                        placeholder="Enter password"
+                        value={password}
+                        onChangeText={setPassword}
+                    />
+                </View>
+
+                <Button
+                    title={isPending ? "Logging in..." : "Login"}
+                    onPress={handleLogin}
+                />
+
+                <View style={styles.dividerRow}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>OR</Text>
+                    <View style={styles.dividerLine} />
+                </View>
+
+                <Pressable
+                    onPress={() =>
+                        Alert.alert(
+                            "Google login unavailable",
+                            "Google client authentication is not configured in this mobile build yet."
+                        )
+                    }
+                    style={({ pressed }) => [styles.googleButton, pressed && styles.googlePressed]}
+                >
+                    <View style={styles.googleIconWrap}>
+                        <Text style={styles.googleIcon}>G</Text>
+                    </View>
+                    <Text style={styles.googleText}>Continue with Google</Text>
+                </Pressable>
+            </AuthScreen>
+        </KeyboardWrapper>
+
     );
 }
 
 const styles = StyleSheet.create({
-
-    safe: {
-        flex: 1,
-        backgroundColor: "#f8fafc",
-    },
-
-    back: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 20,
-        paddingTop: 10,
-    },
-
-    backText: {
-        marginLeft: 6,
-        fontSize: 16,
-        color: "#040947",
-        fontWeight: "500",
-    },
-
-    container: {
-        flex: 1,
-        justifyContent: "center",
-        paddingHorizontal: 20,
-    },
-
-    card: {
-        backgroundColor: "white",
-        borderRadius: 16,
-        padding: 26,
-        shadowColor: "#000",
-        shadowOpacity: 0.08,
-        shadowRadius: 10,
-        elevation: 5,
-    },
-
     logoContainer: {
         alignItems: "center",
-        marginBottom: 26,
+        marginBottom: 4,
     },
-
     logoImage: {
-        width: 70,
-        height: 70,
-        marginBottom: 10,
+        width: 76,
+        height: 76,
+        marginBottom: 12,
     },
-
     logoText: {
         fontSize: 26,
-        fontWeight: "700",
+        fontWeight: "800",
         color: "#ebbc01",
     },
-
-    subtitle: {
-        fontSize: 15,
-        color: "#040947",
-        marginTop: 4,
-    },
-
-    form: {
-        gap: 18,
-    },
-
     field: {
-        gap: 6,
+        gap: 8,
     },
-
     label: {
         fontSize: 14,
-        fontWeight: "500",
-        color: "#374151",
+        fontWeight: "700",
+        color: "#0b2457",
     },
-
     passwordRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
     },
-
     forgot: {
         fontSize: 13,
-        color: "#040947",
+        color: "#0b2457",
+        fontWeight: "600",
     },
-
+    dividerRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: "#dbe7ff",
+    },
+    dividerText: {
+        fontSize: 12,
+        color: "#64748b",
+        fontWeight: "700",
+        letterSpacing: 1.2,
+    },
+    googleButton: {
+        minHeight: 54,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: "#dbe7ff",
+        backgroundColor: "#f8fbff",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+        paddingHorizontal: 18,
+    },
+    googlePressed: {
+        opacity: 0.82,
+    },
+    googleIconWrap: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#ffffff",
+        borderWidth: 1,
+        borderColor: "#e5e7eb",
+    },
+    googleIcon: {
+        fontSize: 18,
+        fontWeight: "800",
+        color: "#ea4335",
+    },
+    googleText: {
+        fontSize: 15,
+        fontWeight: "700",
+        color: "#0f172a",
+    },
     signupContainer: {
-        marginTop: 10,
+        marginTop: 22,
         alignItems: "center",
     },
-
     signupText: {
         fontSize: 14,
-        color: "#6b7280",
+        color: "#64748b",
     },
-
     signupHighlight: {
-        color: "#040947",
-        fontWeight: "600",
+        color: "#0b2457",
+        fontWeight: "700",
     },
 });

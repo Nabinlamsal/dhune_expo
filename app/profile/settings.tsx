@@ -1,5 +1,5 @@
 import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
+import PasswordInput from "@/components/ui/PasswordInput";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useChangePassword } from "@/hooks/auth/useChangePassword";
 import { useForgotPassword } from "@/hooks/auth/useForgotPassword";
@@ -167,20 +167,18 @@ export default function ProfileSettingsScreen() {
                         >
                             <View style={styles.field}>
                                 <Text style={styles.label}>Old Password</Text>
-                                <Input
+                                <PasswordInput
                                     placeholder="Enter old password"
                                     value={oldPassword}
                                     onChangeText={setOldPassword}
-                                    secureTextEntry
                                 />
                             </View>
                             <View style={styles.field}>
                                 <Text style={styles.label}>New Password</Text>
-                                <Input
+                                <PasswordInput
                                     placeholder="Enter new password"
                                     value={newPassword}
                                     onChangeText={setNewPassword}
-                                    secureTextEntry
                                 />
                             </View>
                             <Button

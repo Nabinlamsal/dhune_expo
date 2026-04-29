@@ -40,6 +40,7 @@ export default function OrdersScreen() {
     const orders = data ?? [];
     const canGoBack = page > 0;
     const canGoNext = orders.length === PAGE_SIZE;
+    const shouldShowPagination = canGoBack || canGoNext;
 
     return (
         <SafeAreaView style={styles.safe}>
@@ -86,7 +87,7 @@ export default function OrdersScreen() {
                     })
                 )}
 
-                {!isLoading && orders.length > 0 ? (
+                {!isLoading && orders.length > 0 && shouldShowPagination ? (
                     <View style={styles.paginationFooter}>
                         <Pressable
                             disabled={!canGoBack || isFetching}

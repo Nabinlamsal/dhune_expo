@@ -18,11 +18,6 @@ import {
 
 type ProfileRole = "user" | "business" | "vendor" | "admin";
 
-type ProfileStat = {
-    label: string;
-    value: string;
-};
-
 type ProfileDetail = {
     label: string;
     value: string;
@@ -33,7 +28,6 @@ type ScreenProfile = {
     role: ProfileRole;
     joinedAt: string;
     avatarUrl: string | null;
-    stats: ProfileStat[];
     details: ProfileDetail[];
 };
 
@@ -100,15 +94,6 @@ function DetailRow({ label, value }: ProfileDetail) {
     );
 }
 
-function StatItem({ label, value }: ProfileStat) {
-    return (
-        <View style={styles.statItem}>
-            <Text style={styles.statValue}>{value}</Text>
-            <Text style={styles.statLabel}>{label}</Text>
-        </View>
-    );
-}
-
 function OptionRow({ icon, title, subtitle, onPress }: OptionRowProps) {
     return (
         <Pressable
@@ -157,11 +142,6 @@ export default function ProfileScreen() {
             role,
             joinedAt: data.CreatedAt,
             avatarUrl: extractProfileImage(data),
-            stats: [
-                { label: "Role", value: data.Role || "-" },
-                { label: "Status", value: data.IsActive ? "Active" : "Inactive" },
-                { label: "Docs", value: String(data.Documents?.length ?? 0) },
-            ],
             details,
         } satisfies ScreenProfile;
     }, [data]);

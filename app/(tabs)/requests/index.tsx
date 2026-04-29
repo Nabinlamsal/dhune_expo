@@ -49,6 +49,7 @@ export default function RequestsScreen() {
     const requests = data?.data ?? [];
     const canGoBack = page > 0;
     const canGoNext = requests.length === PAGE_SIZE;
+    const shouldShowPagination = canGoBack || canGoNext;
     const openRequests = requests.filter((req: any) => req.status === "OPEN").slice(0, 8);
 
     const offerQueries = useQueries({
@@ -178,7 +179,7 @@ export default function RequestsScreen() {
                     })
                 )}
 
-                {!isLoading && requests.length > 0 ? (
+                {!isLoading && requests.length > 0 && shouldShowPagination ? (
                     <View style={styles.paginationFooter}>
                         <Pressable
                             disabled={!canGoBack || isFetching}

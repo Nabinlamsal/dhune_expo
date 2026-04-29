@@ -3,6 +3,10 @@ import { Tabs } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useNotifications } from "@/hooks/notifications/useNotifications";
 
+export const unstable_settings = {
+    initialRouteName: "home",
+};
+
 function CenterTabButton({
     onPress,
     accessibilityState,
@@ -37,12 +41,11 @@ export default function TabsLayout() {
 
     return (
         <Tabs
+            initialRouteName="home"
             screenOptions={{
                 headerShown: false,
-
                 tabBarActiveTintColor: "#040947",
                 tabBarInactiveTintColor: "#111827",
-
                 tabBarStyle: {
                     height: 76,
                     paddingTop: 8,
