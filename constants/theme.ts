@@ -1,53 +1,71 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
+export type AppThemeMode = "light" | "dark";
 
-import { Platform } from 'react-native';
-
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
-export const Colors = {
-  light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-  },
+export type AppTheme = {
+    background: string;
+    card: string;
+    surfaceMuted: string;
+    border: string;
+    borderStrong: string;
+    text: string;
+    textMuted: string;
+    textSoft: string;
+    primary: string;
+    primarySoft: string;
+    primaryContrast: string;
+    success: string;
+    successContrast: string;
+    danger: string;
+    dangerSoft: string;
+    inputBackground: string;
+    inputBorder: string;
+    inputText: string;
+    inputPlaceholder: string;
+    overlay: string;
 };
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});
+export const appThemes: Record<AppThemeMode, AppTheme> = {
+    light: {
+        background: "#edf4ff",
+        card: "#ffffff",
+        surfaceMuted: "#f8fbff",
+        border: "#dbe7ff",
+        borderStrong: "#bfd2f6",
+        text: "#0f172a",
+        textMuted: "#64748b",
+        textSoft: "#94a3b8",
+        primary: "#0b2457",
+        primarySoft: "#eff6ff",
+        primaryContrast: "#ffffff",
+        success: "#0d7a43",
+        successContrast: "#ffffff",
+        danger: "#b42318",
+        dangerSoft: "#fff1f0",
+        inputBackground: "#ffffff",
+        inputBorder: "#dbe7ff",
+        inputText: "#0f172a",
+        inputPlaceholder: "#94a3b8",
+        overlay: "rgba(15, 23, 42, 0.44)",
+    },
+    dark: {
+        background: "#07111f",
+        card: "#0d1b2d",
+        surfaceMuted: "#12243a",
+        border: "#1c3553",
+        borderStrong: "#2a4b74",
+        text: "#e7edf7",
+        textMuted: "#9fb2cb",
+        textSoft: "#7a90af",
+        primary: "#8fb8ff",
+        primarySoft: "#17304f",
+        primaryContrast: "#07111f",
+        success: "#1a8f5a",
+        successContrast: "#f4fff8",
+        danger: "#d14b41",
+        dangerSoft: "#3a1717",
+        inputBackground: "#102236",
+        inputBorder: "#244261",
+        inputText: "#edf4ff",
+        inputPlaceholder: "#7f96b7",
+        overlay: "rgba(2, 6, 23, 0.72)",
+    },
+};

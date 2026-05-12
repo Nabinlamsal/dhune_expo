@@ -1,7 +1,7 @@
+import { useNotifications } from "@/hooks/notifications/useNotifications";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
-import { useNotifications } from "@/hooks/notifications/useNotifications";
 
 export const unstable_settings = {
     initialRouteName: "home",
@@ -52,8 +52,6 @@ export default function TabsLayout() {
                     paddingBottom: 10,
                     borderTopWidth: 0,
                     backgroundColor: "#ffffff",
-                    borderTopLeftRadius: 22,
-                    borderTopRightRadius: 22,
                     elevation: 12,
                     shadowColor: "#040947",
                     shadowOpacity: 0.12,
@@ -66,8 +64,21 @@ export default function TabsLayout() {
                 },
             }}
         >
-            {/* Requests */}
             <Tabs.Screen
+                name="requests"
+                options={{
+                    title: "Home",
+                    tabBarIcon: ({ color, focused }) => (
+                        <Ionicons
+                            name={focused ? "home" : "home-outline"}
+                            color={color}
+                            size={focused ? 23 : 21}
+                        />
+                    ),
+                }}
+            />
+            {/* Requests */}
+            {/* <Tabs.Screen
                 name="requests"
                 options={{
                     title: "Requests",
@@ -79,7 +90,7 @@ export default function TabsLayout() {
                         />
                     ),
                 }}
-            />
+            /> */}
 
             {/* Alerts */}
             <Tabs.Screen
@@ -149,24 +160,17 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
     centerWrap: {
-        top: -24,
+        // top: -,
         justifyContent: "center",
         alignItems: "center",
     },
     centerBtn: {
-        width: 64,
-        height: 64,
+        width: 53,
+        height: 53,
         borderRadius: 32,
         backgroundColor: "#040947",
-        borderWidth: 3,
-        borderColor: "#ffffff",
-        shadowColor: "#040947",
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 6 },
         alignItems: "center",
         justifyContent: "center",
-        elevation: 12,
     },
     centerBtnActive: {
         backgroundColor: "#040947",

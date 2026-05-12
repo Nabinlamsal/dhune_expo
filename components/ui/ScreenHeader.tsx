@@ -1,3 +1,4 @@
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -16,6 +17,8 @@ export default function ScreenHeader({
     backHref,
     rightSlot,
 }: ScreenHeaderProps) {
+    const { theme } = useAppTheme();
+
     return (
         <View style={styles.wrap}>
             <View style={styles.row}>
@@ -25,18 +28,22 @@ export default function ScreenHeader({
                             onPress={() => router.replace(backHref as any)}
                             style={({ pressed }) => [
                                 styles.backButton,
+                                {
+                                    backgroundColor: theme.card,
+                                    borderColor: theme.border,
+                                },
                                 pressed && styles.pressed,
                             ]}
                             accessibilityRole="button"
                             accessibilityLabel="Go back"
                         >
-                            <Ionicons name="chevron-back" size={16} color="#0b2457" />
+                            <Ionicons name="chevron-back" size={16} color={theme.primary} />
                         </Pressable>
                     ) : null}
                     <View style={styles.copy}>
-                        <Text style={styles.title}>{title}</Text>
+                        <Text style={[styles.title, { color: theme.primary }]}>{title}</Text>
                         {subtitle ? (
-                            <Text style={styles.subtitle}>{subtitle}</Text>
+                            <Text style={[styles.subtitle, { color: theme.textMuted }]}>{subtitle}</Text>
                         ) : null}
                     </View>
                 </View>
@@ -81,12 +88,10 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: "800",
-        color: "#0b2457",
     },
     subtitle: {
         marginTop: 4,
         fontSize: 12,
-        color: "#5b6b86",
         fontWeight: "600",
     },
 });

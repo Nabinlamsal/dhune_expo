@@ -1,3 +1,4 @@
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { Pressable, StyleSheet, Text } from "react-native";
 
 interface ButtonProps {
@@ -7,18 +8,23 @@ interface ButtonProps {
 }
 
 export default function Button({ title, onPress, variant = "primary" }: ButtonProps) {
+    const { theme } = useAppTheme();
+
     return (
         <Pressable
             onPress={onPress}
-            style={[
+            style={({ pressed }) => [
                 styles.button,
-                variant === "primary" ? styles.primary : styles.secondary,
+                {
+                    backgroundColor: variant === "primary" ? theme.primary : theme.borderStrong,
+                },
+                pressed && styles.pressed,
             ]}
         >
             <Text
                 style={[
                     styles.text,
-                    variant === "primary" ? styles.primaryText : styles.secondaryText,
+                    { color: variant === "primary" ? theme.primaryContrast : theme.text },
                 ]}
             >
                 {title}
@@ -35,24 +41,11 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
 
-    primary: {
-        backgroundColor: "#040947",
-    },
-
-    secondary: {
-        backgroundColor: "#6187c2",
-    },
-
     text: {
         fontSize: 16,
         fontWeight: "600",
     },
-
-    primaryText: {
-        color: "white",
-    },
-
-    secondaryText: {
-        color: "white",
+    pressed: {
+        opacity: 0.88,
     },
 });

@@ -243,7 +243,7 @@ export default function ProfileScreen() {
                             style={({ pressed }) => [styles.logoutBtn, pressed && styles.logoutBtnPressed]}
                             onPress={handleLogout}
                         >
-                            <Ionicons name="log-out-outline" size={17} color="#ffffff" />
+                            <Ionicons name="log-out-outline" size={17} color="#991b1bd9" />
                             <Text style={styles.logoutText}>{isLoggingOut ? "Logging out..." : "Log out"}</Text>
                         </Pressable>
                     </>
@@ -472,10 +472,10 @@ const styles = StyleSheet.create({
     },
     logoutBtn: {
         height: 46,
-        backgroundColor: "#991b1b",
+        backgroundColor: "#991b1b40",
         borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "#7f1d1d",
+        borderWidth: 0.5,
+        borderColor: "#991b1b",
         alignItems: "center",
         justifyContent: "center",
         flexDirection: "row",
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     },
     logoutText: {
         fontSize: 13,
-        color: "#ffffff",
+        color: "#991b1bd9",
         fontWeight: "700",
     },
     retryText: {

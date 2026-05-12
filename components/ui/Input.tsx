@@ -1,11 +1,22 @@
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { StyleSheet, TextInput, TextInputProps } from "react-native";
 
 export default function Input(props: TextInputProps) {
+    const { theme } = useAppTheme();
+
     return (
         <TextInput
             {...props}
-            style={[styles.input, props.style]}
-            placeholderTextColor="#9ca3af"
+            style={[
+                styles.input,
+                {
+                    borderColor: theme.inputBorder,
+                    backgroundColor: theme.inputBackground,
+                    color: theme.inputText,
+                },
+                props.style,
+            ]}
+            placeholderTextColor={theme.inputPlaceholder}
         />
     );
 }
@@ -13,11 +24,9 @@ export default function Input(props: TextInputProps) {
 const styles = StyleSheet.create({
     input: {
         borderWidth: 1,
-        borderColor: "#e5e7eb",
         borderRadius: 8,
         paddingVertical: 12,
         paddingHorizontal: 14,
         fontSize: 16,
-        backgroundColor: "white",
     },
 });

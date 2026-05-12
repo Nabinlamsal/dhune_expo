@@ -24,9 +24,13 @@ export function ThemeProvider({ children }: PropsWithChildren) {
 
     useEffect(() => {
         const loadMode = async () => {
-            const stored = await AsyncStorage.getItem(STORAGE_KEY);
-            if (stored === "light" || stored === "dark") {
-                setModeState(stored);
+            try {
+                const stored = await AsyncStorage.getItem(STORAGE_KEY);
+                if (stored === "light" || stored === "dark") {
+                    setModeState(stored);
+                }
+            } catch {
+                setModeState("light");
             }
         };
 
@@ -35,7 +39,11 @@ export function ThemeProvider({ children }: PropsWithChildren) {
 
     const setMode = async (nextMode: AppThemeMode) => {
         setModeState(nextMode);
-        await AsyncStorage.setItem(STORAGE_KEY, nextMode);
+        try {
+            await AsyncStorage.setItem(STORAGE_KEY, nextMode);
+        } catch {
+            // Keep the current session interactive even if persistence fails.
+        }
     };
 
     const value = useMemo<ThemeContextValue>(

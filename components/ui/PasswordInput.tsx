@@ -1,3 +1,4 @@
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
@@ -20,13 +21,29 @@ export default function PasswordInput({
     ...props
 }: PasswordInputProps) {
     const [visible, setVisible] = useState(false);
+    const { theme } = useAppTheme();
 
     return (
-        <View style={[styles.container, containerStyle]}>
+        <View
+            style={[
+                styles.container,
+                {
+                    borderColor: theme.inputBorder,
+                    backgroundColor: theme.inputBackground,
+                },
+                containerStyle,
+            ]}
+        >
             <TextInput
                 {...props}
-                style={[styles.input, style]}
-                placeholderTextColor="#9ca3af"
+                style={[
+                    styles.input,
+                    {
+                        color: theme.inputText,
+                    },
+                    style,
+                ]}
+                placeholderTextColor={theme.inputPlaceholder}
                 secureTextEntry={!visible}
             />
             <Pressable
@@ -39,7 +56,7 @@ export default function PasswordInput({
                 <Ionicons
                     name={visible ? "eye-off-outline" : "eye-outline"}
                     size={20}
-                    color="#64748b"
+                    color={theme.textMuted}
                 />
             </Pressable>
         </View>
@@ -52,9 +69,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         borderWidth: 1,
-        borderColor: "#e5e7eb",
         borderRadius: 8,
-        backgroundColor: "#ffffff",
         paddingRight: 6,
     },
     input: {
@@ -62,7 +77,6 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 14,
         fontSize: 16,
-        color: "#0f172a",
     },
     iconButton: {
         width: 38,
@@ -72,6 +86,6 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     iconButtonPressed: {
-        backgroundColor: "#f1f5f9",
+        opacity: 0.8,
     },
 });
