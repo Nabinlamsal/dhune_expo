@@ -1,4 +1,5 @@
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { useLogout } from "@/hooks/auth/useLogout";
 import { useMyProfile } from "@/hooks/users/useMyProfile";
 import { MyProfile } from "@/types/users/my-profile";
@@ -83,37 +84,46 @@ function extractProfileImage(profile: MyProfile): string | null {
 }
 
 function DetailRow({ label, value }: ProfileDetail) {
+    const { theme } = useAppTheme();
+
     return (
         <View style={styles.detailRow}>
-            <View style={styles.detailDot} />
+            <View style={[styles.detailDot, { backgroundColor: theme.primary }]} />
             <View style={styles.detailCopy}>
-                <Text style={styles.detailLabel}>{label}</Text>
-                <Text style={styles.detailValue}>{value}</Text>
+                <Text style={[styles.detailLabel, { color: theme.textMuted }]}>{label}</Text>
+                <Text style={[styles.detailValue, { color: theme.text }]}>{value}</Text>
             </View>
         </View>
     );
 }
 
 function OptionRow({ icon, title, subtitle, onPress }: OptionRowProps) {
+    const { theme } = useAppTheme();
+
     return (
         <Pressable
-            style={({ pressed }) => [styles.optionRow, pressed && styles.optionRowPressed]}
+            style={({ pressed }) => [
+                styles.optionRow,
+                { borderBottomColor: theme.border },
+                pressed && styles.optionRowPressed,
+            ]}
             onPress={onPress}
         >
-            <View style={styles.optionIcon}>
-                <Ionicons name={icon} size={18} color="#0b2457" />
+            <View style={[styles.optionIcon, { backgroundColor: theme.primarySoft, borderColor: theme.border }]}>
+                <Ionicons name={icon} size={18} color={theme.primary} />
             </View>
             <View style={styles.optionCopy}>
-                <Text style={styles.optionTitle}>{title}</Text>
-                <Text style={styles.optionSubtitle}>{subtitle}</Text>
+                <Text style={[styles.optionTitle, { color: theme.text }]}>{title}</Text>
+                <Text style={[styles.optionSubtitle, { color: theme.textMuted }]}>{subtitle}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#64748b" />
+            <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
         </Pressable>
     );
 }
 
 export default function ProfileScreen() {
     const { data, isLoading, isError, refetch, isFetching } = useMyProfile();
+    const { theme } = useAppTheme();
     const logout = useLogout();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -172,7 +182,7 @@ export default function ProfileScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
                     title="Profile"
@@ -180,51 +190,55 @@ export default function ProfileScreen() {
                 />
 
                 {isLoading ? (
-                    <View style={styles.stateCard}>
-                        <Text style={styles.stateTitle}>Loading profile...</Text>
+                    <View style={[styles.stateCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        <Text style={[styles.stateTitle, { color: theme.primary }]}>Loading profile...</Text>
                     </View>
                 ) : null}
 
                 {isError ? (
-                    <View style={styles.stateCard}>
-                        <Text style={styles.stateTitle}>Could not load profile</Text>
+                    <View style={[styles.stateCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        <Text style={[styles.stateTitle, { color: theme.primary }]}>Could not load profile</Text>
                         <Pressable
-                            style={({ pressed }) => [styles.retryBtn, pressed && styles.logoutBtnPressed]}
+                            style={({ pressed }) => [
+                                styles.retryBtn,
+                                { backgroundColor: theme.surfaceMuted, borderColor: theme.border },
+                                pressed && styles.logoutBtnPressed,
+                            ]}
                             onPress={() => refetch()}
                         >
-                            <Text style={styles.retryText}>{isFetching ? "Retrying..." : "Try again"}</Text>
+                            <Text style={[styles.retryText, { color: theme.primary }]}>{isFetching ? "Retrying..." : "Try again"}</Text>
                         </Pressable>
                     </View>
                 ) : null}
 
                 {profile ? (
                     <>
-                        <View style={styles.headerCard}>
-                            <View style={styles.headerBlobOne} />
-                            <View style={styles.headerBlobTwo} />
-                            <View style={styles.avatar}>
+                        <View style={[styles.headerCard, { backgroundColor: theme.mode === "dark" ? theme.surfaceMuted : "#dff5ff", borderColor: theme.border }]}>
+                            <View style={[styles.headerBlobOne, { backgroundColor: theme.primarySoft }]} />
+                            <View style={[styles.headerBlobTwo, { backgroundColor: theme.accentSoft }]} />
+                            <View style={[styles.avatar, { backgroundColor: theme.card, borderColor: theme.borderStrong }]}>
                                 {profile.avatarUrl ? (
                                     <Image source={{ uri: profile.avatarUrl }} style={styles.avatarImage} />
                                 ) : (
-                                    <Ionicons name="person-outline" size={36} color="#0b2457" />
+                                    <Ionicons name="person-outline" size={36} color={theme.primary} />
                                 )}
                             </View>
-                            <Text style={styles.name}>{profile.displayName}</Text>
-                            <View style={styles.rolePill}>
+                            <Text style={[styles.name, { color: theme.text }]}>{profile.displayName}</Text>
+                            <View style={[styles.rolePill, { backgroundColor: theme.primary }]}>
                                 <Text style={styles.role}>{profile.role}</Text>
                             </View>
-                            <Text style={styles.joined}>Joined {formatDate(profile.joinedAt)}</Text>
+                            <Text style={[styles.joined, { color: theme.textMuted }]}>Joined {formatDate(profile.joinedAt)}</Text>
                         </View>
 
 
-                        <View style={styles.detailsCard}>
-                            <Text style={styles.detailsTitle}>Account Overview</Text>
+                        <View style={[styles.detailsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                            <Text style={[styles.detailsTitle, { color: theme.primary }]}>Account Overview</Text>
                             {profile.details.map((item, index) => (
                                 <DetailRow key={`${item.label}-${index}`} label={item.label} value={item.value} />
                             ))}
                         </View>
 
-                        <View style={styles.optionsCard}>
+                        <View style={[styles.optionsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                             <OptionRow
                                 icon="create-outline"
                                 title="Update Profile Details"
@@ -243,8 +257,8 @@ export default function ProfileScreen() {
                             style={({ pressed }) => [styles.logoutBtn, pressed && styles.logoutBtnPressed]}
                             onPress={handleLogout}
                         >
-                            <Ionicons name="log-out-outline" size={17} color="#991b1bd9" />
-                            <Text style={styles.logoutText}>{isLoggingOut ? "Logging out..." : "Log out"}</Text>
+                            <Ionicons name="log-out-outline" size={17} color={theme.danger} />
+                            <Text style={[styles.logoutText, { color: theme.danger }]}>{isLoggingOut ? "Logging out..." : "Log out"}</Text>
                         </Pressable>
                     </>
                 ) : null}
@@ -256,7 +270,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: "#edf4ff",
     },
     container: {
         paddingHorizontal: 14,
@@ -265,10 +278,8 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     stateCard: {
-        backgroundColor: "#ffffff",
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: "#dbe7ff",
         padding: 14,
         alignItems: "center",
         gap: 8,
@@ -276,26 +287,21 @@ const styles = StyleSheet.create({
     stateTitle: {
         fontSize: 13,
         fontWeight: "600",
-        color: "#1e3a8a",
     },
     retryBtn: {
         minWidth: 110,
         height: 38,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: "#c5d4f5",
-        backgroundColor: "#f8fbff",
         alignItems: "center",
         justifyContent: "center",
     },
     headerCard: {
-        backgroundColor: "#dff5ff",
         borderRadius: 16,
         alignItems: "center",
         paddingVertical: 16,
         paddingHorizontal: 12,
         borderWidth: 1,
-        borderColor: "#cbe8fa",
         overflow: "hidden",
         position: "relative",
     },
@@ -306,7 +312,6 @@ const styles = StyleSheet.create({
         borderRadius: 80,
         right: -45,
         top: -45,
-        backgroundColor: "#bae6fd",
     },
     headerBlobTwo: {
         position: "absolute",
@@ -315,15 +320,12 @@ const styles = StyleSheet.create({
         borderRadius: 80,
         left: -55,
         bottom: -74,
-        backgroundColor: "#bfdbfe",
     },
     avatar: {
         width: 82,
         height: 82,
         borderRadius: 41,
         borderWidth: 1,
-        borderColor: "#bbd8ee",
-        backgroundColor: "#f8fcff",
         alignItems: "center",
         justifyContent: "center",
         overflow: "hidden",
@@ -336,7 +338,6 @@ const styles = StyleSheet.create({
     name: {
         fontSize: 18,
         fontWeight: "700",
-        color: "#0f172a",
         textAlign: "center",
     },
     rolePill: {
@@ -344,7 +345,6 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         paddingHorizontal: 10,
         paddingVertical: 4,
-        backgroundColor: "#0b2457",
     },
     role: {
         fontSize: 11,
@@ -355,7 +355,6 @@ const styles = StyleSheet.create({
     joined: {
         marginTop: 5,
         fontSize: 11,
-        color: "#1f3a7a",
         fontWeight: "500",
     },
     statsCard: {
@@ -369,16 +368,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         borderRadius: 12,
-        backgroundColor: "#ffffff",
         borderWidth: 1,
-        borderColor: "#dbe7ff",
         paddingVertical: 10,
         paddingHorizontal: 4,
     },
     statValue: {
         fontSize: 15,
         fontWeight: "700",
-        color: "#0b2457",
     },
     statLabel: {
         marginTop: 1,
@@ -408,7 +404,6 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: "#93c5fd",
         marginTop: 6,
     },
     detailCopy: {
@@ -416,7 +411,6 @@ const styles = StyleSheet.create({
     },
     detailLabel: {
         fontSize: 11,
-        color: "#5b6b86",
         fontWeight: "700",
         marginBottom: 2,
         textTransform: "uppercase",
@@ -424,14 +418,11 @@ const styles = StyleSheet.create({
     },
     detailValue: {
         fontSize: 15,
-        color: "#0f172a",
         fontWeight: "500",
     },
     optionsCard: {
-        backgroundColor: "#ffffff",
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: "#dbe7ff",
         overflow: "hidden",
     },
     optionRow: {
@@ -450,11 +441,9 @@ const styles = StyleSheet.create({
         width: 38,
         height: 38,
         borderRadius: 19,
-        backgroundColor: "#eff6ff",
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
-        borderColor: "#dbe7ff",
     },
     optionCopy: {
         flex: 1,
@@ -462,12 +451,10 @@ const styles = StyleSheet.create({
     optionTitle: {
         fontSize: 13,
         fontWeight: "700",
-        color: "#0f172a",
     },
     optionSubtitle: {
         marginTop: 2,
         fontSize: 11,
-        color: "#5b6b86",
         fontWeight: "500",
     },
     logoutBtn: {
@@ -486,12 +473,10 @@ const styles = StyleSheet.create({
     },
     logoutText: {
         fontSize: 13,
-        color: "#991b1bd9",
         fontWeight: "700",
     },
     retryText: {
         fontSize: 13,
-        color: "#1d4ed8",
         fontWeight: "600",
     },
 });

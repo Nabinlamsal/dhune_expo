@@ -1,5 +1,6 @@
 import OfferBidCard from "@/components/offers/OfferBidCard";
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAcceptOffer, useOffersByRequest, useRejectOffer } from "@/hooks/orders/useOffer";
 import { useCancelRequest, useRequestDetail } from "@/hooks/orders/useRequest";
 import { Offer } from "@/types/orders/offers";
@@ -22,13 +23,15 @@ type DetailRowProps = {
 };
 
 function DetailRow({ label, value, icon }: DetailRowProps) {
+    const { theme } = useAppTheme();
+
     return (
-        <View style={styles.detailRow}>
+        <View style={[styles.detailRow, { borderBottomColor: theme.border }]}>
             <View style={styles.detailLabelWrap}>
-                <Ionicons name={icon} size={12} color={PRIMARY} />
-                <Text style={styles.detailLabel}>{label}</Text>
+                <Ionicons name={icon} size={12} color={theme.primary} />
+                <Text style={[styles.detailLabel, { color: theme.textMuted }]}>{label}</Text>
             </View>
-            <Text style={styles.detailValue} numberOfLines={2}>
+            <Text style={[styles.detailValue, { color: theme.primary }]} numberOfLines={2}>
                 {value ?? "-"}
             </Text>
         </View>
@@ -36,9 +39,11 @@ function DetailRow({ label, value, icon }: DetailRowProps) {
 }
 
 function SectionCard({ children }: { children: ReactNode }) {
+    const { theme } = useAppTheme();
+
     return (
-        <View style={styles.section}>
-            <View style={styles.sectionGloss} />
+        <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }]}>
+            <View style={[styles.sectionGloss, { backgroundColor: theme.mode === "dark" ? "rgba(255,255,255,0.04)" : "#ffffffb8" }]} />
             {children}
         </View>
     );
@@ -85,6 +90,7 @@ const formatDateTime = (value?: string | null) => {
 
 export default function RequestDetailScreen() {
     const router = useRouter();
+    const { theme } = useAppTheme();
     const { id, ref } = useLocalSearchParams<{ id: string; ref?: string }>();
     const requestId = String(id ?? "");
 
@@ -178,22 +184,22 @@ export default function RequestDetailScreen() {
 
     if (isLoading) {
         return (
-            <SafeAreaView style={styles.safe}>
-                <Text style={styles.centerText}>Loading request details...</Text>
+            <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+                <Text style={[styles.centerText, { color: theme.textMuted }]}>Loading request details...</Text>
             </SafeAreaView>
         );
     }
 
     if (!request) {
         return (
-            <SafeAreaView style={styles.safe}>
-                <Text style={styles.centerText}>Request not found.</Text>
+            <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+                <Text style={[styles.centerText, { color: theme.textMuted }]}>Request not found.</Text>
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
                     title="Request Details"
@@ -201,7 +207,7 @@ export default function RequestDetailScreen() {
                     backHref="/(tabs)/requests"
                 />
 
-                <View style={styles.heroCard}>
+                <View style={[styles.heroCard, { shadowColor: theme.shadow }]}>
                     <View style={styles.heroTop}>
                         <Text style={styles.heroTitle}>Request Details</Text>
                         <View style={styles.statusPill}>
@@ -214,7 +220,7 @@ export default function RequestDetailScreen() {
                             <Text style={styles.heroMetaText}>{ref ?? compactId("Rq", request.id)}</Text>
                         </View>
                         <View style={styles.heroMetaChip}>
-                            <Ionicons name="wallet-outline" size={12} color={PRIMARY_ACCENT} />
+                            <Ionicons name="wallet-outline" size={12} color={theme.accent} />
                             <Text style={styles.heroMetaText}>{request.payment_method ?? "-"}</Text>
                         </View>
                     </View>
@@ -232,10 +238,10 @@ export default function RequestDetailScreen() {
                     </View>
                 ) : null}
 
-                <Text style={styles.sectionTitle}>Offers & Bids</Text>
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Offers & Bids</Text>
                 <SectionCard>
                     {offersLoading ? (
-                        <Text style={styles.emptyText}>Loading bids...</Text>
+                        <Text style={[styles.emptyText, { color: theme.textMuted }]}>Loading bids...</Text>
                     ) : pendingOffers.length ? (
                         <View style={styles.offerStack}>
                             {pendingOffers.map((offer) => {
@@ -260,39 +266,39 @@ export default function RequestDetailScreen() {
                             })}
                         </View>
                     ) : (
-                        <Text style={styles.emptyText}>No active offers yet. Vendors will appear here once they bid.</Text>
+                        <Text style={[styles.emptyText, { color: theme.textMuted }]}>No active offers yet. Vendors will appear here once they bid.</Text>
                     )}
                 </SectionCard>
 
-                <Text style={styles.sectionTitle}>Pickup Window</Text>
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Pickup Window</Text>
                 <SectionCard>
                     <View style={styles.windowRow}>
                         <View style={styles.windowCol}>
-                            <Text style={styles.windowLabel}>From</Text>
-                            <Text style={styles.windowValue}>{pickupFrom}</Text>
+                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>From</Text>
+                            <Text style={[styles.windowValue, { color: theme.primary }]}>{pickupFrom}</Text>
                         </View>
-                        <View style={styles.windowDivider} />
+                        <View style={[styles.windowDivider, { backgroundColor: theme.border }]} />
                         <View style={styles.windowCol}>
-                            <Text style={styles.windowLabel}>To</Text>
-                            <Text style={styles.windowValue}>{pickupTo}</Text>
+                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>To</Text>
+                            <Text style={[styles.windowValue, { color: theme.primary }]}>{pickupTo}</Text>
                         </View>
                     </View>
                 </SectionCard>
 
-                <Text style={styles.sectionTitle}>Pickup Details</Text>
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Pickup Details</Text>
                 <SectionCard>
                     <DetailRow label="Address" value={request.pickup_address} icon="location-outline" />
                     <DetailRow label="Coordinates" value={pickupCoords} icon="navigate-outline" />
                     <DetailRow label="Created" value={formatDateTime(request.created_at)} icon="calendar-outline" />
                 </SectionCard>
 
-                <Text style={styles.sectionTitle}>Services</Text>
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Services</Text>
                 {request.services?.length ? (
                     request.services.map((service, idx) => (
                         <SectionCard key={`${service.category_id}-${idx}`}>
                             <View style={styles.serviceTitleRow}>
-                                <Ionicons name="construct-outline" size={14} color={PRIMARY} />
-                                <Text style={styles.serviceTitle}>Service {idx + 1}</Text>
+                                <Ionicons name="construct-outline" size={14} color={theme.primary} />
+                                <Text style={[styles.serviceTitle, { color: theme.primary }]}>Service {idx + 1}</Text>
                             </View>
                             <DetailRow label="Category" value={`Ct${idx + 1}`} icon="pricetag-outline" />
                             <DetailRow label="Unit" value={service.selected_unit} icon="cube-outline" />
@@ -301,7 +307,7 @@ export default function RequestDetailScreen() {
                         </SectionCard>
                     ))
                 ) : (
-                    <Text style={styles.emptyText}>No services in this request.</Text>
+                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>No services in this request.</Text>
                 )}
             </ScrollView>
         </SafeAreaView>

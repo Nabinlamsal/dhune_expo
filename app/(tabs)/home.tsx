@@ -1,6 +1,7 @@
 import IncomingOfferPopup from "@/components/offers/IncomingOfferPopup";
 import NotificationButton from "@/components/ui/NotificationButton";
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAcceptOffer, useRejectOffer } from "@/hooks/orders/useOffer";
 import { useMyOrderStats, useMyOrders } from "@/hooks/orders/useOrder";
 import { useMyRequestStats, useMyRequests } from "@/hooks/orders/useRequest";
@@ -81,13 +82,15 @@ function StatCard({
     icon: keyof typeof Ionicons.glyphMap;
     accent?: boolean;
 }) {
+    const { theme } = useAppTheme();
+
     return (
-        <View style={styles.statCard}>
-            <View style={[styles.statIcon, accent && styles.statIconAccent]}>
-                <Ionicons name={icon} size={16} color={accent ? "#040947" : "#475569"} />
+        <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={[styles.statIcon, { backgroundColor: accent ? theme.primarySoft : theme.surfaceMuted }]}>
+                <Ionicons name={icon} size={16} color={accent ? theme.primary : theme.textMuted} />
             </View>
-            <Text style={styles.statValue}>{value ?? "-"}</Text>
-            <Text style={styles.statLabel}>{label}</Text>
+            <Text style={[styles.statValue, { color: theme.primary }]}>{value ?? "-"}</Text>
+            <Text style={[styles.statLabel, { color: theme.textMuted }]}>{label}</Text>
         </View>
     );
 }
@@ -106,12 +109,14 @@ function StatusPill({ status, type }: { status: string; type: "request" | "order
 }
 
 function SectionHeader({ title, onPress }: { title: string; onPress?: () => void }) {
+    const { theme } = useAppTheme();
+
     return (
         <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{title}</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
             {onPress && (
                 <Pressable onPress={onPress}>
-                    <Text style={styles.seeAll}>See all</Text>
+                    <Text style={[styles.seeAll, { color: theme.accent }]}>See all</Text>
                 </Pressable>
             )}
         </View>
@@ -119,16 +124,19 @@ function SectionHeader({ title, onPress }: { title: string; onPress?: () => void
 }
 
 function EmptyState({ label }: { label: string }) {
+    const { theme } = useAppTheme();
+
     return (
-        <View style={styles.emptyState}>
-            <Ionicons name="folder-open-outline" size={28} color="#d1d5db" />
-            <Text style={styles.emptyText}>{label}</Text>
+        <View style={[styles.emptyState, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Ionicons name="folder-open-outline" size={28} color={theme.textSoft} />
+            <Text style={[styles.emptyText, { color: theme.textSoft }]}>{label}</Text>
         </View>
     );
 }
 
 export default function HomeScreen() {
     const router = useRouter();
+    const { theme } = useAppTheme();
     const { data: requestStats } = useMyRequestStats();
     const { data: orderStats } = useMyOrderStats();
     const { data: requestsData } = useMyRequests(6, 0);
@@ -192,7 +200,7 @@ export default function HomeScreen() {
     const canShowPopup = Boolean(incomingOffer && incomingOffer.offer.id !== dismissedOfferId);
 
     return (
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
                 <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
                     <View style={styles.header}>
@@ -208,12 +216,12 @@ export default function HomeScreen() {
                         onPress={() => router.push("/(tabs)/requests/create")}
                     >
                         <View style={styles.ctaLeft}>
-                            <Text style={styles.ctaLabel}>Ready for laundry?</Text>
+                            <Text style={[styles.ctaLabel, { color: theme.accent }]}>Ready for laundry?</Text>
                             <Text style={styles.ctaTitle}>Create a Request</Text>
                             <Text style={styles.ctaSub}>Vendors bid, you choose the best offer.</Text>
                         </View>
                         <View style={styles.ctaIconWrap}>
-                            <Ionicons name="add-circle" size={42} color="#ebbc01" />
+                            <Ionicons name="add-circle" size={42} color={theme.accent} />
                         </View>
                     </Pressable>
 
@@ -253,19 +261,23 @@ export default function HomeScreen() {
                         recentRequests.map((req: any, index) => (
                             <Pressable
                                 key={String(req.id)}
-                                style={({ pressed }) => [styles.listCard, pressed && styles.listCardPressed]}
+                                style={({ pressed }) => [
+                                    styles.listCard,
+                                    { backgroundColor: theme.card, borderColor: theme.border },
+                                    pressed && styles.listCardPressed,
+                                ]}
                                 onPress={() =>
                                     router.push(`/requests/${req.id}?ref=${encodeURIComponent(`Rq${index + 1}`)}` as any)
                                 }
                             >
-                                <View style={styles.listCardIcon}>
-                                    <Ionicons name="shirt-outline" size={20} color="#040947" />
+                                <View style={[styles.listCardIcon, { backgroundColor: theme.accentSoft }]}>
+                                    <Ionicons name="shirt-outline" size={20} color={theme.primary} />
                                 </View>
                                 <View style={styles.listCardBody}>
-                                    <Text style={styles.listCardTitle} numberOfLines={1}>
+                                    <Text style={[styles.listCardTitle, { color: theme.text }]} numberOfLines={1}>
                                         {getRequestCategoryName(req)}
                                     </Text>
-                                    <Text style={styles.listCardMeta}>{formatDate(req.created_at)}</Text>
+                                    <Text style={[styles.listCardMeta, { color: theme.textSoft }]}>{formatDate(req.created_at)}</Text>
                                 </View>
                                 <StatusPill status={String(req.status)} type="request" />
                             </Pressable>
@@ -279,21 +291,25 @@ export default function HomeScreen() {
                         recentOrders.map((order, index) => (
                             <Pressable
                                 key={order.id}
-                                style={({ pressed }) => [styles.listCard, pressed && styles.listCardPressed]}
+                                style={({ pressed }) => [
+                                    styles.listCard,
+                                    { backgroundColor: theme.card, borderColor: theme.border },
+                                    pressed && styles.listCardPressed,
+                                ]}
                                 onPress={() =>
                                     router.push(`/orders/${order.id}?ref=${encodeURIComponent(`Or${index + 1}`)}` as any)
                                 }
                             >
-                                <View style={styles.listCardIcon}>
-                                    <Ionicons name="bag-handle-outline" size={20} color="#040947" />
+                                <View style={[styles.listCardIcon, { backgroundColor: theme.accentSoft }]}>
+                                    <Ionicons name="bag-handle-outline" size={20} color={theme.primary} />
                                 </View>
                                 <View style={styles.listCardBody}>
-                                    <Text style={styles.listCardTitle} numberOfLines={1}>
+                                    <Text style={[styles.listCardTitle, { color: theme.text }]} numberOfLines={1}>
                                         {getOrderCategoryName(order)}
                                     </Text>
-                                    <Text style={styles.listCardMeta}>
+                                    <Text style={[styles.listCardMeta, { color: theme.textSoft }]}>
                                         {`Or${index + 1}`} • {formatDate(order.created_at)} •{" "}
-                                        <Text style={styles.price}>Rs {order.final_price}</Text>
+                                        <Text style={[styles.price, { color: theme.primary }]}>Rs {order.final_price}</Text>
                                     </Text>
                                 </View>
                                 <StatusPill status={order.order_status} type="order" />
@@ -371,7 +387,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: "#f5f6fa",
     },
     scroll: {
         paddingHorizontal: 16,
@@ -423,12 +438,10 @@ const styles = StyleSheet.create({
     statCard: {
         flex: 1,
         minWidth: "47%",
-        backgroundColor: "#ffffff",
         borderRadius: 12,
         padding: 12,
         alignItems: "flex-start",
         borderWidth: 1,
-        borderColor: "#e5e7eb",
     },
     statIcon: {
         width: 30,
@@ -439,17 +452,12 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         marginBottom: 8,
     },
-    statIconAccent: {
-        backgroundColor: "#ebf2ff",
-    },
     statValue: {
         fontSize: 19,
         fontWeight: "800",
-        color: "#040947",
     },
     statLabel: {
         fontSize: 10,
-        color: "#64748b",
         marginTop: 2,
     },
     sectionHeader: {
@@ -461,20 +469,18 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 15,
         fontWeight: "700",
-        color: "#111827",
     },
     seeAll: {
         fontSize: 12,
-        color: "#ebbc01",
         fontWeight: "700",
     },
     listCard: {
-        backgroundColor: "#fff",
         borderRadius: 12,
         padding: 12,
         flexDirection: "row",
         alignItems: "center",
         marginBottom: 9,
+        borderWidth: 1,
     },
     listCardPressed: {
         opacity: 0.85,
@@ -484,7 +490,6 @@ const styles = StyleSheet.create({
         width: 38,
         height: 38,
         borderRadius: 10,
-        backgroundColor: "#ebbc0115",
         alignItems: "center",
         justifyContent: "center",
         marginRight: 10,
@@ -495,15 +500,12 @@ const styles = StyleSheet.create({
     listCardTitle: {
         fontSize: 13,
         fontWeight: "600",
-        color: "#111827",
     },
     listCardMeta: {
         fontSize: 11,
-        color: "#9ca3af",
         marginTop: 2,
     },
     price: {
-        color: "#040947",
         fontWeight: "700",
     },
     pill: {
@@ -525,7 +527,7 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
     emptyState: {
-        backgroundColor: "#fff",
+        borderWidth: 1,
         borderRadius: 12,
         paddingVertical: 24,
         alignItems: "center",
@@ -535,7 +537,6 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 12,
-        color: "#d1d5db",
         fontWeight: "500",
     },
 });

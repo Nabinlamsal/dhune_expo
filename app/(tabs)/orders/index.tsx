@@ -1,4 +1,5 @@
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { useMyOrders } from "@/hooks/orders/useOrder";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -34,6 +35,7 @@ const getOrderCategoryLabel = (order: any) => {
 
 export default function OrdersScreen() {
     const router = useRouter();
+    const { theme } = useAppTheme();
     const [page, setPage] = useState(0);
     const offset = page * PAGE_SIZE;
     const { data, isLoading, isFetching } = useMyOrders(PAGE_SIZE, offset);
@@ -43,7 +45,7 @@ export default function OrdersScreen() {
     const shouldShowPagination = canGoBack || canGoNext;
 
     return (
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
                     title="Orders"
@@ -51,9 +53,9 @@ export default function OrdersScreen() {
                 />
 
                 {isLoading ? (
-                    <Text style={styles.emptyText}>Loading orders...</Text>
+                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>Loading orders...</Text>
                 ) : orders.length === 0 ? (
-                    <Text style={styles.emptyText}>No orders found.</Text>
+                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>No orders found.</Text>
                 ) : (
                     orders.map((order, index) => {
                         const color = STATUS_COLORS[order.order_status] ?? "#9ca3af";
@@ -61,19 +63,23 @@ export default function OrdersScreen() {
                         return (
                             <Pressable
                                 key={order.id}
-                                style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+                                style={({ pressed }) => [
+                                    styles.card,
+                                    { backgroundColor: theme.card, borderColor: theme.border },
+                                    pressed && styles.pressed,
+                                ]}
                                 onPress={() =>
                                     router.push(`/orders/${order.id}?ref=${encodeURIComponent(orderRef)}` as any)
                                 }
                             >
-                                <View style={styles.iconWrap}>
-                                    <Ionicons name="bag-handle-outline" size={18} color="#040947" />
+                                <View style={[styles.iconWrap, { backgroundColor: theme.primarySoft }]}>
+                                    <Ionicons name="bag-handle-outline" size={18} color={theme.primary} />
                                 </View>
                                 <View style={styles.body}>
-                                    <Text style={styles.title} numberOfLines={1}>
+                                    <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
                                         {getOrderCategoryLabel(order)}
                                     </Text>
-                                    <Text style={styles.meta}>
+                                    <Text style={[styles.meta, { color: theme.textSoft }]}>
                                         {orderRef} · {formatDate(order.created_at)} · Rs {order.final_price}
                                     </Text>
                                 </View>
@@ -94,13 +100,14 @@ export default function OrdersScreen() {
                             onPress={() => setPage((current) => Math.max(0, current - 1))}
                             style={({ pressed }) => [
                                 styles.pageBtn,
+                                { backgroundColor: theme.card, borderColor: theme.border },
                                 pressed && styles.pressed,
                                 (!canGoBack || isFetching) && styles.disabled,
                             ]}
                         >
-                            <Text style={styles.pageBtnText}>Previous</Text>
+                            <Text style={[styles.pageBtnText, { color: theme.text }]}>Previous</Text>
                         </Pressable>
-                        <Text style={styles.paginationText}>
+                        <Text style={[styles.paginationText, { color: theme.textMuted }]}>
                             Page {page + 1}
                             {isFetching ? " ..." : ""}
                         </Text>
@@ -109,11 +116,12 @@ export default function OrdersScreen() {
                             onPress={() => setPage((current) => current + 1)}
                             style={({ pressed }) => [
                                 styles.pageBtn,
+                                { backgroundColor: theme.card, borderColor: theme.border },
                                 pressed && styles.pressed,
                                 (!canGoNext || isFetching) && styles.disabled,
                             ]}
                         >
-                            <Text style={styles.pageBtnText}>Next</Text>
+                            <Text style={[styles.pageBtnText, { color: theme.text }]}>Next</Text>
                         </Pressable>
                     </View>
                 ) : null}
@@ -125,7 +133,6 @@ export default function OrdersScreen() {
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: "#edf4ff",
     },
     scroll: {
         padding: 16,
@@ -141,35 +148,28 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         paddingHorizontal: 10,
         paddingVertical: 7,
-        backgroundColor: "#ffffff",
         borderWidth: 1,
-        borderColor: "#dbe7ff",
     },
     pageBtnText: {
         fontSize: 12,
         fontWeight: "700",
-        color: "#334155",
     },
     paginationText: {
         minWidth: 68,
         textAlign: "center",
         fontSize: 12,
-        color: "#6b7280",
     },
     emptyText: {
         textAlign: "center",
-        color: "#6b7280",
         marginTop: 24,
     },
     card: {
-        backgroundColor: "#fff",
         borderRadius: 16,
         padding: 12,
         flexDirection: "row",
         alignItems: "center",
         marginBottom: 10,
         borderWidth: 1,
-        borderColor: "#dbe7ff",
     },
     pressed: {
         opacity: 0.86,
@@ -183,7 +183,6 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#e8f0ff",
     },
     body: {
         flex: 1,
@@ -191,13 +190,11 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 14,
-        color: "#111827",
         fontWeight: "600",
     },
     meta: {
         marginTop: 2,
         fontSize: 12,
-        color: "#9ca3af",
     },
     pill: {
         borderRadius: 999,

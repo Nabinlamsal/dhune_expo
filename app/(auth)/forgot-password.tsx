@@ -2,6 +2,7 @@ import AuthScreen from "@/components/ui/AuthScreen";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import KeyboardWrapper from "@/components/ui/KeyboardWrapper";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { useForgotPassword } from "@/hooks/auth/useForgotPassword";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -9,6 +10,7 @@ import { Alert, StyleSheet, Text, View } from "react-native";
 
 export default function ForgotPasswordScreen() {
     const forgotPassword = useForgotPassword();
+    const { theme } = useAppTheme();
     const [email, setEmail] = useState("");
 
     const handleSubmit = async () => {
@@ -39,7 +41,7 @@ export default function ForgotPasswordScreen() {
                 onBackPress={() => router.back()}
             >
                 <View style={styles.field}>
-                    <Text style={styles.label}>Email</Text>
+                    <Text style={[styles.label, { color: theme.primary }]}>Email</Text>
                     <Input
                         placeholder="example@gmail.com"
                         value={email}
@@ -65,6 +67,5 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: "700",
-        color: "#0b2457",
     },
 });

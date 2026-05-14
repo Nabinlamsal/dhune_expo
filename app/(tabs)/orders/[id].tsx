@@ -1,6 +1,7 @@
 import ReportDisputeModal from "@/components/disputes/ReportDisputeModal";
 import RateVendorModal from "@/components/ratings/RateVendorModal";
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCreateDispute } from "@/hooks/disputes/useDispute";
 import { useUpsertOrderRating } from "@/hooks/ratings/useRating";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -28,13 +29,15 @@ type DetailRowProps = {
 };
 
 function DetailRow({ label, value, icon }: DetailRowProps) {
+    const { theme } = useAppTheme();
+
     return (
-        <View style={styles.detailRow}>
+        <View style={[styles.detailRow, { borderBottomColor: theme.border }]}>
             <View style={styles.detailLabelWrap}>
-                <Ionicons name={icon} size={12} color={PRIMARY} />
-                <Text style={styles.detailLabel}>{label}</Text>
+                <Ionicons name={icon} size={12} color={theme.primary} />
+                <Text style={[styles.detailLabel, { color: theme.textMuted }]}>{label}</Text>
             </View>
-            <Text style={styles.detailValue} numberOfLines={2}>
+            <Text style={[styles.detailValue, { color: theme.primary }]} numberOfLines={2}>
                 {value ?? "-"}
             </Text>
         </View>
@@ -42,9 +45,11 @@ function DetailRow({ label, value, icon }: DetailRowProps) {
 }
 
 function SectionCard({ children }: { children: ReactNode }) {
+    const { theme } = useAppTheme();
+
     return (
-        <View style={styles.section}>
-            <View style={styles.sectionGloss} />
+        <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }]}>
+            <View style={[styles.sectionGloss, { backgroundColor: theme.mode === "dark" ? "rgba(255,255,255,0.04)" : "#ffffffb8" }]} />
             {children}
         </View>
     );
@@ -70,6 +75,7 @@ const formatDateTime = (value?: string | null) => {
 
 export default function OrderDetailScreen() {
     const { id, ref } = useLocalSearchParams<{ id: string; ref?: string }>();
+    const { theme } = useAppTheme();
     const { data: order, isLoading } = useOrderDetail(String(id ?? ""));
     const upsertRatingMutation = useUpsertOrderRating();
     const createDisputeMutation = useCreateDispute();
@@ -186,22 +192,22 @@ export default function OrderDetailScreen() {
 
     if (isLoading) {
         return (
-            <SafeAreaView style={styles.safe}>
-                <Text style={styles.centerText}>Loading order details...</Text>
+            <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+                <Text style={[styles.centerText, { color: theme.textMuted }]}>Loading order details...</Text>
             </SafeAreaView>
         );
     }
 
     if (!order) {
         return (
-            <SafeAreaView style={styles.safe}>
-                <Text style={styles.centerText}>Order not found.</Text>
+            <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+                <Text style={[styles.centerText, { color: theme.textMuted }]}>Order not found.</Text>
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
                     title="Order Details"
@@ -209,7 +215,7 @@ export default function OrderDetailScreen() {
                     backHref="/(tabs)/orders"
                 />
 
-                <View style={styles.heroCard}>
+                <View style={[styles.heroCard, { shadowColor: theme.shadow }]}>
                     <View style={styles.heroTop}>
                         <Text style={styles.heroTitle}>Order Details</Text>
                         <View style={styles.statusPill}>
@@ -222,30 +228,30 @@ export default function OrderDetailScreen() {
                             <Text style={styles.heroMetaText}>{ref ?? compactId("Or", order.id)}</Text>
                         </View>
                         <View style={styles.heroMetaChip}>
-                            <Ionicons name="cash-outline" size={12} color={PRIMARY_ACCENT} />
+                            <Ionicons name="cash-outline" size={12} color={theme.accent} />
                             <Text style={styles.heroMetaText}>{`Rs ${order.final_price}`}</Text>
                         </View>
                     </View>
                 </View>
 
                 {isCompleted ? (
-                    <View style={styles.ratingCard}>
+                    <View style={[styles.ratingCard, { backgroundColor: theme.mode === "dark" ? theme.surfaceMuted : "#fffdf5", borderColor: theme.accent }]}>
                         <View style={styles.ratingContent}>
                             <Ionicons name={hasRated ? "checkmark-done-circle" : "star"} size={18} color={hasRated ? "#16a34a" : "#f59e0b"} />
                             <View style={{ flex: 1 }}>
-                                <Text style={styles.ratingTitle}>{hasRated ? "Vendor already rated" : "Rate your vendor"}</Text>
-                                <Text style={styles.ratingSubtitle}>
+                                <Text style={[styles.ratingTitle, { color: theme.text }]}>{hasRated ? "Vendor already rated" : "Rate your vendor"}</Text>
+                                <Text style={[styles.ratingSubtitle, { color: theme.textMuted }]}>
                                     {hasRated ? "You can submit again to update your rating anytime." : "Order completed. Share your review and star rating."}
                                 </Text>
                             </View>
                         </View>
-                        <Pressable style={({ pressed }) => [styles.rateBtn, pressed && styles.pressed]} onPress={handleOpenRating}>
+                        <Pressable style={({ pressed }) => [styles.rateBtn, { backgroundColor: theme.primary }, pressed && styles.pressed]} onPress={handleOpenRating}>
                             <Text style={styles.rateBtnText}>{hasRated ? "Update Rating" : "Rate Vendor"}</Text>
                         </Pressable>
                     </View>
                 ) : null}
 
-                <Text style={styles.sectionTitle}>Order Summary</Text>
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Order Summary</Text>
                 <SectionCard>
                     <DetailRow label="Order Ref" value={ref ?? compactId("Or", order.id)} icon="document-text-outline" />
                     <DetailRow label="Request Ref" value={compactId("Rq", order.request_id)} icon="git-merge-outline" />
@@ -253,7 +259,7 @@ export default function OrderDetailScreen() {
                     <DetailRow label="Created" value={formatDateTime(order.created_at)} icon="calendar-outline" />
                 </SectionCard>
 
-                <Text style={styles.sectionTitle}>Vendor</Text>
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Vendor</Text>
                 <SectionCard>
                     <DetailRow label="Vendor Ref" value={compactId("Vn", order.vendor?.id)} icon="storefront-outline" />
                     <DetailRow label="Name" value={order.vendor?.name} icon="person-circle-outline" />
@@ -261,22 +267,22 @@ export default function OrderDetailScreen() {
                     <DetailRow label="Phone" value={order.vendor?.phone} icon="call-outline" />
                 </SectionCard>
 
-                <Text style={styles.sectionTitle}>Pickup Window</Text>
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Pickup Window</Text>
                 <SectionCard>
                     <View style={styles.windowRow}>
                         <View style={styles.windowCol}>
-                            <Text style={styles.windowLabel}>From</Text>
-                            <Text style={styles.windowValue}>{pickupFrom}</Text>
+                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>From</Text>
+                            <Text style={[styles.windowValue, { color: theme.primary }]}>{pickupFrom}</Text>
                         </View>
-                        <View style={styles.windowDivider} />
+                        <View style={[styles.windowDivider, { backgroundColor: theme.border }]} />
                         <View style={styles.windowCol}>
-                            <Text style={styles.windowLabel}>To</Text>
-                            <Text style={styles.windowValue}>{pickupTo}</Text>
+                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>To</Text>
+                            <Text style={[styles.windowValue, { color: theme.primary }]}>{pickupTo}</Text>
                         </View>
                     </View>
                 </SectionCard>
 
-                <Text style={styles.sectionTitle}>Request Snapshot</Text>
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Request Snapshot</Text>
                 <SectionCard>
                     <DetailRow label="Address" value={order.request?.pickup_address} icon="location-outline" />
                     <DetailRow label="Coordinates" value={pickupCoords} icon="navigate-outline" />
@@ -284,13 +290,13 @@ export default function OrderDetailScreen() {
                     <DetailRow label="Request Status" value={order.request?.status} icon="pulse-outline" />
                 </SectionCard>
 
-                <Text style={styles.sectionTitle}>Services</Text>
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Services</Text>
                 {order.services?.length ? (
                     order.services.map((service, idx) => (
                         <SectionCard key={`${service.category_id}-${idx}`}>
                             <View style={styles.serviceTitleRow}>
-                                <Ionicons name="construct-outline" size={14} color={PRIMARY} />
-                                <Text style={styles.serviceTitle}>Service {idx + 1}</Text>
+                                <Ionicons name="construct-outline" size={14} color={theme.primary} />
+                                <Text style={[styles.serviceTitle, { color: theme.primary }]}>Service {idx + 1}</Text>
                             </View>
                             <DetailRow label="Category" value={`Ct${idx + 1}`} icon="pricetag-outline" />
                             <DetailRow label="Name" value={service.category_name} icon="grid-outline" />
@@ -299,20 +305,20 @@ export default function OrderDetailScreen() {
                         </SectionCard>
                     ))
                 ) : (
-                    <Text style={styles.emptyText}>No services in this order.</Text>
+                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>No services in this order.</Text>
                 )}
 
-                <View style={styles.disputeCard}>
+                <View style={[styles.disputeCard, { backgroundColor: theme.mode === "dark" ? theme.surfaceMuted : "#fff7ed", borderColor: theme.accent }]}>
                     <View style={styles.disputeContent}>
                         <Ionicons name="shield-checkmark-outline" size={18} color="#b45309" />
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.disputeTitle}>Issue with this order?</Text>
-                            <Text style={styles.disputeSubtitle}>
+                            <Text style={[styles.disputeTitle, { color: theme.text }]}>Issue with this order?</Text>
+                            <Text style={[styles.disputeSubtitle, { color: theme.textMuted }]}>
                                 Report torn, damaged, missing, or lost clothes for admin review.
                             </Text>
                         </View>
                     </View>
-                    <Pressable style={({ pressed }) => [styles.disputeBtn, pressed && styles.pressed]} onPress={() => setShowDisputeModal(true)}>
+                    <Pressable style={({ pressed }) => [styles.disputeBtn, { backgroundColor: theme.primary }, pressed && styles.pressed]} onPress={() => setShowDisputeModal(true)}>
                         <Text style={styles.disputeBtnText}>Report Dispute</Text>
                     </Pressable>
                 </View>

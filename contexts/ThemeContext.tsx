@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { appThemes, AppTheme, AppThemeMode } from "@/constants/theme";
+import { appThemes, AppTheme, AppThemeMode, AppThemePreference } from "@/constants/theme";
+import * as SystemUI from "expo-system-ui";
 import {
     createContext,
     PropsWithChildren,
@@ -8,37 +9,46 @@ import {
     useMemo,
     useState,
 } from "react";
+import { useColorScheme } from "react-native";
 
-const STORAGE_KEY = "app.theme.mode";
+const STORAGE_KEY = "app.theme.preference";
 
 type ThemeContextValue = {
     theme: AppTheme;
     mode: AppThemeMode;
-    setMode: (mode: AppThemeMode) => Promise<void>;
+    preference: AppThemePreference;
+    setMode: (mode: AppThemePreference) => Promise<void>;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: PropsWithChildren) {
-    const [mode, setModeState] = useState<AppThemeMode>("light");
+    const colorScheme = useColorScheme();
+    const systemMode: AppThemeMode = colorScheme === "dark" ? "dark" : "light";
+    const [preference, setPreference] = useState<AppThemePreference>("system");
+    const mode: AppThemeMode = preference === "system" ? systemMode : preference;
 
     useEffect(() => {
         const loadMode = async () => {
             try {
                 const stored = await AsyncStorage.getItem(STORAGE_KEY);
-                if (stored === "light" || stored === "dark") {
-                    setModeState(stored);
+                if (stored === "light" || stored === "dark" || stored === "system") {
+                    setPreference(stored);
                 }
             } catch {
-                setModeState("light");
+                setPreference("system");
             }
         };
 
         void loadMode();
     }, []);
 
-    const setMode = async (nextMode: AppThemeMode) => {
-        setModeState(nextMode);
+    useEffect(() => {
+        void SystemUI.setBackgroundColorAsync(appThemes[mode].background);
+    }, [mode]);
+
+    const setMode = async (nextMode: AppThemePreference) => {
+        setPreference(nextMode);
         try {
             await AsyncStorage.setItem(STORAGE_KEY, nextMode);
         } catch {
@@ -50,9 +60,10 @@ export function ThemeProvider({ children }: PropsWithChildren) {
         () => ({
             theme: appThemes[mode],
             mode,
+            preference,
             setMode,
         }),
-        [mode]
+        [mode, preference]
     );
 
     return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

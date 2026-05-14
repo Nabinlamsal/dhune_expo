@@ -1,10 +1,12 @@
 import { getAuthSession } from "@/services/auth/session.service";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, SafeAreaView, StyleSheet } from "react-native";
 
 export default function Index() {
     const [target, setTarget] = useState<string | null>(null);
+    const { theme } = useAppTheme();
 
     useEffect(() => {
         let active = true;
@@ -21,8 +23,8 @@ export default function Index() {
 
     if (!target) {
         return (
-            <SafeAreaView style={styles.loading}>
-                <ActivityIndicator size="large" color="#040947" />
+            <SafeAreaView style={[styles.loading, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
             </SafeAreaView>
         );
     }
@@ -35,6 +37,5 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#f4f8ff",
     },
 });

@@ -1,5 +1,6 @@
 import Input from "@/components/ui/Input";
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { useActiveCategories } from "@/hooks/catalog/useCategory";
 import { useCreateRequest } from "@/hooks/orders/useRequest";
 import { Category } from "@/types/catalog/category";
@@ -105,6 +106,7 @@ const buildDateWithHour = (datePart: Date, hour: number) => {
 
 export default function CreateRequestScreen() {
     const router = useRouter();
+    const { theme } = useAppTheme();
 
     const { data: categories = [], isLoading: isLoadingCategories } = useActiveCategories();
     const createRequestMutation = useCreateRequest();
@@ -377,7 +379,7 @@ export default function CreateRequestScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
                     title="Create Request"
@@ -386,10 +388,10 @@ export default function CreateRequestScreen() {
                 />
 
                 <View style={styles.servicesHeader}>
-                    <Text style={styles.sectionTitle}>Services</Text>
-                    <Pressable style={styles.addServiceBtn} onPress={addService}>
-                        <Ionicons name="add" size={16} color="#040947" />
-                        <Text style={styles.addServiceText}>Add Category</Text>
+                    <Text style={[styles.sectionTitle, { color: theme.primary }]}>Services</Text>
+                    <Pressable style={[styles.addServiceBtn, { borderColor: theme.border, backgroundColor: theme.surfaceMuted }]} onPress={addService}>
+                        <Ionicons name="add" size={16} color={theme.primary} />
+                        <Text style={[styles.addServiceText, { color: theme.primary }]}>Add Category</Text>
                     </Pressable>
                 </View>
 
@@ -398,45 +400,45 @@ export default function CreateRequestScreen() {
                     const unitOptions = selectedCategory?.allowed_units ?? [];
 
                     return (
-                        <View key={service.id} style={[styles.card, styles.serviceCard]}>
+                        <View key={service.id} style={[styles.card, styles.serviceCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                             <View style={styles.serviceTopRow}>
-                                <Text style={styles.serviceTitle}>Service #{index + 1}</Text>
+                                <Text style={[styles.serviceTitle, { color: theme.primary }]}>Service #{index + 1}</Text>
                                 <Pressable
                                     onPress={() => removeService(service.id)}
                                     disabled={services.length === 1}
                                     style={[styles.removeBtn, services.length === 1 && styles.removeBtnDisabled]}
                                 >
-                                    <Text style={styles.removeText}>Remove</Text>
+                                    <Text style={[styles.removeText, { color: services.length === 1 ? theme.textSoft : theme.danger }]}>Remove</Text>
                                 </Pressable>
                             </View>
 
-                            <Text style={styles.fieldLabel}>Category</Text>
+                            <Text style={[styles.fieldLabel, { color: theme.primary }]}>Category</Text>
                             {isLoadingCategories ? (
-                                <Text style={styles.hint}>Loading categories...</Text>
+                                <Text style={[styles.hint, { color: theme.textMuted }]}>Loading categories...</Text>
                             ) : categories.length === 0 ? (
-                                <Text style={styles.hint}>No active categories available.</Text>
+                                <Text style={[styles.hint, { color: theme.textMuted }]}>No active categories available.</Text>
                             ) : (
                                 <View>
                                     <Pressable
-                                        style={styles.dropdownTrigger}
+                                        style={[styles.dropdownTrigger, { borderColor: theme.border, backgroundColor: theme.inputBackground }]}
                                         onPress={() =>
                                             setOpenCategoryFor((current) =>
                                                 current === service.id ? null : service.id
                                             )
                                         }
                                     >
-                                        <Text style={styles.dropdownTriggerText}>
+                                        <Text style={[styles.dropdownTriggerText, { color: selectedCategory ? theme.text : theme.inputPlaceholder }]}>
                                             {selectedCategory?.name ?? "Select a category"}
                                         </Text>
                                         <Ionicons
                                             name={openCategoryFor === service.id ? "chevron-up" : "chevron-down"}
                                             size={16}
-                                            color="#040947"
+                                            color={theme.primary}
                                         />
                                     </Pressable>
 
                                     {openCategoryFor === service.id && (
-                                        <View style={styles.dropdownMenu}>
+                                        <View style={[styles.dropdownMenu, { backgroundColor: theme.card, borderColor: theme.border }]}>
                                             {categories.map((category) => {
                                                 const active = service.category_id === category.id;
                                                 return (
@@ -444,7 +446,7 @@ export default function CreateRequestScreen() {
                                                         key={category.id}
                                                         style={[
                                                             styles.dropdownOption,
-                                                            active && styles.dropdownOptionActive,
+                                                            active && { backgroundColor: theme.primarySoft },
                                                         ]}
                                                         onPress={() => {
                                                             const defaultUnit = category.allowed_units[0] ?? "";
@@ -461,7 +463,7 @@ export default function CreateRequestScreen() {
                                                         <Text
                                                             style={[
                                                                 styles.dropdownOptionText,
-                                                                active && styles.dropdownOptionTextActive,
+                                                                { color: active ? theme.primary : theme.text },
                                                             ]}
                                                         >
                                                             {category.name}
@@ -473,17 +475,17 @@ export default function CreateRequestScreen() {
                                     )}
 
                                     {!!selectedCategory?.description?.trim() && (
-                                        <Text style={styles.categoryDescription}>
+                                        <Text style={[styles.categoryDescription, { color: theme.textMuted }]}>
                                             {selectedCategory.description}
                                         </Text>
                                     )}
                                 </View>
                             )}
 
-                            <Text style={styles.fieldLabel}>Service Unit</Text>
+                            <Text style={[styles.fieldLabel, { color: theme.primary }]}>Service Unit</Text>
                             {service.category_id ? (
                                 unitOptions.length === 0 ? (
-                                    <Text style={styles.hint}>No units configured for this category.</Text>
+                                    <Text style={[styles.hint, { color: theme.textMuted }]}>No units configured for this category.</Text>
                                 ) : (
                                     <View style={styles.chipRow}>
                                         {unitOptions.map((unit) => {
@@ -491,7 +493,11 @@ export default function CreateRequestScreen() {
                                             return (
                                                 <Pressable
                                                     key={unit}
-                                                    style={[styles.unitChip, active && styles.unitChipActive]}
+                                                    style={[
+                                                        styles.unitChip,
+                                                        { backgroundColor: theme.card, borderColor: theme.border },
+                                                        active && { backgroundColor: theme.primary, borderColor: theme.primary },
+                                                    ]}
                                                     onPress={() =>
                                                         updateService(service.id, {
                                                             selected_unit: unit,
@@ -502,7 +508,7 @@ export default function CreateRequestScreen() {
                                                     }
                                                 >
                                                     <Text
-                                                        style={[styles.unitChipText, active && styles.unitChipTextActive]}
+                                                        style={[styles.unitChipText, { color: active ? theme.primaryContrast : theme.text }]}
                                                     >
                                                         {UNIT_LABELS[unit]}
                                                     </Text>
@@ -512,12 +518,12 @@ export default function CreateRequestScreen() {
                                     </View>
                                 )
                             ) : (
-                                <Text style={styles.hint}>Select a category first.</Text>
+                                <Text style={[styles.hint, { color: theme.textMuted }]}>Select a category first.</Text>
                             )}
 
                             {service.selected_unit === "KG" && (
                                 <>
-                                    <Text style={styles.fieldLabel}>Quantity (KG)</Text>
+                                    <Text style={[styles.fieldLabel, { color: theme.primary }]}>Quantity (KG)</Text>
                                     <Input
                                         keyboardType="decimal-pad"
                                         value={service.quantity_value}
@@ -531,7 +537,7 @@ export default function CreateRequestScreen() {
 
                             {service.selected_unit === "SQFT" && (
                                 <>
-                                    <Text style={styles.fieldLabel}>Total SQFT</Text>
+                                    <Text style={[styles.fieldLabel, { color: theme.primary }]}>Total SQFT</Text>
                                     <Input
                                         keyboardType="decimal-pad"
                                         value={service.sqft}
@@ -544,13 +550,13 @@ export default function CreateRequestScreen() {
                             {service.selected_unit === "ITEMS" && (
                                 <>
                                     <View style={styles.itemsHeader}>
-                                        <Text style={styles.fieldLabel}>Items and Pieces</Text>
+                                        <Text style={[styles.fieldLabel, { color: theme.primary }]}>Items and Pieces</Text>
                                         <Pressable
-                                            style={styles.addItemBtn}
+                                            style={[styles.addItemBtn, { backgroundColor: theme.accentSoft }]}
                                             onPress={() => addItemRow(service.id)}
                                         >
-                                            <Ionicons name="add" size={14} color="#040947" />
-                                            <Text style={styles.addItemText}>Add Item</Text>
+                                            <Ionicons name="add" size={14} color={theme.primary} />
+                                            <Text style={[styles.addItemText, { color: theme.primary }]}>Add Item</Text>
                                         </Pressable>
                                     </View>
 
@@ -580,7 +586,7 @@ export default function CreateRequestScreen() {
                                                 <Ionicons
                                                     name="trash-outline"
                                                     size={18}
-                                                    color={service.items.length === 1 ? "#cbd5e1" : "#ef4444"}
+                                                    color={service.items.length === 1 ? theme.disabled : theme.danger}
                                                 />
                                             </Pressable>
                                         </View>
@@ -588,7 +594,7 @@ export default function CreateRequestScreen() {
                                 </>
                             )}
 
-                            <Text style={styles.fieldLabel}>Description (optional)</Text>
+                            <Text style={[styles.fieldLabel, { color: theme.primary }]}>Description (optional)</Text>
                             <Input
                                 value={service.description}
                                 onChangeText={(value) => updateService(service.id, { description: value })}
@@ -598,13 +604,13 @@ export default function CreateRequestScreen() {
                     );
                 })}
 
-                <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>Pickup Location</Text>
-                    <View style={styles.mapWrap}>
+                <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <Text style={[styles.sectionTitle, { color: theme.primary }]}>Pickup Location</Text>
+                    <View style={[styles.mapWrap, { borderColor: theme.border }]}>
                         {isLoadingLocation ? (
                             <View style={styles.mapLoader}>
-                                <ActivityIndicator size="small" color="#040947" />
-                                <Text style={styles.hint}>Loading current location...</Text>
+                                <ActivityIndicator size="small" color={theme.primary} />
+                                <Text style={[styles.hint, { color: theme.textMuted }]}>Loading current location...</Text>
                             </View>
                         ) : (
                             <MapView
@@ -635,37 +641,41 @@ export default function CreateRequestScreen() {
                         placeholder="Pickup address"
                     />
                     <View style={styles.coordRow}>
-                        <Text style={styles.hint}>
+                        <Text style={[styles.hint, { color: theme.textMuted }]}>
                             Lat: {pickupLat != null ? pickupLat.toFixed(6) : "-"}
                         </Text>
-                        <Text style={styles.hint}>
+                        <Text style={[styles.hint, { color: theme.textMuted }]}>
                             Lng: {pickupLng != null ? pickupLng.toFixed(6) : "-"}
                         </Text>
                     </View>
                 </View>
 
-                <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>Pickup Window</Text>
-                    <Pressable style={styles.pickerField} onPress={() => setActivePicker("date")}>
-                        <Text style={styles.fieldLabel}>Date</Text>
-                        <Text style={styles.pickerValue}>{formatDateLabel(pickupDate)}</Text>
+                <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <Text style={[styles.sectionTitle, { color: theme.primary }]}>Pickup Window</Text>
+                    <Pressable style={[styles.pickerField, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]} onPress={() => setActivePicker("date")}>
+                        <Text style={[styles.fieldLabel, { color: theme.primary }]}>Date</Text>
+                        <Text style={[styles.pickerValue, { color: theme.text }]}>{formatDateLabel(pickupDate)}</Text>
                     </Pressable>
-                    <Text style={styles.fieldLabel}>Range</Text>
+                    <Text style={[styles.fieldLabel, { color: theme.primary }]}>Range</Text>
                     <View style={styles.rangeRow}>
                         {PICKUP_RANGES.map((range) => {
                             const active = pickupRange === range.key;
                             return (
                                 <Pressable
                                     key={range.key}
-                                    style={[styles.rangeChip, active && styles.rangeChipActive]}
+                                    style={[
+                                        styles.rangeChip,
+                                        { backgroundColor: theme.card, borderColor: theme.border },
+                                        active && { backgroundColor: theme.primary, borderColor: theme.primary },
+                                    ]}
                                     onPress={() => setPickupRange(range.key)}
                                 >
                                     <Ionicons
                                         name={active ? "checkbox" : "square-outline"}
                                         size={14}
-                                        color={active ? "#fff" : "#475569"}
+                                        color={active ? theme.primaryContrast : theme.textMuted}
                                     />
-                                    <Text style={[styles.rangeChipText, active && styles.rangeChipTextActive]}>
+                                    <Text style={[styles.rangeChipText, { color: active ? theme.primaryContrast : theme.text }]}>
                                         {range.label}
                                     </Text>
                                 </Pressable>
@@ -674,16 +684,20 @@ export default function CreateRequestScreen() {
                     </View>
                 </View>
 
-                <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>Payment Method</Text>
+                <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <Text style={[styles.sectionTitle, { color: theme.primary }]}>Payment Method</Text>
                     <View style={styles.paymentRow}>
                         {PAYMENT_OPTIONS.map((method) => (
                             <Pressable
                                 key={method}
-                                style={[styles.payCard, paymentMethod === method && styles.payCardActive]}
+                                style={[
+                                    styles.payCard,
+                                    { backgroundColor: theme.card, borderColor: theme.border },
+                                    paymentMethod === method && { backgroundColor: theme.primary, borderColor: theme.primary },
+                                ]}
                                 onPress={() => setPaymentMethod(method)}
                             >
-                                <Text style={[styles.payText, paymentMethod === method && styles.payTextActive]}>
+                                <Text style={[styles.payText, { color: paymentMethod === method ? theme.primaryContrast : theme.text }]}>
                                     {method === "CASH" ? "Cash" : "Online"}
                                 </Text>
                             </Pressable>
@@ -694,9 +708,9 @@ export default function CreateRequestScreen() {
                 <View style={{ height: 110 }} />
             </ScrollView>
 
-            <View style={styles.footer}>
+            <View style={[styles.footer, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
                 <Pressable
-                    style={[styles.submitBtn, createRequestMutation.isPending && styles.submitBtnDisabled]}
+                    style={[styles.submitBtn, { backgroundColor: theme.primary }, createRequestMutation.isPending && styles.submitBtnDisabled]}
                     onPress={createRequestMutation.isPending ? undefined : handleCreateRequest}
                 >
                     <Text style={styles.submitText}>
@@ -711,8 +725,8 @@ export default function CreateRequestScreen() {
                 animationType="slide"
                 onRequestClose={() => setActivePicker(null)}
             >
-                <View style={styles.modalBackdrop}>
-                    <View style={styles.modalCard}>
+                <View style={[styles.modalBackdrop, { backgroundColor: theme.overlay }]}>
+                    <View style={[styles.modalCard, { backgroundColor: theme.card }]}>
                         {activePicker && (
                             <DateTimePicker
                                 mode="date"
@@ -732,7 +746,7 @@ export default function CreateRequestScreen() {
                             />
                         )}
                         {Platform.OS === "ios" && (
-                            <Pressable style={styles.doneBtn} onPress={() => setActivePicker(null)}>
+                            <Pressable style={[styles.doneBtn, { backgroundColor: theme.primary }]} onPress={() => setActivePicker(null)}>
                                 <Text style={styles.doneBtnText}>Done</Text>
                             </Pressable>
                         )}

@@ -1,3 +1,4 @@
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { useNotifications } from "@/hooks/notifications/useNotifications";
 import { NotificationItem } from "@/types/notifications";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,31 +38,36 @@ function NotificationCard({
     onPress: () => void;
     onMarkRead: () => void;
 }) {
+    const { theme } = useAppTheme();
+
     return (
         <Pressable
             onPress={onPress}
             style={({ pressed }) => [
                 styles.card,
-                !item.is_read && styles.cardUnread,
+                {
+                    backgroundColor: item.is_read ? theme.card : theme.mode === "dark" ? theme.surfaceMuted : "#fffdf4",
+                    borderColor: item.is_read ? theme.border : theme.accent,
+                },
                 pressed && styles.cardPressed,
             ]}
         >
-            <View style={[styles.iconWrap, !item.is_read && styles.iconWrapUnread]}>
+            <View style={[styles.iconWrap, { backgroundColor: item.is_read ? theme.primarySoft : theme.accentSoft }]}>
                 <Ionicons
                     name={item.is_read ? "notifications-outline" : "radio-button-on"}
                     size={18}
-                    color={item.is_read ? "#0b2457" : "#ebbc01"}
+                    color={item.is_read ? theme.primary : theme.accent}
                 />
             </View>
             <View style={styles.cardBody}>
                 <View style={styles.cardHeader}>
-                    <Text style={styles.typeTag}>{getTypeLabel(item.type)}</Text>
-                    <Text style={styles.timestamp}>{formatDateTime(item.created_at)}</Text>
+                    <Text style={[styles.typeTag, { color: theme.primary }]}>{getTypeLabel(item.type)}</Text>
+                    <Text style={[styles.timestamp, { color: theme.textMuted }]}>{formatDateTime(item.created_at)}</Text>
                 </View>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.body}>{item.body}</Text>
+                <Text style={[styles.title, { color: theme.text }]}>{item.title}</Text>
+                <Text style={[styles.body, { color: theme.textMuted }]}>{item.body}</Text>
                 <View style={styles.footerRow}>
-                    <Text style={styles.entityMeta}>
+                    <Text style={[styles.entityMeta, { color: theme.textMuted }]}>
                         {item.entity_type} {item.entity_id ? "update" : ""}
                     </Text>
                     {!item.is_read ? (
@@ -69,13 +75,14 @@ function NotificationCard({
                             onPress={onMarkRead}
                             style={({ pressed }) => [
                                 styles.markReadBtn,
+                                { backgroundColor: theme.primary },
                                 pressed && styles.markReadPressed,
                             ]}
                         >
                             <Text style={styles.markReadText}>Mark read</Text>
                         </Pressable>
                     ) : (
-                        <Text style={styles.readState}>Read</Text>
+                        <Text style={[styles.readState, { color: theme.success }]}>Read</Text>
                     )}
                 </View>
             </View>
@@ -100,7 +107,8 @@ export default function NotificationsScreen() {
         markAllAsRead,
         handleNotificationPress,
         reconnect,
-    } = useNotifications();
+} = useNotifications();
+    const { theme } = useAppTheme();
 
     const emptyText = useMemo(() => {
         if (!isReady) return "Loading notifications...";
@@ -109,11 +117,11 @@ export default function NotificationsScreen() {
     }, [isReady, unreadOnly]);
 
     return (
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <View style={styles.header}>
                 <View style={styles.headerCopy}>
-                    <Text style={styles.headerTitle}>Notifications</Text>
-                    <Text style={styles.headerMeta}>
+                    <Text style={[styles.headerTitle, { color: theme.primary }]}>Notifications</Text>
+                    <Text style={[styles.headerMeta, { color: theme.textMuted }]}>
                         {unreadCount} unread | {isSocketConnected ? "Live" : "Offline"}
                     </Text>
                 </View>
@@ -122,11 +130,12 @@ export default function NotificationsScreen() {
                         onPress={reconnect}
                         style={({ pressed }) => [
                             styles.reconnectBtn,
+                            { backgroundColor: theme.card, borderColor: theme.border },
                             pressed && styles.reconnectPressed,
                         ]}
                     >
-                        <Ionicons name="refresh" size={14} color="#0b2457" />
-                        <Text style={styles.reconnectText}>Reconnect</Text>
+                        <Ionicons name="refresh" size={14} color={theme.primary} />
+                        <Text style={[styles.reconnectText, { color: theme.primary }]}>Reconnect</Text>
                     </Pressable>
                 ) : null}
             </View>
@@ -136,19 +145,20 @@ export default function NotificationsScreen() {
                     onPress={() => void setUnreadOnly(!unreadOnly)}
                     style={({ pressed }) => [
                         styles.filterChip,
-                        unreadOnly && styles.filterChipActive,
+                        { backgroundColor: theme.card, borderColor: theme.border },
+                        unreadOnly && { backgroundColor: theme.primary, borderColor: theme.primary },
                         pressed && styles.filterChipPressed,
                     ]}
                 >
                     <Ionicons
                         name={unreadOnly ? "mail-unread" : "mail-open"}
                         size={14}
-                        color={unreadOnly ? "#ffffff" : "#0b2457"}
+                        color={unreadOnly ? theme.primaryContrast : theme.primary}
                     />
                     <Text
                         style={[
                             styles.filterText,
-                            unreadOnly && styles.filterTextActive,
+                            { color: unreadOnly ? theme.primaryContrast : theme.primary },
                         ]}
                     >
                         {unreadOnly ? "Unread only" : "All notifications"}
@@ -160,6 +170,7 @@ export default function NotificationsScreen() {
                     disabled={notifications.length === 0 || unreadCount === 0}
                     style={({ pressed }) => [
                         styles.markAllBtn,
+                        { backgroundColor: theme.accent },
                         (notifications.length === 0 || unreadCount === 0) &&
                         styles.markAllDisabled,
                         pressed && styles.markAllPressed,
@@ -187,7 +198,7 @@ export default function NotificationsScreen() {
                     <RefreshControl
                         refreshing={isRefreshing}
                         onRefresh={() => void refresh({ refreshList: true })}
-                        tintColor="#0b2457"
+                        tintColor={theme.primary}
                     />
                 }
                 onEndReachedThreshold={0.25}
@@ -198,14 +209,14 @@ export default function NotificationsScreen() {
                 }}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <Ionicons name="notifications-off-outline" size={28} color="#9ca3af" />
-                        <Text style={styles.emptyText}>{emptyText}</Text>
+                        <Ionicons name="notifications-off-outline" size={28} color={theme.textSoft} />
+                        <Text style={[styles.emptyText, { color: theme.textSoft }]}>{emptyText}</Text>
                     </View>
                 }
                 ListFooterComponent={
                     isLoadingMore ? (
                         <View style={styles.footerLoader}>
-                            <ActivityIndicator color="#0b2457" />
+                            <ActivityIndicator color={theme.primary} />
                         </View>
                     ) : null
                 }

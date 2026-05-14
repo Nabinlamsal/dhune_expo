@@ -1,6 +1,7 @@
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { useDeleteProfileImage } from "@/hooks/users/useDeleteProfileImage";
 import { useMyProfile } from "@/hooks/users/useMyProfile";
 import { useUpdateMyProfile } from "@/hooks/users/useUpdateMyProfile";
@@ -52,6 +53,7 @@ function extractProfileImage(profile: MyProfile): string | null {
 
 export default function EditProfileScreen() {
     const { data } = useMyProfile();
+    const { theme } = useAppTheme();
     const updateProfile = useUpdateMyProfile();
     const uploadProfileImage = useUploadProfileImage();
     const deleteProfileImage = useDeleteProfileImage();
@@ -219,7 +221,7 @@ export default function EditProfileScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <KeyboardAvoidingView
                 style={styles.safe}
                 behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -231,20 +233,20 @@ export default function EditProfileScreen() {
                         backHref="/(tabs)/profile"
                     />
 
-                    <View style={styles.card}>
-                        <View style={styles.photoCard}>
+                    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        <View style={[styles.photoCard, { borderBottomColor: theme.border }]}>
                             <Pressable
                                 style={({ pressed }) => [styles.avatarWrap, pressed && styles.pressed]}
                                 onPress={openPhotoActions}
                             >
-                                <View style={styles.avatar}>
+                                <View style={[styles.avatar, { backgroundColor: theme.surfaceMuted, borderColor: theme.borderStrong }]}>
                                     {localAvatarUri ? (
                                         <Image source={{ uri: localAvatarUri }} style={styles.avatarImage} />
                                     ) : (
-                                        <Ionicons name="person-outline" size={34} color="#0b2457" />
+                                        <Ionicons name="person-outline" size={34} color={theme.primary} />
                                     )}
                                 </View>
-                                <View style={styles.avatarBadge}>
+                                <View style={[styles.avatarBadge, { backgroundColor: theme.primary, borderColor: theme.card }]}>
                                     <Ionicons
                                         name={uploadProfileImage.isPending ? "sync" : "camera-outline"}
                                         size={13}
@@ -252,8 +254,8 @@ export default function EditProfileScreen() {
                                     />
                                 </View>
                             </Pressable>
-                            <Text style={styles.photoTitle}>Profile Picture</Text>
-                            <Text style={styles.photoSubtitle}>
+                            <Text style={[styles.photoTitle, { color: theme.primary }]}>Profile Picture</Text>
+                            <Text style={[styles.photoSubtitle, { color: theme.textMuted }]}>
                                 {uploadProfileImage.isPending
                                     ? "Uploading selected image..."
                                     : deleteProfileImage.isPending
@@ -263,7 +265,7 @@ export default function EditProfileScreen() {
                         </View>
 
                         <View style={styles.field}>
-                            <Text style={styles.label}>Name</Text>
+                            <Text style={[styles.label, { color: theme.primary }]}>Name</Text>
                             <Input
                                 placeholder="Enter your name"
                                 value={name}
@@ -273,7 +275,7 @@ export default function EditProfileScreen() {
                         </View>
 
                         <View style={styles.field}>
-                            <Text style={styles.label}>Phone</Text>
+                            <Text style={[styles.label, { color: theme.primary }]}>Phone</Text>
                             <Input
                                 placeholder="98XXXXXXXX"
                                 value={phone}
@@ -281,7 +283,7 @@ export default function EditProfileScreen() {
                                 keyboardType="phone-pad"
                                 maxLength={10}
                             />
-                            <Text style={styles.helper}>Phone number must be exactly 10 digits.</Text>
+                            <Text style={[styles.helper, { color: theme.textMuted }]}>Phone number must be exactly 10 digits.</Text>
                         </View>
 
                         <Button
@@ -298,7 +300,6 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: "#edf4ff",
     },
     container: {
         paddingHorizontal: 14,
@@ -306,10 +307,8 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
     card: {
-        backgroundColor: "#ffffff",
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: "#dbe7ff",
         padding: 14,
     },
     photoCard: {
@@ -317,7 +316,6 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
         marginBottom: 14,
         borderBottomWidth: 1,
-        borderBottomColor: "#edf2ff",
     },
     avatarWrap: {
         marginBottom: 10,
@@ -327,8 +325,6 @@ const styles = StyleSheet.create({
         height: 88,
         borderRadius: 44,
         borderWidth: 1,
-        borderColor: "#bbd8ee",
-        backgroundColor: "#f8fcff",
         alignItems: "center",
         justifyContent: "center",
         overflow: "hidden",
@@ -344,21 +340,17 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: "#0b2457",
         borderWidth: 2,
-        borderColor: "#ffffff",
         alignItems: "center",
         justifyContent: "center",
     },
     photoTitle: {
         fontSize: 14,
         fontWeight: "800",
-        color: "#0b2457",
     },
     photoSubtitle: {
         marginTop: 4,
         fontSize: 11,
-        color: "#64748b",
         fontWeight: "500",
         textAlign: "center",
         lineHeight: 17,
@@ -368,14 +360,12 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 12,
-        color: "#0b2457",
         fontWeight: "700",
         marginBottom: 6,
     },
     helper: {
         marginTop: 6,
         fontSize: 11,
-        color: "#64748b",
         fontWeight: "500",
     },
     pressed: {

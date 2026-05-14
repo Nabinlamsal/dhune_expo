@@ -3,6 +3,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import KeyboardWrapper from "@/components/ui/KeyboardWrapper";
 import PasswordInput from "@/components/ui/PasswordInput";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { useResetPassword } from "@/hooks/auth/useResetPassword";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
@@ -11,6 +12,7 @@ import { Alert, StyleSheet, Text, View } from "react-native";
 export default function ResetPasswordScreen() {
     const params = useLocalSearchParams<{ email?: string }>();
     const resetPassword = useResetPassword();
+    const { theme } = useAppTheme();
     const [email, setEmail] = useState(typeof params.email === "string" ? params.email : "");
     const [otp, setOtp] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -47,7 +49,7 @@ export default function ResetPasswordScreen() {
                 onBackPress={() => router.back()}
             >
                 <View style={styles.field}>
-                    <Text style={styles.label}>Email</Text>
+                    <Text style={[styles.label, { color: theme.primary }]}>Email</Text>
                     <Input
                         placeholder="example@gmail.com"
                         value={email}
@@ -58,7 +60,7 @@ export default function ResetPasswordScreen() {
                 </View>
 
                 <View style={styles.field}>
-                    <Text style={styles.label}>OTP</Text>
+                    <Text style={[styles.label, { color: theme.primary }]}>OTP</Text>
                     <Input
                         placeholder="123456"
                         value={otp}
@@ -69,7 +71,7 @@ export default function ResetPasswordScreen() {
                 </View>
 
                 <View style={styles.field}>
-                    <Text style={styles.label}>New Password</Text>
+                    <Text style={[styles.label, { color: theme.primary }]}>New Password</Text>
                     <PasswordInput
                         placeholder="Enter new password"
                         value={newPassword}
@@ -94,6 +96,5 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: "700",
-        color: "#0b2457",
     },
 });

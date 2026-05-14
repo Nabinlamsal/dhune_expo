@@ -1,10 +1,13 @@
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Image, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
 
 export default function GetStartedScreen() {
+    const { theme } = useAppTheme();
+
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
 
             <View style={styles.logoContainer}>
                 <Image
@@ -12,29 +15,29 @@ export default function GetStartedScreen() {
                     style={styles.logo}
                     resizeMode="contain"
                 />
-                <View style={styles.badge}>
-                    <Text style={styles.badgeText}>Reliable pickup and delivery</Text>
+                <View style={[styles.badge, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <Text style={[styles.badgeText, { color: theme.primary }]}>Reliable pickup and delivery</Text>
                 </View>
             </View>
 
             <View style={styles.textSection}>
-                <Text style={styles.title}>Get Started</Text>
-                <Text style={styles.subtitle}>
+                <Text style={[styles.title, { color: theme.mode === "dark" ? theme.text : "#040947" }]}>Get Started</Text>
+                <Text style={[styles.subtitle, { color: theme.textMuted }]}>
                     Continue with your account or create a new one to request service, compare vendors, and track every order.
                 </Text>
             </View>
 
             <View style={styles.buttons}>
                 <Pressable
-                    style={styles.loginButton}
+                    style={[styles.loginButton, { backgroundColor: theme.mode === "dark" ? theme.primary : "#040947" }]}
                     onPress={() => router.replace("/(auth)/login")}
                 >
-                    <Ionicons name="log-in-outline" size={20} color="white" />
-                    <Text style={styles.loginText}>Login</Text>
+                    <Ionicons name="log-in-outline" size={20} color={theme.primaryContrast} />
+                    <Text style={[styles.loginText, { color: theme.primaryContrast }]}>Login</Text>
                 </Pressable>
 
                 <Pressable
-                    style={styles.signupButton}
+                    style={[styles.signupButton, { backgroundColor: theme.accent }]}
                     onPress={() => router.replace("/(auth)/signup")}
                 >
                     <Ionicons name="person-add-outline" size={20} color="#0b2457" />
@@ -50,7 +53,6 @@ const styles = StyleSheet.create({
 
     container: {
         flex: 1,
-        backgroundColor: "#f4f8ff",
         paddingHorizontal: 28,
         justifyContent: "center",
     },
@@ -67,14 +69,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: 999,
-        backgroundColor: "#ffffff",
         borderWidth: 1,
-        borderColor: "#dbe7ff",
     },
     badgeText: {
         fontSize: 12,
         fontWeight: "700",
-        color: "#0b2457",
     },
     textSection: {
         alignItems: "center",
@@ -83,12 +82,10 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 32,
         fontWeight: "800",
-        color: "#040947",
         marginBottom: 10,
     },
     subtitle: {
         fontSize: 16,
-        color: "#64748b",
         textAlign: "center",
         lineHeight: 24,
     },
@@ -100,7 +97,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#040947",
         paddingVertical: 16,
         borderRadius: 16,
         gap: 10,
@@ -109,13 +105,11 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#ebbc01",
         paddingVertical: 16,
         borderRadius: 16,
         gap: 10,
     },
     loginText: {
-        color: "white",
         fontSize: 17,
         fontWeight: "700",
     },

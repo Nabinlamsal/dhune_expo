@@ -8,12 +8,14 @@ import Input from "../../components/ui/Input";
 import PasswordInput from "../../components/ui/PasswordInput";
 
 import KeyboardWrapper from "@/components/ui/KeyboardWrapper";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { extractErrorMessage, isEmailNotVerifiedError } from "@/services/auth/auth-error";
 import { useLogin } from "../../hooks/auth/useLogin";
 import { LoginRequest } from "../../types/auth/login";
 
 export default function LoginScreen() {
     const { mutate, isPending } = useLogin();
+    const { theme } = useAppTheme();
 
     const [emailOrPhone, setEmailOrPhone] = useState("");
     const [password, setPassword] = useState("");
@@ -62,7 +64,7 @@ export default function LoginScreen() {
                             style={styles.logoImage}
                             resizeMode="contain"
                         />
-                        <Text style={styles.logoText}>Dhune.np</Text>
+                        <Text style={[styles.logoText, { color: theme.accent }]}>Dhune.np</Text>
                     </View>
                 }
                 footer={
@@ -70,15 +72,15 @@ export default function LoginScreen() {
                         style={styles.signupContainer}
                         onPress={() => router.replace("/(auth)/signup")}
                     >
-                        <Text style={styles.signupText}>
+                        <Text style={[styles.signupText, { color: theme.textMuted }]}>
                             Don&apos;t have an account?{" "}
-                            <Text style={styles.signupHighlight}>Sign Up</Text>
+                            <Text style={[styles.signupHighlight, { color: theme.primary }]}>Sign Up</Text>
                         </Text>
                     </Pressable>
                 }
             >
                 <View style={styles.field}>
-                    <Text style={styles.label}>Email or Phone</Text>
+                    <Text style={[styles.label, { color: theme.primary }]}>Email or Phone</Text>
                     <Input
                         placeholder="example@gmail.com"
                         value={emailOrPhone}
@@ -89,9 +91,9 @@ export default function LoginScreen() {
 
                 <View style={styles.field}>
                     <View style={styles.passwordRow}>
-                        <Text style={styles.label}>Password</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>Password</Text>
                         <Pressable onPress={() => router.push("/(auth)/forgot-password")}>
-                            <Text style={styles.forgot}>Forgot?</Text>
+                            <Text style={[styles.forgot, { color: theme.primary }]}>Forgot?</Text>
                         </Pressable>
                     </View>
 
@@ -108,9 +110,9 @@ export default function LoginScreen() {
                 />
 
                 <View style={styles.dividerRow}>
-                    <View style={styles.dividerLine} />
-                    <Text style={styles.dividerText}>OR</Text>
-                    <View style={styles.dividerLine} />
+                    <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+                    <Text style={[styles.dividerText, { color: theme.textMuted }]}>OR</Text>
+                    <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
                 </View>
 
                 <Pressable
@@ -120,12 +122,19 @@ export default function LoginScreen() {
                             "Google client authentication is not configured in this mobile build yet."
                         )
                     }
-                    style={({ pressed }) => [styles.googleButton, pressed && styles.googlePressed]}
+                    style={({ pressed }) => [
+                        styles.googleButton,
+                        {
+                            backgroundColor: theme.surfaceMuted,
+                            borderColor: theme.border,
+                        },
+                        pressed && styles.googlePressed,
+                    ]}
                 >
-                    <View style={styles.googleIconWrap}>
+                    <View style={[styles.googleIconWrap, { backgroundColor: theme.card, borderColor: theme.border }]}>
                         <Text style={styles.googleIcon}>G</Text>
                     </View>
-                    <Text style={styles.googleText}>Continue with Google</Text>
+                    <Text style={[styles.googleText, { color: theme.text }]}>Continue with Google</Text>
                 </Pressable>
             </AuthScreen>
         </KeyboardWrapper>
@@ -146,7 +155,6 @@ const styles = StyleSheet.create({
     logoText: {
         fontSize: 26,
         fontWeight: "800",
-        color: "#ebbc01",
     },
     field: {
         gap: 8,
@@ -154,7 +162,6 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: "700",
-        color: "#0b2457",
     },
     passwordRow: {
         flexDirection: "row",
@@ -163,7 +170,6 @@ const styles = StyleSheet.create({
     },
     forgot: {
         fontSize: 13,
-        color: "#0b2457",
         fontWeight: "600",
     },
     dividerRow: {
@@ -174,11 +180,9 @@ const styles = StyleSheet.create({
     dividerLine: {
         flex: 1,
         height: 1,
-        backgroundColor: "#dbe7ff",
     },
     dividerText: {
         fontSize: 12,
-        color: "#64748b",
         fontWeight: "700",
         letterSpacing: 1.2,
     },
@@ -186,8 +190,6 @@ const styles = StyleSheet.create({
         minHeight: 54,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: "#dbe7ff",
-        backgroundColor: "#f8fbff",
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
@@ -203,9 +205,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#ffffff",
         borderWidth: 1,
-        borderColor: "#e5e7eb",
     },
     googleIcon: {
         fontSize: 18,
@@ -215,7 +215,6 @@ const styles = StyleSheet.create({
     googleText: {
         fontSize: 15,
         fontWeight: "700",
-        color: "#0f172a",
     },
     signupContainer: {
         marginTop: 22,
@@ -223,10 +222,8 @@ const styles = StyleSheet.create({
     },
     signupText: {
         fontSize: 14,
-        color: "#64748b",
     },
     signupHighlight: {
-        color: "#0b2457",
         fontWeight: "700",
     },
 });

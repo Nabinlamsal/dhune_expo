@@ -168,7 +168,7 @@ export default function ProfileSettingsScreen() {
     const forgotPassword = useForgotPassword();
     const resetPassword = useResetPassword();
     const queryClient = useQueryClient();
-    const { theme, mode, setMode } = useAppTheme();
+    const { theme, mode, preference, setMode } = useAppTheme();
 
     const colors = useMemo(
         () => ({
@@ -558,16 +558,23 @@ export default function ProfileSettingsScreen() {
                             colors={colors}
                         >
                             <SettingToggleRow
+                                label="System"
+                                description="Follow your device appearance automatically."
+                                active={preference === "system"}
+                                onPress={() => void setMode("system")}
+                                colors={colors}
+                            />
+                            <SettingToggleRow
                                 label="Light"
                                 description="Use the brighter Dhune interface."
-                                active={mode === "light"}
+                                active={preference !== "system" && mode === "light"}
                                 onPress={() => void setMode("light")}
                                 colors={colors}
                             />
                             <SettingToggleRow
                                 label="Dark"
                                 description="Reduce glare with a darker interface."
-                                active={mode === "dark"}
+                                active={preference !== "system" && mode === "dark"}
                                 onPress={() => void setMode("dark")}
                                 colors={colors}
                             />

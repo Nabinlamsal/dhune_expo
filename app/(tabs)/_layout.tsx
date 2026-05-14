@@ -1,5 +1,5 @@
-import { useNotifications } from "@/hooks/notifications/useNotifications";
 import { Ionicons } from "@expo/vector-icons";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { Tabs } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -15,21 +15,29 @@ function CenterTabButton({
     accessibilityState?: { selected?: boolean };
 }) {
     const selected = !!accessibilityState?.selected;
+    const { theme } = useAppTheme();
 
     return (
         <View style={styles.centerWrap}>
             <Pressable
                 onPress={onPress}
+                accessibilityRole="button"
+                accessibilityLabel="Create request"
                 style={({ pressed }) => [
                     styles.centerBtn,
+                    {
+                        backgroundColor: theme.accent,
+                        borderColor: theme.mode === "dark" ? theme.primaryContrast : theme.accent,
+                        shadowColor: theme.shadow,
+                    },
                     selected && styles.centerBtnActive,
                     pressed && styles.centerPressed,
                 ]}
             >
                 <Ionicons
-                    name={selected ? "home" : "home-outline"}
-                    color={selected ? "#ebbc01" : "#ffffff"}
-                    size={24}
+                    name="add"
+                    color={theme.mode === "dark" ? theme.background : theme.primaryContrast}
+                    size={31}
                 />
             </Pressable>
         </View>
@@ -37,24 +45,24 @@ function CenterTabButton({
 }
 
 export default function TabsLayout() {
-    const { unreadCount } = useNotifications();
+    const { theme } = useAppTheme();
 
     return (
         <Tabs
             initialRouteName="home"
             screenOptions={{
                 headerShown: false,
-                tabBarActiveTintColor: "#040947",
-                tabBarInactiveTintColor: "#111827",
+                tabBarActiveTintColor: theme.tabBarActive,
+                tabBarInactiveTintColor: theme.tabBarInactive,
                 tabBarStyle: {
                     height: 76,
                     paddingTop: 8,
                     paddingBottom: 10,
                     borderTopWidth: 0,
-                    backgroundColor: "#ffffff",
+                    backgroundColor: theme.tabBarBackground,
                     elevation: 12,
-                    shadowColor: "#040947",
-                    shadowOpacity: 0.12,
+                    shadowColor: theme.shadow,
+                    shadowOpacity: theme.mode === "dark" ? 0.35 : 0.12,
                     shadowRadius: 14,
                     shadowOffset: { width: 0, height: -3 },
                 },
@@ -65,7 +73,7 @@ export default function TabsLayout() {
             }}
         >
             <Tabs.Screen
-                name="requests"
+                name="home"
                 options={{
                     title: "Home",
                     tabBarIcon: ({ color, focused }) => (
@@ -78,7 +86,7 @@ export default function TabsLayout() {
                 }}
             />
             {/* Requests */}
-            {/* <Tabs.Screen
+            <Tabs.Screen
                 name="requests"
                 options={{
                     title: "Requests",
@@ -90,37 +98,22 @@ export default function TabsLayout() {
                         />
                     ),
                 }}
-            /> */}
-
-            {/* Alerts */}
-            <Tabs.Screen
-                name="notifications"
-                options={{
-                    title: "Alerts",
-                    tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? "99+" : unreadCount) : undefined,
-                    tabBarBadgeStyle: {
-                        backgroundColor: "#dc2626",
-                        color: "#ffffff",
-                        fontSize: 10,
-                        fontWeight: "700",
-                    },
-                    tabBarIcon: ({ color, focused }) => (
-                        <Ionicons
-                            name={focused ? "notifications" : "notifications-outline"}
-                            color={color}
-                            size={focused ? 23 : 21}
-                        />
-                    ),
-                }}
             />
 
-            {/* Center Home */}
+            {/* Center Create Request */}
             <Tabs.Screen
-                name="home"
+                name="requests/create"
                 options={{
                     title: "",
                     tabBarLabel: "",
                     tabBarButton: (props) => <CenterTabButton {...props} />,
+                }}
+            />
+
+            <Tabs.Screen
+                name="notifications"
+                options={{
+                    href: null,
                 }}
             />
 
@@ -168,12 +161,15 @@ const styles = StyleSheet.create({
         width: 53,
         height: 53,
         borderRadius: 32,
-        backgroundColor: "#040947",
         alignItems: "center",
         justifyContent: "center",
+        borderWidth: 1,
+        shadowOpacity: 0.18,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 6,
     },
     centerBtnActive: {
-        backgroundColor: "#040947",
         transform: [{ scale: 1.03 }],
     },
     centerPressed: {

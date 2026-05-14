@@ -1,5 +1,6 @@
 import OfferBidCard from "@/components/offers/OfferBidCard";
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAcceptOffer, useRejectOffer } from "@/hooks/orders/useOffer";
 import { useMyRequests } from "@/hooks/orders/useRequest";
 import { getOffersByRequest } from "@/services/orders/offer_service";
@@ -40,6 +41,7 @@ const getCategoryLabel = (request: any) => {
 
 export default function RequestsScreen() {
     const router = useRouter();
+    const { theme } = useAppTheme();
     const [page, setPage] = useState(0);
     const offset = page * PAGE_SIZE;
     const { data, isLoading, isFetching } = useMyRequests(PAGE_SIZE, offset);
@@ -100,7 +102,7 @@ export default function RequestsScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
                     title="Requests"
@@ -108,23 +110,27 @@ export default function RequestsScreen() {
                 />
 
                 <Pressable
-                    style={({ pressed }) => [styles.createCard, pressed && styles.pressed]}
+                    style={({ pressed }) => [
+                        styles.createCard,
+                        { shadowColor: theme.shadow },
+                        pressed && styles.pressed,
+                    ]}
                     onPress={() => router.push("/(tabs)/requests/create")}
                 >
                     <View style={styles.createLeft}>
-                        <Text style={styles.createLabel}>New Request</Text>
+                        <Text style={[styles.createLabel, { color: theme.accent }]}>New Request</Text>
                         <Text style={styles.createTitle}>Create Laundry Request</Text>
                         <Text style={styles.createSub}>
                             Add one or more service categories with units and item details.
                         </Text>
                     </View>
-                    <Ionicons name="add-circle" size={36} color="#ebbc01" />
+                    <Ionicons name="add-circle" size={36} color={theme.accent} />
                 </Pressable>
 
                 {isLoading ? (
-                    <Text style={styles.emptyText}>Loading requests...</Text>
+                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>Loading requests...</Text>
                 ) : requests.length === 0 ? (
-                    <Text style={styles.emptyText}>No requests found.</Text>
+                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>No requests found.</Text>
                 ) : (
                     requests.map((req: any, index) => {
                         const statusColor = REQUEST_STATUS_COLOR[req.status as RequestStatus] ?? "#9ca3af";
@@ -136,23 +142,27 @@ export default function RequestsScreen() {
                         return (
                             <View key={String(req.id)}>
                                 <Pressable
-                                    style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+                                    style={({ pressed }) => [
+                                        styles.card,
+                                        { backgroundColor: theme.card, borderColor: theme.border },
+                                        pressed && styles.pressed,
+                                    ]}
                                     onPress={() =>
                                         router.push(`/requests/${req.id}?ref=${encodeURIComponent(requestRef)}` as any)
                                     }
                                 >
-                                    <View style={styles.iconWrap}>
-                                        <Ionicons name="shirt-outline" size={18} color="#040947" />
+                                    <View style={[styles.iconWrap, { backgroundColor: theme.primarySoft }]}>
+                                        <Ionicons name="shirt-outline" size={18} color={theme.primary} />
                                     </View>
                                     <View style={styles.body}>
-                                        <Text style={styles.title} numberOfLines={1}>
+                                        <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
                                             {getCategoryLabel(req)}
                                         </Text>
-                                        <Text style={styles.meta}>
+                                        <Text style={[styles.meta, { color: theme.textSoft }]}>
                                             {requestRef} · {formatDate(req.created_at)}
                                         </Text>
                                         {req.status === "OPEN" ? (
-                                            <Text style={styles.bidCount}>
+                                            <Text style={[styles.bidCount, { color: theme.success }]}>
                                                 {pendingOffers.length} active {pendingOffers.length === 1 ? "bid" : "bids"}
                                             </Text>
                                         ) : null}
@@ -186,13 +196,14 @@ export default function RequestsScreen() {
                             onPress={() => setPage((current) => Math.max(0, current - 1))}
                             style={({ pressed }) => [
                                 styles.pageBtn,
+                                { backgroundColor: theme.card, borderColor: theme.border },
                                 pressed && styles.pressed,
                                 (!canGoBack || isFetching) && styles.disabled,
                             ]}
                         >
-                            <Text style={styles.pageBtnText}>Previous</Text>
+                            <Text style={[styles.pageBtnText, { color: theme.text }]}>Previous</Text>
                         </Pressable>
-                        <Text style={styles.paginationText}>
+                        <Text style={[styles.paginationText, { color: theme.textMuted }]}>
                             Page {page + 1}
                             {isFetching ? " ..." : ""}
                         </Text>
@@ -201,11 +212,12 @@ export default function RequestsScreen() {
                             onPress={() => setPage((current) => current + 1)}
                             style={({ pressed }) => [
                                 styles.pageBtn,
+                                { backgroundColor: theme.card, borderColor: theme.border },
                                 pressed && styles.pressed,
                                 (!canGoNext || isFetching) && styles.disabled,
                             ]}
                         >
-                            <Text style={styles.pageBtnText}>Next</Text>
+                            <Text style={[styles.pageBtnText, { color: theme.text }]}>Next</Text>
                         </Pressable>
                     </View>
                 ) : null}
@@ -217,7 +229,6 @@ export default function RequestsScreen() {
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: "#edf4ff",
     },
     scroll: {
         padding: 16,
@@ -235,24 +246,19 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         paddingHorizontal: 10,
         paddingVertical: 7,
-        backgroundColor: "#ffffff",
         borderWidth: 1,
-        borderColor: "#dbe7ff",
     },
     pageBtnText: {
         fontSize: 12,
         fontWeight: "700",
-        color: "#334155",
     },
     paginationText: {
         minWidth: 68,
         textAlign: "center",
         fontSize: 12,
-        color: "#6b7280",
     },
     emptyText: {
         textAlign: "center",
-        color: "#6b7280",
         marginTop: 24,
     },
     createCard: {
@@ -263,7 +269,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        shadowColor: "#0b2457",
         shadowOpacity: 0.12,
         shadowRadius: 14,
         shadowOffset: { width: 0, height: 8 },
@@ -274,7 +279,6 @@ const styles = StyleSheet.create({
         paddingRight: 10,
     },
     createLabel: {
-        color: "#ebbc0199",
         fontSize: 10,
         fontWeight: "700",
         textTransform: "uppercase",
@@ -292,14 +296,12 @@ const styles = StyleSheet.create({
         lineHeight: 17,
     },
     card: {
-        backgroundColor: "#fff",
         borderRadius: 16,
         padding: 12,
         flexDirection: "row",
         alignItems: "center",
         marginBottom: 4,
         borderWidth: 1,
-        borderColor: "#dbe7ff",
     },
     pressed: {
         opacity: 0.86,
@@ -313,7 +315,6 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#e8f0ff",
     },
     body: {
         flex: 1,
@@ -321,18 +322,15 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 14,
-        color: "#111827",
         fontWeight: "600",
     },
     meta: {
         marginTop: 2,
         fontSize: 12,
-        color: "#9ca3af",
     },
     bidCount: {
         marginTop: 2,
         fontSize: 11,
-        color: "#0f766e",
         fontWeight: "700",
     },
     pill: {

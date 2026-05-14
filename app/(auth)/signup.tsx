@@ -14,6 +14,7 @@ import { useSignup } from "@/hooks/auth/useSignup";
 import { Ionicons } from "@expo/vector-icons";
 import AuthScreen from "@/components/ui/AuthScreen";
 import PasswordInput from "@/components/ui/PasswordInput";
+import { useAppTheme } from "@/contexts/ThemeContext";
 
 type AccountType = "user" | "business";
 
@@ -55,6 +56,7 @@ const buildSignupFormData = (params: {
 
 export default function SignupScreen() {
     const signup = useSignup();
+    const { theme } = useAppTheme();
     const [accountType, setAccountType] = useState<AccountType>("user");
     const [name, setName] = useState("");
     const [owner, setOwner] = useState("");
@@ -136,7 +138,7 @@ export default function SignupScreen() {
                         style={styles.brandLogo}
                         resizeMode="contain"
                     />
-                    <Text style={styles.brandText}>Dhune.np</Text>
+                    <Text style={[styles.brandText, { color: theme.accent }]}>Dhune.np</Text>
                 </View>
             }
             footer={
@@ -144,8 +146,8 @@ export default function SignupScreen() {
                     style={styles.loginLink}
                     onPress={() => router.replace("/(auth)/login")}
                 >
-                    <Text style={styles.loginText}>
-                        Already have an account? <Text style={styles.loginHighlight}>Login</Text>
+                    <Text style={[styles.loginText, { color: theme.textMuted }]}>
+                        Already have an account? <Text style={[styles.loginHighlight, { color: theme.primary }]}>Login</Text>
                     </Text>
                 </Pressable>
             }
@@ -154,14 +156,16 @@ export default function SignupScreen() {
                 <Pressable
                     style={[
                         styles.typeButton,
-                        accountType === "user" && styles.activeType,
+                        { backgroundColor: theme.surfaceMuted, borderColor: theme.border },
+                        accountType === "user" && { backgroundColor: theme.accent, borderColor: theme.accent },
                     ]}
                     onPress={() => setAccountType("user")}
                 >
                     <Text
                         style={[
                             styles.typeText,
-                            accountType === "user" && styles.activeTypeText,
+                            { color: theme.text },
+                            accountType === "user" && { color: "#0b2457" },
                         ]}
                     >
                         Normal User
@@ -171,14 +175,16 @@ export default function SignupScreen() {
                 <Pressable
                     style={[
                         styles.typeButton,
-                        accountType === "business" && styles.activeType,
+                        { backgroundColor: theme.surfaceMuted, borderColor: theme.border },
+                        accountType === "business" && { backgroundColor: theme.accent, borderColor: theme.accent },
                     ]}
                     onPress={() => setAccountType("business")}
                 >
                     <Text
                         style={[
                             styles.typeText,
-                            accountType === "business" && styles.activeTypeText,
+                            { color: theme.text },
+                            accountType === "business" && { color: "#0b2457" },
                         ]}
                     >
                         Business
@@ -189,9 +195,10 @@ export default function SignupScreen() {
             {accountType === "user" && (
                 <>
                     <View style={styles.field}>
-                        <Text style={styles.label}>Full Name</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>Full Name</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
+                            placeholderTextColor={theme.inputPlaceholder}
                             placeholder="Example: Ram Sharma"
                             value={name}
                             onChangeText={setName}
@@ -199,9 +206,10 @@ export default function SignupScreen() {
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={styles.label}>Phone</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>Phone</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
+                            placeholderTextColor={theme.inputPlaceholder}
                             placeholder="+977 98XXXXXXXX"
                             value={phone}
                             onChangeText={setPhone}
@@ -209,9 +217,10 @@ export default function SignupScreen() {
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={styles.label}>Email</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>Email</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
+                            placeholderTextColor={theme.inputPlaceholder}
                             placeholder="example@email.com"
                             value={email}
                             onChangeText={setEmail}
@@ -221,7 +230,7 @@ export default function SignupScreen() {
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={styles.label}>Password</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>Password</Text>
                         <PasswordInput
                             placeholder="Create a strong password"
                             value={password}
@@ -234,9 +243,10 @@ export default function SignupScreen() {
             {accountType === "business" && (
                 <>
                     <View style={styles.field}>
-                        <Text style={styles.label}>Business Name</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>Business Name</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
+                            placeholderTextColor={theme.inputPlaceholder}
                             placeholder="Everest Hospital Pvt Ltd"
                             value={name}
                             onChangeText={setName}
@@ -244,9 +254,10 @@ export default function SignupScreen() {
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={styles.label}>Owner Name</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>Owner Name</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
+                            placeholderTextColor={theme.inputPlaceholder}
                             placeholder="Owner's legal name"
                             value={owner}
                             onChangeText={setOwner}
@@ -254,9 +265,10 @@ export default function SignupScreen() {
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={styles.label}>Business Type</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>Business Type</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
+                            placeholderTextColor={theme.inputPlaceholder}
                             placeholder="Hotel, Hospital, Hostel"
                             value={businessType}
                             onChangeText={setBusinessType}
@@ -264,9 +276,10 @@ export default function SignupScreen() {
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={styles.label}>Registration Number</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>Registration Number</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
+                            placeholderTextColor={theme.inputPlaceholder}
                             placeholder="Official registration number"
                             value={registrationNumber}
                             onChangeText={setRegistrationNumber}
@@ -274,10 +287,10 @@ export default function SignupScreen() {
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={styles.label}>Registration Document</Text>
-                        <Pressable style={styles.uploadButton} onPress={pickDocument}>
-                            <Ionicons name="document-outline" size={18} color="#0b2457" />
-                            <Text style={styles.uploadText}>
+                        <Text style={[styles.label, { color: theme.primary }]}>Registration Document</Text>
+                        <Pressable style={[styles.uploadButton, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]} onPress={pickDocument}>
+                            <Ionicons name="document-outline" size={18} color={theme.primary} />
+                            <Text style={[styles.uploadText, { color: theme.text }]}>
                                 {documentFile
                                     ? documentFile.name
                                     : "Upload registration document"}
@@ -286,9 +299,10 @@ export default function SignupScreen() {
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={styles.label}>Email</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>Email</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
+                            placeholderTextColor={theme.inputPlaceholder}
                             placeholder="business@email.com"
                             value={email}
                             onChangeText={setEmail}
@@ -298,9 +312,10 @@ export default function SignupScreen() {
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={styles.label}>Phone</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>Phone</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
+                            placeholderTextColor={theme.inputPlaceholder}
                             placeholder="+977 98XXXXXXXX"
                             value={phone}
                             onChangeText={setPhone}
@@ -308,7 +323,7 @@ export default function SignupScreen() {
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={styles.label}>Password</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>Password</Text>
                         <PasswordInput
                             placeholder="Create a strong password"
                             value={password}
@@ -318,7 +333,7 @@ export default function SignupScreen() {
                 </>
             )}
 
-            <Pressable style={styles.button} onPress={handleSignup}>
+            <Pressable style={[styles.button, { backgroundColor: theme.mode === "dark" ? theme.primary : "#040947" }]} onPress={handleSignup}>
                 <Text style={styles.buttonText}>
                     {signup.isPending ? "Creating..." : "Create Account"}
                 </Text>
@@ -339,7 +354,6 @@ const styles = StyleSheet.create({
     brandText: {
         fontSize: 24,
         fontWeight: "800",
-        color: "#ebbc01",
     },
     typeSelector: {
         flexDirection: "row",
@@ -350,21 +364,11 @@ const styles = StyleSheet.create({
         minHeight: 48,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: "#dbe7ff",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#f8fbff",
-    },
-    activeType: {
-        backgroundColor: "#ebbc01",
-        borderColor: "#ebbc01",
     },
     typeText: {
         fontWeight: "700",
-        color: "#334155",
-    },
-    activeTypeText: {
-        color: "#0b2457",
     },
     field: {
         marginBottom: 14,
@@ -372,16 +376,12 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: "700",
-        color: "#0b2457",
         marginBottom: 8,
     },
     input: {
-        backgroundColor: "white",
         padding: 14,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#dbe7ff",
-        color: "#0f172a",
     },
     uploadButton: {
         flexDirection: "row",
@@ -389,17 +389,13 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         padding: 14,
         borderRadius: 12,
-        backgroundColor: "#f8fbff",
         borderWidth: 1,
-        borderColor: "#dbe7ff",
     },
     uploadText: {
         marginLeft: 8,
         fontWeight: "600",
-        color: "#334155",
     },
     button: {
-        backgroundColor: "#040947",
         paddingVertical: 16,
         borderRadius: 14,
         alignItems: "center",
@@ -416,10 +412,8 @@ const styles = StyleSheet.create({
     },
     loginText: {
         fontSize: 15,
-        color: "#64748b",
     },
     loginHighlight: {
-        color: "#0b2457",
         fontWeight: "700",
     },
 });
