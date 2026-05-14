@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type OfferLike = {
@@ -49,6 +50,7 @@ export default function OfferBidCard({
     compact,
     highlight,
 }: OfferBidCardProps) {
+    const { theme } = useAppTheme();
     const vendorName = offer.vendor_name ?? "Verified Vendor";
     const ratingValue =
         typeof offer.average_rating === "number"
@@ -70,62 +72,72 @@ export default function OfferBidCard({
     const disabled = Boolean(isAccepting || isRejecting);
 
     return (
-        <View style={[styles.card, compact && styles.compactCard]}>
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }, compact && styles.compactCard]}>
             <View style={styles.topRow}>
                 <View style={styles.vendorWrap}>
-                    <View style={styles.avatar}>
-                        <Ionicons name="storefront-outline" size={15} color="#082f49" />
+                    <View style={[styles.avatar, { backgroundColor: theme.primarySoft }]}>
+                        <Ionicons name="storefront-outline" size={15} color={theme.primary} />
                     </View>
                     <View style={styles.vendorMeta}>
-                        <Text style={styles.vendorName} numberOfLines={1}>
+                        <Text style={[styles.vendorName, { color: theme.text }]} numberOfLines={1}>
                             {vendorName}
                         </Text>
-                        <Text style={styles.vendorSub}>
+                        <Text style={[styles.vendorSub, { color: theme.textMuted }]}>
                             <Ionicons name={hasRatings ? "star" : "star-outline"} size={11} color="#f59e0b" /> {vendorSub}
                         </Text>
                     </View>
                 </View>
 
                 {highlight ? (
-                    <View style={styles.badge}>
-                        <Text style={styles.badgeText}>{highlight === "best_price" ? "Best Price" : "Fastest"}</Text>
+                    <View style={[styles.badge, { backgroundColor: theme.primarySoft }]}>
+                        <Text style={[styles.badgeText, { color: theme.primary }]}>{highlight === "best_price" ? "Best Price" : "Fastest"}</Text>
                     </View>
                 ) : null}
             </View>
 
             <View style={styles.metrics}>
-                <View style={styles.metricBox}>
-                    <Text style={styles.metricLabel}>Bid</Text>
-                    <Text style={styles.metricValue}>{formatMoney(offer.bid_price)}</Text>
+                <View style={[styles.metricBox, { backgroundColor: theme.surfaceMuted }]}>
+                    <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Bid</Text>
+                    <Text style={[styles.metricValue, { color: theme.text }]}>{formatMoney(offer.bid_price)}</Text>
                 </View>
-                <View style={styles.metricBox}>
-                    <Text style={styles.metricLabel}>Completion</Text>
-                    <Text style={styles.metricValue} numberOfLines={1}>
+                <View style={[styles.metricBox, { backgroundColor: theme.surfaceMuted }]}>
+                    <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Completion</Text>
+                    <Text style={[styles.metricValue, { color: theme.text }]} numberOfLines={1}>
                         {formatTime(offer.completion_time)}
                     </Text>
                 </View>
             </View>
 
             {!compact && offer.description ? (
-                <Text style={styles.description} numberOfLines={2}>
+                <Text style={[styles.description, { color: theme.textMuted }]} numberOfLines={2}>
                     {offer.description}
                 </Text>
             ) : null}
 
             <View style={styles.footer}>
-                <Text style={styles.metaText}>{distance || "Near your pickup location"}</Text>
+                <Text style={[styles.metaText, { color: theme.textMuted }]}>{distance || "Near your pickup location"}</Text>
                 <View style={styles.actions}>
                     <Pressable
                         disabled={disabled}
                         onPress={onReject}
-                        style={({ pressed }) => [styles.rejectBtn, pressed && styles.pressed, disabled && styles.disabled]}
+                        style={({ pressed }) => [
+                            styles.rejectBtn,
+                            { backgroundColor: theme.dangerSoft, borderColor: theme.danger },
+                            pressed && styles.pressed,
+                            disabled && styles.disabled,
+                        ]}
                     >
-                        <Text style={styles.rejectText}>{isRejecting ? "Rejecting..." : "Reject"}</Text>
+                        <Text style={[styles.rejectText, { color: theme.danger }]}>{isRejecting ? "Rejecting..." : "Reject"}</Text>
                     </Pressable>
                     <Pressable
                         disabled={disabled}
                         onPress={onAccept}
-                        style={({ pressed }) => [styles.acceptBtn, pressed && styles.pressed, disabled && styles.disabled]}
+                        style={({ pressed }) => [
+                            styles.acceptBtn,
+                            { backgroundColor: theme.success },
+                            pressed && styles.pressed,
+                            disabled && styles.disabled,
+                        ]}
                     >
                         <Text style={styles.acceptText}>{isAccepting ? "Accepting..." : "Accept"}</Text>
                     </Pressable>
@@ -137,13 +149,10 @@ export default function OfferBidCard({
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: "#ffffff",
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: "#e2e8f0",
         padding: 12,
         gap: 10,
-        shadowColor: "#0f172a",
         shadowOpacity: 0.06,
         shadowRadius: 10,
         shadowOffset: { width: 0, height: 4 },
@@ -167,7 +176,6 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: "#e0f2fe",
         alignItems: "center",
         justifyContent: "center",
         marginRight: 8,
@@ -178,21 +186,17 @@ const styles = StyleSheet.create({
     vendorName: {
         fontSize: 13,
         fontWeight: "700",
-        color: "#0f172a",
     },
     vendorSub: {
         fontSize: 11,
-        color: "#64748b",
         marginTop: 2,
     },
     badge: {
-        backgroundColor: "#eef2ff",
         borderRadius: 999,
         paddingHorizontal: 8,
         paddingVertical: 4,
     },
     badgeText: {
-        color: "#3730a3",
         fontSize: 10,
         fontWeight: "700",
     },
@@ -202,23 +206,19 @@ const styles = StyleSheet.create({
     },
     metricBox: {
         flex: 1,
-        backgroundColor: "#f8fafc",
         borderRadius: 10,
         padding: 8,
     },
     metricLabel: {
         fontSize: 10,
-        color: "#64748b",
         marginBottom: 2,
     },
     metricValue: {
         fontSize: 13,
-        color: "#0f172a",
         fontWeight: "700",
     },
     description: {
         fontSize: 12,
-        color: "#334155",
         lineHeight: 18,
     },
     footer: {
@@ -230,7 +230,6 @@ const styles = StyleSheet.create({
     metaText: {
         flex: 1,
         fontSize: 11,
-        color: "#64748b",
     },
     actions: {
         flexDirection: "row",
@@ -238,21 +237,17 @@ const styles = StyleSheet.create({
     },
     rejectBtn: {
         borderWidth: 1,
-        borderColor: "#fecaca",
-        backgroundColor: "#fff1f2",
         paddingHorizontal: 12,
         paddingVertical: 7,
         borderRadius: 8,
     },
     acceptBtn: {
-        backgroundColor: "#052e16",
         paddingHorizontal: 12,
         paddingVertical: 7,
         borderRadius: 8,
     },
     rejectText: {
         fontSize: 12,
-        color: "#b91c1c",
         fontWeight: "700",
     },
     acceptText: {

@@ -2,20 +2,30 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useNotifications } from "@/hooks/notifications/useNotifications";
+import { useAppTheme } from "@/contexts/ThemeContext";
 
 export default function NotificationButton() {
     const { unreadCount } = useNotifications();
+    const { theme } = useAppTheme();
 
     return (
         <Pressable
             onPress={() => router.push("/(tabs)/notifications")}
-            style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+            style={({ pressed }) => [
+                styles.button,
+                {
+                    backgroundColor: theme.card,
+                    shadowColor: theme.shadow,
+                    borderColor: theme.border,
+                },
+                pressed && styles.pressed,
+            ]}
             accessibilityRole="button"
             accessibilityLabel="Notifications"
         >
-            <Ionicons name="notifications-outline" size={20} color="#040947" />
+            <Ionicons name="notifications-outline" size={20} color={theme.primary} />
             {unreadCount > 0 ? (
-                <View style={styles.badge}>
+                <View style={[styles.badge, { borderColor: theme.card }]}>
                     <Text style={styles.badgeText}>
                         {unreadCount > 99 ? "99+" : unreadCount}
                     </Text>
@@ -31,6 +41,7 @@ const styles = StyleSheet.create({
         height: 36,
         borderRadius: 18,
         backgroundColor: "#fff",
+        borderWidth: 1,
         alignItems: "center",
         justifyContent: "center",
         marginRight: 14,

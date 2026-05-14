@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import OfferBidCard from "./OfferBidCard";
@@ -37,18 +38,20 @@ export default function IncomingOfferPopup({
     isAccepting,
     isRejecting,
 }: OfferPopupProps) {
+    const { theme } = useAppTheme();
+
     if (!visible) return null;
 
     return (
         <View pointerEvents="box-none" style={styles.wrap}>
-            <View style={styles.popup}>
+            <View style={[styles.popup, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }]}>
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.eyebrow}>New Vendor Offer</Text>
-                        <Text style={styles.title}>{requestLabel}</Text>
+                        <Text style={[styles.eyebrow, { color: theme.primary }]}>New Vendor Offer</Text>
+                        <Text style={[styles.title, { color: theme.text }]}>{requestLabel}</Text>
                     </View>
                     <Pressable onPress={onDismiss} hitSlop={10}>
-                        <Ionicons name="close" size={18} color="#334155" />
+                        <Ionicons name="close" size={18} color={theme.textMuted} />
                     </Pressable>
                 </View>
 
@@ -61,9 +64,9 @@ export default function IncomingOfferPopup({
                     isRejecting={isRejecting}
                 />
 
-                <Pressable style={({ pressed }) => [styles.linkBtn, pressed && styles.pressed]} onPress={onViewRequest}>
-                    <Text style={styles.linkText}>Open request details</Text>
-                    <Ionicons name="arrow-forward" size={14} color="#1d4ed8" />
+                <Pressable style={({ pressed }) => [styles.linkBtn, { backgroundColor: theme.primarySoft }, pressed && styles.pressed]} onPress={onViewRequest}>
+                    <Text style={[styles.linkText, { color: theme.primary }]}>Open request details</Text>
+                    <Ionicons name="arrow-forward" size={14} color={theme.primary} />
                 </Pressable>
             </View>
         </View>
@@ -79,12 +82,9 @@ const styles = StyleSheet.create({
         zIndex: 100,
     },
     popup: {
-        backgroundColor: "#f8fafc",
         borderRadius: 16,
         padding: 12,
         borderWidth: 1,
-        borderColor: "#dbeafe",
-        shadowColor: "#020617",
         shadowOpacity: 0.18,
         shadowRadius: 16,
         shadowOffset: { width: 0, height: 8 },
@@ -98,7 +98,6 @@ const styles = StyleSheet.create({
     },
     eyebrow: {
         fontSize: 10,
-        color: "#2563eb",
         letterSpacing: 0.6,
         textTransform: "uppercase",
         fontWeight: "700",
@@ -106,7 +105,6 @@ const styles = StyleSheet.create({
     title: {
         marginTop: 2,
         fontSize: 14,
-        color: "#0f172a",
         fontWeight: "700",
     },
     linkBtn: {
@@ -115,12 +113,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         gap: 6,
-        backgroundColor: "#eff6ff",
         borderRadius: 10,
         paddingVertical: 9,
     },
     linkText: {
-        color: "#1d4ed8",
         fontSize: 12,
         fontWeight: "700",
     },

@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { ReactNode } from "react";
 import {
     Pressable,
@@ -33,6 +34,8 @@ function AuthCardLayout({
     onBackPress,
     contentContainerStyle,
 }: Omit<AuthScreenProps, "scrollable">) {
+    const { theme } = useAppTheme();
+
     return (
         <View style={styles.contentWrap}>
             {showBackButton ? (
@@ -41,16 +44,28 @@ function AuthCardLayout({
                     onPress={onBackPress}
                     style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
                 >
-                    <Ionicons name="arrow-back" size={20} color="#0b2457" />
-                    <Text style={styles.backText}>Back</Text>
+                    <Ionicons name="arrow-back" size={20} color={theme.primary} />
+                    <Text style={[styles.backText, { color: theme.primary }]}>Back</Text>
                 </Pressable>
             ) : null}
 
-            <View style={[styles.card, contentContainerStyle]}>
+            <View
+                style={[
+                    styles.card,
+                    {
+                        backgroundColor: theme.card,
+                        borderColor: theme.border,
+                        shadowColor: theme.shadow,
+                    },
+                    contentContainerStyle,
+                ]}
+            >
                 {header}
                 <View style={styles.copyBlock}>
-                    <Text style={styles.title}>{title}</Text>
-                    <Text style={styles.subtitle}>{subtitle}</Text>
+                    <Text style={[styles.title, { color: theme.mode === "dark" ? theme.text : "#040947" }]}>
+                        {title}
+                    </Text>
+                    <Text style={[styles.subtitle, { color: theme.textMuted }]}>{subtitle}</Text>
                 </View>
                 <View style={styles.body}>{children}</View>
                 {footer}
@@ -70,10 +85,12 @@ export default function AuthScreen({
     scrollable = false,
     contentContainerStyle,
 }: AuthScreenProps) {
+    const { theme } = useAppTheme();
+
     return (
-        <SafeAreaView style={styles.safe}>
-            <View style={styles.bgTop} />
-            <View style={styles.bgBottom} />
+        <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+            <View style={[styles.bgTop, { backgroundColor: theme.primarySoft, opacity: theme.mode === "dark" ? 0.45 : 1 }]} />
+            <View style={[styles.bgBottom, { backgroundColor: theme.accentSoft, opacity: theme.mode === "dark" ? 0.8 : 1 }]} />
             {scrollable ? (
                 <ScrollView
                     bounces={false}
@@ -113,7 +130,6 @@ export default function AuthScreen({
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: "#f4f8ff",
     },
     bgTop: {
         position: "absolute",
@@ -122,7 +138,6 @@ const styles = StyleSheet.create({
         width: 260,
         height: 260,
         borderRadius: 130,
-        backgroundColor: "#dbe7ff",
     },
     bgBottom: {
         position: "absolute",
@@ -131,7 +146,6 @@ const styles = StyleSheet.create({
         width: 220,
         height: 220,
         borderRadius: 110,
-        backgroundColor: "#fceec0",
     },
     scrollContent: {
         flexGrow: 1,
@@ -157,17 +171,13 @@ const styles = StyleSheet.create({
     },
     backText: {
         fontSize: 15,
-        color: "#0b2457",
         fontWeight: "600",
     },
     card: {
-        backgroundColor: "#ffffff",
         borderRadius: 24,
         borderWidth: 1,
-        borderColor: "#dbe7ff",
         paddingHorizontal: 24,
         paddingVertical: 28,
-        shadowColor: "#0b2457",
         shadowOpacity: 0.1,
         shadowRadius: 18,
         shadowOffset: { width: 0, height: 10 },
@@ -179,13 +189,11 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 30,
         fontWeight: "800",
-        color: "#040947",
     },
     subtitle: {
         marginTop: 8,
         fontSize: 15,
         lineHeight: 23,
-        color: "#64748b",
     },
     body: {
         gap: 16,
