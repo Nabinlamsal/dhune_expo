@@ -1,5 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -100,13 +100,21 @@ export default function TabsLayout() {
                 }}
             />
 
-            {/* Center Create Request */}
             <Tabs.Screen
                 name="requests/create"
                 options={{
                     title: "",
-                    tabBarLabel: "",
-                    tabBarButton: (props) => <CenterTabButton {...props} />,
+                    tabBarLabel: () => null,
+                    tabBarButton: (props) => (
+                        <CenterTabButton {...props} />
+                    ),
+                    tabBarIcon: ({ focused }) => (
+                        <Ionicons
+                            name={focused ? "add" : "add"}
+                            color="white"
+                            size={30}
+                        />
+                    ),
                 }}
             />
 
@@ -153,7 +161,7 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
     centerWrap: {
-        // top: -,
+        top: -22,
         justifyContent: "center",
         alignItems: "center",
     },

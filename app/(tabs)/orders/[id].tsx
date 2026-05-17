@@ -4,13 +4,14 @@ import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCreateDispute } from "@/hooks/disputes/useDispute";
 import { useUpsertOrderRating } from "@/hooks/ratings/useRating";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useOrderDetail } from "@/hooks/orders/useOrder";
+import { useCashPayment, useKhaltiPayment } from "@/hooks/payment/usePayment";
 
 const PRIMARY = "#0b2457";
 const PRIMARY_ACCENT = "#6ee7d8";
@@ -84,8 +85,13 @@ export default function OrderDetailScreen() {
     const [showDisputeModal, setShowDisputeModal] = useState(false);
     const [hasRated, setHasRated] = useState(false);
 
+    const cashPaymentMutation = useCashPayment();
+    const khaltiPaymentMutation = useKhaltiPayment();
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+
     const orderId = String(order?.id ?? "");
     const isCompleted = order?.order_status === "COMPLETED";
+    const isPaymentProcessing = cashPaymentMutation.isPending || khaltiPaymentMutation.isPending;
 
     const pickupFrom = formatDateTime(order?.request?.pickup_time_from);
     const pickupTo = formatDateTime(order?.request?.pickup_time_to);
@@ -190,6 +196,22 @@ export default function OrderDetailScreen() {
         );
     };
 
+    const handleCashPayment = () => {
+        if (!orderId || isPaymentProcessing) return;
+
+        cashPaymentMutation.mutate(orderId);
+        setShowPaymentModal(false);
+    };
+
+    const handleKhaltiPayment = () => {
+        if (!order || !orderId || isPaymentProcessing) return;
+
+        khaltiPaymentMutation.mutate({
+            order_id: orderId,
+        });
+        setShowPaymentModal(false);
+    };
+
     if (isLoading) {
         return (
             <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
@@ -233,6 +255,74 @@ export default function OrderDetailScreen() {
                         </View>
                     </View>
                 </View>
+
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>
+                    Payment
+                </Text>
+
+                <SectionCard>
+                    <DetailRow
+                        label="Payment Status"
+                        value={order.payment_status}
+                        icon="wallet-outline"
+                    />
+
+                    <DetailRow
+                        label="Payment Method"
+                        value={order.request?.payment_method ?? "-"}
+                        icon="card-outline"
+                    />
+
+                    <DetailRow
+                        label="Amount"
+                        value={`Rs ${order.final_price}`}
+                        icon="cash-outline"
+                    />
+
+                    {order.payment_status !== "PAID" ? (
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.rateBtn,
+                                { backgroundColor: theme.primary },
+                                pressed && styles.pressed,
+                                isPaymentProcessing && {
+                                    opacity: 0.6,
+                                },
+                            ]}
+                            disabled={isPaymentProcessing}
+                            onPress={() => setShowPaymentModal(true)}
+                        >
+                            <Text style={styles.rateBtnText}>
+                                {isPaymentProcessing
+                                    ? "Processing..."
+                                    : "Pay Now"}
+                            </Text>
+                        </Pressable>
+                    ) : (
+                        <View
+                            style={{
+                                alignSelf: "flex-start",
+                                backgroundColor:
+                                    theme.mode === "dark"
+                                        ? "rgba(52,211,153,0.18)"
+                                        : "#dcfce7",
+                                paddingHorizontal: 12,
+                                paddingVertical: 8,
+                                borderRadius: 999,
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    color: theme.success,
+                                    fontWeight: "700",
+                                    fontSize: 12,
+                                }}
+                            >
+                                PAID
+                            </Text>
+                        </View>
+                    )}
+                </SectionCard>
 
                 {isCompleted ? (
                     <View style={[styles.ratingCard, { backgroundColor: theme.mode === "dark" ? theme.surfaceMuted : "#fffdf5", borderColor: theme.accent }]}>
@@ -323,7 +413,87 @@ export default function OrderDetailScreen() {
                     </Pressable>
                 </View>
             </ScrollView>
+            {showPaymentModal && (
+                <View
+                    style={[styles.paymentOverlay, { backgroundColor: theme.overlay }]}
+                >
+                    <View
+                        style={[styles.paymentSheet, { backgroundColor: theme.card, borderColor: theme.border }]}
+                    >
+                        <View style={styles.paymentHeader}>
+                            <View style={[styles.paymentIconWrap, { backgroundColor: theme.primarySoft }]}>
+                                <Ionicons name="wallet-outline" size={18} color={theme.primary} />
+                            </View>
+                            <View style={styles.paymentHeaderText}>
+                                <Text style={[styles.paymentTitle, { color: theme.text }]}>Choose payment</Text>
+                                <Text style={[styles.paymentSubtitle, { color: theme.textMuted }]}>
+                                    Rs {order.final_price}
+                                </Text>
+                            </View>
+                            <Pressable
+                                hitSlop={10}
+                                onPress={() => setShowPaymentModal(false)}
+                                disabled={isPaymentProcessing}
+                            >
+                                <Ionicons name="close" size={18} color={theme.textMuted} />
+                            </Pressable>
+                        </View>
 
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.paymentOption,
+                                styles.paymentOptionPrimary,
+                                { backgroundColor: theme.primary, borderColor: theme.primary },
+                                pressed && styles.pressed,
+                                isPaymentProcessing && styles.disabled,
+                            ]}
+                            disabled={isPaymentProcessing}
+                            onPress={handleKhaltiPayment}
+                        >
+                            <View style={styles.paymentOptionLeft}>
+                                <View style={[styles.paymentOptionIcon, { backgroundColor: "rgba(255,255,255,0.16)" }]}>
+                                    <Ionicons name="card-outline" size={18} color={theme.primaryContrast} />
+                                </View>
+                                <View style={styles.paymentOptionTextWrap}>
+                                    <Text style={[styles.paymentOptionTitle, { color: theme.primaryContrast }]}>
+                                        Pay with Khalti
+                                    </Text>
+                                    <Text style={[styles.paymentOptionSubtitle, { color: theme.primaryContrast }]}>
+                                        Opens Khalti checkout
+                                    </Text>
+                                </View>
+                            </View>
+                            <Ionicons name="open-outline" size={16} color={theme.primaryContrast} />
+                        </Pressable>
+
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.paymentOption,
+                                { backgroundColor: theme.surfaceMuted, borderColor: theme.border },
+                                pressed && styles.pressed,
+                                isPaymentProcessing && styles.disabled,
+                            ]}
+                            disabled={isPaymentProcessing}
+                            onPress={handleCashPayment}
+                        >
+                            <View style={styles.paymentOptionLeft}>
+                                <View style={[styles.paymentOptionIcon, { backgroundColor: theme.accentSoft }]}>
+                                    <Ionicons name="cash-outline" size={18} color={theme.primary} />
+                                </View>
+                                <View style={styles.paymentOptionTextWrap}>
+                                    <Text style={[styles.paymentOptionTitle, { color: theme.text }]}>
+                                        Record cash payment
+                                    </Text>
+                                    <Text style={[styles.paymentOptionSubtitle, { color: theme.textMuted }]}>
+                                        Marks this order as paid by cash
+                                    </Text>
+                                </View>
+                            </View>
+                            <Ionicons name="checkmark-circle-outline" size={16} color={theme.primary} />
+                        </Pressable>
+                    </View>
+                </View>
+            )}
             <RateVendorModal
                 visible={showRatingModal}
                 vendorName={order.vendor?.name}
@@ -580,6 +750,90 @@ const styles = StyleSheet.create({
     emptyText: {
         color: MUTED,
         fontSize: 12,
+    },
+    paymentOverlay: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: "center",
+        padding: 20,
+    },
+    paymentSheet: {
+        borderRadius: 16,
+        borderWidth: 1,
+        padding: 16,
+        gap: 12,
+    },
+    paymentHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+    },
+    paymentIconWrap: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    paymentHeaderText: {
+        flex: 1,
+    },
+    paymentTitle: {
+        fontSize: 16,
+        fontWeight: "700",
+    },
+    paymentSubtitle: {
+        marginTop: 2,
+        fontSize: 12,
+        fontWeight: "600",
+    },
+    paymentOption: {
+        minHeight: 64,
+        borderRadius: 12,
+        borderWidth: 1,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
+    },
+    paymentOptionPrimary: {
+        shadowOpacity: 0.14,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 3,
+    },
+    paymentOptionLeft: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        flex: 1,
+    },
+    paymentOptionIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    paymentOptionTextWrap: {
+        flex: 1,
+    },
+    paymentOptionTitle: {
+        fontSize: 13,
+        fontWeight: "700",
+    },
+    paymentOptionSubtitle: {
+        marginTop: 2,
+        fontSize: 11,
+        fontWeight: "500",
+    },
+    disabled: {
+        opacity: 0.6,
     },
     pressed: {
         opacity: 0.86,
