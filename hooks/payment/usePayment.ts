@@ -140,3 +140,55 @@ export const useKhaltiPayment = () => {
         },
     });
 };
+
+export const useEsewaPayment = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (orderId: string) => {
+            const baseUrl = process.env.EXPO_PUBLIC_NETWORK_BASE_URL;
+
+            if (!baseUrl) {
+                throw new Error("Payment server URL is not configured");
+            }
+
+            const paymentUrl = `${baseUrl.replace(/\/$/, "")}/payments/esewa/pay/${orderId}`;
+
+            Toast.show({
+                type: "info",
+                text1: "Opening eSewa...",
+            });
+
+            const result = await WebBrowser.openBrowserAsync(paymentUrl);
+            console.log("ESEWA BROWSER RESULT:", result);
+
+            return { orderId, result };
+        },
+
+        onSuccess: ({ orderId }) => {
+            queryClient.invalidateQueries({
+                queryKey: ["orders", "detail", orderId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["orders"],
+            });
+        },
+
+        onError: (error: any, orderId) => {
+            Toast.show({
+                type: "error",
+                text1: "Could not open eSewa payment",
+                text2: getPaymentErrorMessage(error, "Please try again in a moment"),
+            });
+
+            if (orderId) {
+                queryClient.invalidateQueries({
+                    queryKey: ["orders", "detail", orderId],
+                });
+                queryClient.invalidateQueries({
+                    queryKey: ["orders"],
+                });
+            }
+        },
+    });
+};

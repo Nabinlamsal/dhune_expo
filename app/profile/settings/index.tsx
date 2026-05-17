@@ -741,7 +741,7 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     groupTitle: {
-        fontSize: 15,
+        fontSize: 17,
         fontWeight: "800",
     },
     expandableWrap: {
@@ -760,19 +760,19 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     smallLabel: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: "700",
         textTransform: "uppercase",
         letterSpacing: 0.4,
         marginBottom: 4,
     },
     expandableTitle: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: "800",
     },
     expandableSubtitle: {
         marginTop: 3,
-        fontSize: 11,
+        fontSize: 13,
         fontWeight: "500",
     },
     chevronWrap: {
@@ -793,7 +793,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     label: {
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: "700",
         marginBottom: 6,
     },
@@ -809,7 +809,7 @@ const styles = StyleSheet.create({
     },
     infoText: {
         flex: 1,
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: "600",
     },
     toggleRow: {
@@ -827,12 +827,12 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     toggleLabel: {
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: "700",
     },
     toggleDescription: {
         marginTop: 3,
-        fontSize: 11,
+        fontSize: 13,
         fontWeight: "500",
     },
     toggleCircle: {
@@ -862,8 +862,8 @@ const styles = StyleSheet.create({
     },
     modalMessage: {
         marginTop: 8,
-        fontSize: 13,
-        lineHeight: 20,
+        fontSize: 14,
+        lineHeight: 21,
         fontWeight: "500",
     },
     modalActions: {
@@ -880,7 +880,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     modalButtonText: {
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: "800",
     },
     snackbarHost: {
@@ -899,7 +899,7 @@ const styles = StyleSheet.create({
     },
     snackbarText: {
         flex: 1,
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: "700",
     },
 });

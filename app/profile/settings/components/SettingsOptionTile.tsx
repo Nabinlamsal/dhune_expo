@@ -82,20 +82,20 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     label: {
-        fontSize: 10,
+        fontSize: 11,
         textTransform: "uppercase",
         letterSpacing: 0.45,
         fontWeight: "700",
         marginBottom: 4,
     },
     title: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: "800",
     },
     subtitle: {
         marginTop: 3,
-        fontSize: 11,
-        lineHeight: 17,
+        fontSize: 13,
+        lineHeight: 19,
         fontWeight: "500",
     },
     pressed: {

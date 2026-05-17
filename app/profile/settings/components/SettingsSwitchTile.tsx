@@ -85,13 +85,13 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     title: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: "800",
     },
     subtitle: {
         marginTop: 3,
-        fontSize: 11,
-        lineHeight: 17,
+        fontSize: 13,
+        lineHeight: 19,
         fontWeight: "500",
     },
 });

@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { formatDateTime, formatMoney } from "@/utils/formatters";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type OfferLike = {
@@ -27,18 +28,8 @@ type OfferBidCardProps = {
     highlight?: "best_price" | "fastest" | null;
 };
 
-const formatMoney = (amount?: number) => {
-    if (typeof amount !== "number" || Number.isNaN(amount)) return "Rs -";
-    return `Rs ${amount.toLocaleString("en-US")}`;
-};
-
 const formatTime = (value?: string) => {
-    if (!value) return "-";
-    const parsed = new Date(value);
-    if (!Number.isNaN(parsed.valueOf())) {
-        return parsed.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-    }
-    return value;
+    return formatDateTime(value);
 };
 
 export default function OfferBidCard({
@@ -184,11 +175,11 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     vendorName: {
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: "700",
     },
     vendorSub: {
-        fontSize: 11,
+        fontSize: 12,
         marginTop: 2,
     },
     badge: {
@@ -197,7 +188,7 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
     },
     badgeText: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: "700",
     },
     metrics: {
@@ -210,16 +201,16 @@ const styles = StyleSheet.create({
         padding: 8,
     },
     metricLabel: {
-        fontSize: 10,
+        fontSize: 11,
         marginBottom: 2,
     },
     metricValue: {
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: "700",
     },
     description: {
-        fontSize: 12,
-        lineHeight: 18,
+        fontSize: 13,
+        lineHeight: 19,
     },
     footer: {
         flexDirection: "row",
@@ -229,7 +220,7 @@ const styles = StyleSheet.create({
     },
     metaText: {
         flex: 1,
-        fontSize: 11,
+        fontSize: 12,
     },
     actions: {
         flexDirection: "row",
@@ -247,11 +238,11 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     rejectText: {
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: "700",
     },
     acceptText: {
-        fontSize: 12,
+        fontSize: 13,
         color: "#ffffff",
         fontWeight: "700",
     },

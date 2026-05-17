@@ -27,7 +27,7 @@ function CenterTabButton({
                     styles.centerBtn,
                     {
                         backgroundColor: theme.accent,
-                        borderColor: theme.mode === "dark" ? theme.primaryContrast : theme.accent,
+                        borderColor: theme.mode === "dark" ? "#2b2b2b" : theme.card,
                         shadowColor: theme.shadow,
                     },
                     selected && styles.centerBtnActive,
@@ -36,8 +36,8 @@ function CenterTabButton({
             >
                 <Ionicons
                     name="add"
-                    color={theme.mode === "dark" ? theme.background : theme.primaryContrast}
-                    size={31}
+                    color="#040947"
+                    size={34}
                 />
             </Pressable>
         </View>
@@ -161,21 +161,21 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
     centerWrap: {
-        top: -22,
+        top: -24,
         justifyContent: "center",
         alignItems: "center",
     },
     centerBtn: {
-        width: 53,
-        height: 53,
+        width: 60,
+        height: 60,
         borderRadius: 32,
         alignItems: "center",
         justifyContent: "center",
-        borderWidth: 1,
-        shadowOpacity: 0.18,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 6,
+        borderWidth: 4,
+        shadowOpacity: 0.24,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 9,
     },
     centerBtnActive: {
         transform: [{ scale: 1.03 }],

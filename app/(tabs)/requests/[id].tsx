@@ -4,13 +4,14 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAcceptOffer, useOffersByRequest, useRejectOffer } from "@/hooks/orders/useOffer";
 import { useCancelRequest, useRequestDetail } from "@/hooks/orders/useRequest";
 import { Offer } from "@/types/orders/offers";
+import { compactId, formatCoordinates, formatDateTime } from "@/utils/formatters";
+import { formatStatusLabel, getRequestStatusColor } from "@/utils/statusHelpers";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const PRIMARY = "#0b2457";
-const PRIMARY_ACCENT = "#6ee7d8";
 const SECTION_BG = "#f7fbff";
 const SECTION_BORDER = "#d7e4ff";
 const SURFACE_BG = "#eaf2ff";
@@ -49,12 +50,6 @@ function SectionCard({ children }: { children: ReactNode }) {
     );
 }
 
-const compactId = (prefix: string, value?: string | null) => {
-    if (!value) return "-";
-    const sum = Array.from(value).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-    return `${prefix}${(sum % 999) + 1}`;
-};
-
 const getBestPriceOfferId = (offers: Offer[]) => {
     const pending = offers.filter((offer) => offer.status === "PENDING");
     if (!pending.length) return null;
@@ -76,18 +71,6 @@ const getFastestOfferId = (offers: Offer[]) => {
     }).id;
 };
 
-const formatDateTime = (value?: string | null) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    if (Number.isNaN(date.valueOf())) return value;
-    return date.toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-    });
-};
-
 export default function RequestDetailScreen() {
     const router = useRouter();
     const { theme } = useAppTheme();
@@ -106,13 +89,11 @@ export default function RequestDetailScreen() {
     const bestPriceOfferId = getBestPriceOfferId(offers);
     const fastestOfferId = getFastestOfferId(offers);
     const isOpen = request?.status === "OPEN";
+    const statusColor = getRequestStatusColor(request?.status);
 
     const pickupFrom = formatDateTime(request?.pickup_time_from);
     const pickupTo = formatDateTime(request?.pickup_time_to);
-    const pickupCoords =
-        request?.pickup_lat != null && request?.pickup_lng != null
-            ? `${request.pickup_lat}, ${request.pickup_lng}`
-            : "-";
+    const pickupCoords = formatCoordinates(request?.pickup_lat, request?.pickup_lng);
 
     const handleAccept = (offerId: string) => {
         Alert.alert("Accept this offer?", "This will create the order and close remaining offers.", [
@@ -210,8 +191,8 @@ export default function RequestDetailScreen() {
                 <View style={[styles.heroCard, { shadowColor: theme.shadow }]}>
                     <View style={styles.heroTop}>
                         <Text style={styles.heroTitle}>Request Details</Text>
-                        <View style={styles.statusPill}>
-                            <Text style={styles.statusText}>{request.status ?? "Unknown"}</Text>
+                        <View style={[styles.statusPill, { backgroundColor: statusColor }]}>
+                            <Text style={styles.statusText}>{formatStatusLabel(request.status)}</Text>
                         </View>
                     </View>
                     <View style={styles.heroMetaRow}>
@@ -270,7 +251,7 @@ export default function RequestDetailScreen() {
                     )}
                 </SectionCard>
 
-                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Pickup Window</Text>
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Pickup & Location</Text>
                 <SectionCard>
                     <View style={styles.windowRow}>
                         <View style={styles.windowCol}>
@@ -283,16 +264,14 @@ export default function RequestDetailScreen() {
                             <Text style={[styles.windowValue, { color: theme.primary }]}>{pickupTo}</Text>
                         </View>
                     </View>
-                </SectionCard>
-
-                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Pickup Details</Text>
-                <SectionCard>
+                    <View style={styles.detailSpacer} />
                     <DetailRow label="Address" value={request.pickup_address} icon="location-outline" />
                     <DetailRow label="Coordinates" value={pickupCoords} icon="navigate-outline" />
                     <DetailRow label="Created" value={formatDateTime(request.created_at)} icon="calendar-outline" />
+                    <DetailRow label="Payment Method" value={request.payment_method ?? "-"} icon="wallet-outline" />
                 </SectionCard>
 
-                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Services</Text>
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Service Details</Text>
                 {request.services?.length ? (
                     request.services.map((service, idx) => (
                         <SectionCard key={`${service.category_id}-${idx}`}>
@@ -300,7 +279,6 @@ export default function RequestDetailScreen() {
                                 <Ionicons name="construct-outline" size={14} color={theme.primary} />
                                 <Text style={[styles.serviceTitle, { color: theme.primary }]}>Service {idx + 1}</Text>
                             </View>
-                            <DetailRow label="Category" value={`Ct${idx + 1}`} icon="pricetag-outline" />
                             <DetailRow label="Unit" value={service.selected_unit} icon="cube-outline" />
                             <DetailRow label="Quantity" value={service.quantity_value} icon="layers-outline" />
                             <DetailRow label="Description" value={service.description ?? "-"} icon="reader-outline" />
@@ -354,15 +332,14 @@ const styles = StyleSheet.create({
         color: "#ffffff",
     },
     statusPill: {
-        backgroundColor: PRIMARY_ACCENT,
         borderRadius: 999,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
     },
     statusText: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: "700",
-        color: "#073b3a",
+        color: "#ffffff",
         textTransform: "capitalize",
     },
     heroMetaRow: {
@@ -398,7 +375,7 @@ const styles = StyleSheet.create({
     },
     cancelBtnText: {
         color: "#ffffff",
-        fontSize: 11,
+        fontSize: 13,
         fontWeight: "700",
     },
     sectionTitle: {
@@ -448,15 +425,43 @@ const styles = StyleSheet.create({
         height: 34,
     },
     windowLabel: {
-        fontSize: 11,
+        fontSize: 12,
         color: MUTED,
         marginBottom: 2,
         fontWeight: "600",
     },
     windowValue: {
-        fontSize: 12,
+        fontSize: 14,
         color: PRIMARY,
         fontWeight: "700",
+    },
+    summaryGrid: {
+        borderRadius: 14,
+        borderWidth: 1,
+        padding: 12,
+        marginBottom: 10,
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    summaryItem: {
+        flex: 1,
+    },
+    summaryLabel: {
+        fontSize: 12,
+        fontWeight: "700",
+        marginBottom: 4,
+    },
+    summaryValue: {
+        fontSize: 15,
+        fontWeight: "800",
+    },
+    summaryDivider: {
+        width: 1,
+        height: 34,
+        marginHorizontal: 12,
+    },
+    detailSpacer: {
+        height: 10,
     },
     detailRow: {
         flexDirection: "row",
@@ -475,15 +480,22 @@ const styles = StyleSheet.create({
         flex: 0.95,
     },
     detailLabel: {
-        fontSize: 11,
+        fontSize: 12,
         color: MUTED,
+        fontWeight: "600",
     },
     detailValue: {
         flex: 1.35,
         textAlign: "right",
-        fontSize: 12,
+        fontSize: 14,
         color: PRIMARY,
         fontWeight: "700",
+    },
+    serviceBlock: {
+        borderWidth: 1,
+        borderRadius: 12,
+        padding: 10,
+        marginBottom: 10,
     },
     serviceTitleRow: {
         flexDirection: "row",
@@ -492,13 +504,13 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     serviceTitle: {
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: "700",
         color: PRIMARY,
     },
     emptyText: {
         color: MUTED,
-        fontSize: 12,
+        fontSize: 14,
     },
     pressed: {
         opacity: 0.86,

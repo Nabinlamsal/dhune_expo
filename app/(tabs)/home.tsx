@@ -308,7 +308,7 @@ export default function HomeScreen() {
                                         {getOrderCategoryName(order)}
                                     </Text>
                                     <Text style={[styles.listCardMeta, { color: theme.textSoft }]}>
-                                        {`Or${index + 1}`} • {formatDate(order.created_at)} •{" "}
+                                        {`Or${index + 1}`} - {formatDate(order.created_at)} -{" "}
                                         <Text style={[styles.price, { color: theme.primary }]}>Rs {order.final_price}</Text>
                                     </Text>
                                 </View>
@@ -540,4 +540,5 @@ const styles = StyleSheet.create({
         fontWeight: "500",
     },
 });
+
 

@@ -3,6 +3,8 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { useLogout } from "@/hooks/auth/useLogout";
 import { useMyProfile } from "@/hooks/users/useMyProfile";
 import { MyProfile } from "@/types/users/my-profile";
+import { formatDate } from "@/utils/formatters";
+import { formatStatusLabel } from "@/utils/statusHelpers";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
@@ -39,26 +41,8 @@ type OptionRowProps = {
     onPress: () => void;
 };
 
-function formatDate(isoDate?: string | null): string {
-    if (!isoDate) return "-";
-    const parsed = new Date(isoDate);
-    if (Number.isNaN(parsed.getTime())) {
-        return isoDate;
-    }
-    return parsed.toLocaleDateString("en-US", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-    });
-}
-
 function formatBoolean(value: boolean): string {
     return value ? "Yes" : "No";
-}
-
-function formatStatus(value?: string | null): string {
-    if (!value) return "-";
-    return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
 
 function extractProfileImage(profile: MyProfile): string | null {
@@ -143,7 +127,7 @@ export default function ProfileScreen() {
                 { label: "Owner", value: data.BusinessProfile.OwnerName || "-" },
                 { label: "Business Type", value: data.BusinessProfile.BusinessType || "-" },
                 { label: "Registration", value: data.BusinessProfile.RegistrationNumber || "-" },
-                { label: "Approval", value: formatStatus(data.BusinessProfile.ApprovalStatus) },
+                { label: "Approval", value: formatStatusLabel(data.BusinessProfile.ApprovalStatus) },
             );
         }
 
@@ -285,7 +269,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     stateTitle: {
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: "600",
     },
     retryBtn: {
@@ -336,7 +320,7 @@ const styles = StyleSheet.create({
         height: "100%",
     },
     name: {
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: "700",
         textAlign: "center",
     },
@@ -347,14 +331,14 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
     },
     role: {
-        fontSize: 11,
+        fontSize: 12,
         color: "#ffffff",
         fontWeight: "700",
         textTransform: "capitalize",
     },
     joined: {
         marginTop: 5,
-        fontSize: 11,
+        fontSize: 13,
         fontWeight: "500",
     },
     statsCard: {
@@ -410,14 +394,14 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     detailLabel: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: "700",
         marginBottom: 2,
         textTransform: "uppercase",
         letterSpacing: 0.3,
     },
     detailValue: {
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: "500",
     },
     optionsCard: {
@@ -449,12 +433,12 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     optionTitle: {
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: "700",
     },
     optionSubtitle: {
         marginTop: 2,
-        fontSize: 11,
+        fontSize: 13,
         fontWeight: "500",
     },
     logoutBtn: {
@@ -472,11 +456,11 @@ const styles = StyleSheet.create({
         opacity: 0.85,
     },
     logoutText: {
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: "700",
     },
     retryText: {
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: "600",
     },
 });

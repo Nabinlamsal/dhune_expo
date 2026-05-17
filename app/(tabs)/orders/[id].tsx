@@ -1,5 +1,6 @@
 import ReportDisputeModal from "@/components/disputes/ReportDisputeModal";
 import RateVendorModal from "@/components/ratings/RateVendorModal";
+import ExpandableSection from "@/components/ui/ExpandableSection";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCreateDispute } from "@/hooks/disputes/useDispute";
@@ -7,16 +8,17 @@ import { useUpsertOrderRating } from "@/hooks/ratings/useRating";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useOrderDetail } from "@/hooks/orders/useOrder";
 import { useCashPayment, useKhaltiPayment } from "@/hooks/payment/usePayment";
+import { compactId, formatCoordinates, formatDateTime, formatMoney } from "@/utils/formatters";
+import { formatStatusLabel, getOrderStatusColor, getPaymentStatusColor, getRequestStatusColor } from "@/utils/statusHelpers";
+import Toast from "react-native-toast-message";
 
 const PRIMARY = "#0b2457";
-const PRIMARY_ACCENT = "#6ee7d8";
-const SECTION_BG = "#f7fbff";
-const SECTION_BORDER = "#d7e4ff";
+const ACTION_BG = "#0b2457";
 const SURFACE_BG = "#eaf2ff";
 const MUTED = "#5b6b86";
 
@@ -45,35 +47,6 @@ function DetailRow({ label, value, icon }: DetailRowProps) {
     );
 }
 
-function SectionCard({ children }: { children: ReactNode }) {
-    const { theme } = useAppTheme();
-
-    return (
-        <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }]}>
-            <View style={[styles.sectionGloss, { backgroundColor: theme.mode === "dark" ? "rgba(255,255,255,0.04)" : "#ffffffb8" }]} />
-            {children}
-        </View>
-    );
-}
-
-const compactId = (prefix: string, value?: string | null) => {
-    if (!value) return "-";
-    const sum = Array.from(value).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-    return `${prefix}${(sum % 999) + 1}`;
-};
-
-const formatDateTime = (value?: string | null) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    if (Number.isNaN(date.valueOf())) return value;
-    return date.toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-    });
-};
-
 export default function OrderDetailScreen() {
     const { id, ref } = useLocalSearchParams<{ id: string; ref?: string }>();
     const { theme } = useAppTheme();
@@ -92,13 +65,13 @@ export default function OrderDetailScreen() {
     const orderId = String(order?.id ?? "");
     const isCompleted = order?.order_status === "COMPLETED";
     const isPaymentProcessing = cashPaymentMutation.isPending || khaltiPaymentMutation.isPending;
+    const orderStatusColor = getOrderStatusColor(order?.order_status);
+    const paymentStatusColor = getPaymentStatusColor(order?.payment_status);
+    const requestStatusColor = getRequestStatusColor(order?.request?.status);
 
     const pickupFrom = formatDateTime(order?.request?.pickup_time_from);
     const pickupTo = formatDateTime(order?.request?.pickup_time_to);
-    const pickupCoords =
-        order?.request?.pickup_lat != null && order?.request?.pickup_lng != null
-            ? `${order.request.pickup_lat}, ${order.request.pickup_lng}`
-            : "-";
+    const pickupCoords = formatCoordinates(order?.request?.pickup_lat, order?.request?.pickup_lng);
 
     useEffect(() => {
         if (!orderId) return;
@@ -212,6 +185,14 @@ export default function OrderDetailScreen() {
         setShowPaymentModal(false);
     };
 
+    const handleEsewaPayment = () => {
+        Toast.show({
+            type: "info",
+            text1: "Coming Soon",
+            text2: "eSewa payment is coming soon.",
+        });
+    };
+
     if (isLoading) {
         return (
             <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
@@ -240,50 +221,43 @@ export default function OrderDetailScreen() {
                 <View style={[styles.heroCard, { shadowColor: theme.shadow }]}>
                     <View style={styles.heroTop}>
                         <Text style={styles.heroTitle}>Order Details</Text>
-                        <View style={styles.statusPill}>
-                            <Text style={styles.statusText}>{order.order_status ?? "Unknown"}</Text>
+                        <View style={[styles.statusPill, { backgroundColor: orderStatusColor }]}>
+                            <Text style={styles.statusText}>{formatStatusLabel(order.order_status)}</Text>
                         </View>
                     </View>
                     <View style={styles.heroMetaRow}>
                         <View style={styles.heroMetaChip}>
                             <Ionicons name="bag-check-outline" size={12} color="#ffffff" />
-                            <Text style={styles.heroMetaText}>{ref ?? compactId("Or", order.id)}</Text>
+                            <Text style={styles.heroMetaText}>{ref ?? compactId("Or", order?.id)}</Text>
                         </View>
                         <View style={styles.heroMetaChip}>
                             <Ionicons name="cash-outline" size={12} color={theme.accent} />
-                            <Text style={styles.heroMetaText}>{`Rs ${order.final_price}`}</Text>
+                            <Text style={styles.heroMetaText}>{formatMoney(order.final_price)}</Text>
+                        </View>
+                        <View style={styles.heroMetaChip}>
+                            <Ionicons name="calendar-outline" size={12} color={theme.accent} />
+                            <Text style={styles.heroMetaText}>{formatDateTime(order?.created_at)}</Text>
                         </View>
                     </View>
                 </View>
 
-                <Text style={[styles.sectionTitle, { color: theme.primary }]}>
-                    Payment
-                </Text>
-
-                <SectionCard>
-                    <DetailRow
-                        label="Payment Status"
-                        value={order.payment_status}
-                        icon="wallet-outline"
-                    />
-
-                    <DetailRow
-                        label="Payment Method"
-                        value={order.request?.payment_method ?? "-"}
-                        icon="card-outline"
-                    />
-
-                    <DetailRow
-                        label="Amount"
-                        value={`Rs ${order.final_price}`}
-                        icon="cash-outline"
-                    />
-
+                <View style={[styles.paymentSummaryCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <View style={styles.paymentSummaryTop}>
+                        <View>
+                            <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>Payment Due</Text>
+                            <Text style={[styles.paymentAmount, { color: theme.text }]}>{formatMoney(order.final_price)}</Text>
+                        </View>
+                        <View style={[styles.paymentBadge, { backgroundColor: `${paymentStatusColor}22` }]}>
+                            <Text style={[styles.paymentBadgeText, { color: paymentStatusColor }]}>
+                                {formatStatusLabel(order.payment_status)}
+                            </Text>
+                        </View>
+                    </View>
                     {order.payment_status !== "PAID" ? (
                         <Pressable
                             style={({ pressed }) => [
                                 styles.rateBtn,
-                                { backgroundColor: theme.primary },
+                                { backgroundColor: ACTION_BG },
                                 pressed && styles.pressed,
                                 isPaymentProcessing && {
                                     opacity: 0.6,
@@ -298,31 +272,76 @@ export default function OrderDetailScreen() {
                                     : "Pay Now"}
                             </Text>
                         </Pressable>
-                    ) : (
-                        <View
-                            style={{
-                                alignSelf: "flex-start",
-                                backgroundColor:
-                                    theme.mode === "dark"
-                                        ? "rgba(52,211,153,0.18)"
-                                        : "#dcfce7",
-                                paddingHorizontal: 12,
-                                paddingVertical: 8,
-                                borderRadius: 999,
-                            }}
-                        >
-                            <Text
-                                style={{
-                                    color: theme.success,
-                                    fontWeight: "700",
-                                    fontSize: 12,
-                                }}
-                            >
-                                PAID
-                            </Text>
+                    ) : null}
+                </View>
+                <ExpandableSection
+                    title="Vendor Details"
+                    icon="storefront-outline"
+                    summary={order.vendor?.name ?? compactId("Vn", order.vendor?.id)}
+                >
+                    <DetailRow label="Name" value={order.vendor?.name} icon="person-circle-outline" />
+                    <DetailRow label="Email" value={order.vendor?.email} icon="mail-outline" />
+                    <DetailRow label="Phone" value={order.vendor?.phone} icon="call-outline" />
+                </ExpandableSection>
+
+                <ExpandableSection
+                    title="Pickup & Delivery"
+                    icon="location-outline"
+                    summary={order.request?.pickup_address ?? pickupFrom}
+                >
+                    <View style={styles.windowRow}>
+                        <View style={styles.windowCol}>
+                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>From</Text>
+                            <Text style={[styles.windowValue, { color: theme.primary }]}>{pickupFrom}</Text>
                         </View>
+                        <View style={[styles.windowDivider, { backgroundColor: theme.border }]} />
+                        <View style={styles.windowCol}>
+                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>To</Text>
+                            <Text style={[styles.windowValue, { color: theme.primary }]}>{pickupTo}</Text>
+                        </View>
+                    </View>
+                    <View style={styles.detailSpacer} />
+                    <DetailRow label="Address" value={order.request?.pickup_address} icon="location-outline" />
+                    <DetailRow label="Coordinates" value={pickupCoords} icon="navigate-outline" />
+                </ExpandableSection>
+
+                <ExpandableSection
+                    title="Service Details"
+                    icon="construct-outline"
+                    summary={`${order.services?.length ?? 0} service${order.services?.length === 1 ? "" : "s"}`}
+                >
+                    {order.services?.length ? (
+                        order.services.map((service, idx) => (
+                        <View key={`${service.category_id}-${idx}`} style={[styles.serviceBlock, { borderColor: theme.border }]}>
+                            <View style={styles.serviceTitleRow}>
+                                <Ionicons name="construct-outline" size={14} color={theme.primary} />
+                                <Text style={[styles.serviceTitle, { color: theme.primary }]}>Service {idx + 1}</Text>
+                            </View>
+                            <DetailRow label="Name" value={service.category_name} icon="grid-outline" />
+                            <DetailRow label="Unit" value={service.selected_unit} icon="cube-outline" />
+                            <DetailRow label="Quantity" value={service.quantity_value} icon="layers-outline" />
+                        </View>
+                        ))
+                    ) : (
+                        <Text style={[styles.emptyText, { color: theme.textMuted }]}>No services in this order.</Text>
                     )}
-                </SectionCard>
+                </ExpandableSection>
+
+                <ExpandableSection
+                    title="Payment Details"
+                    icon="card-outline"
+                    summary={`${formatStatusLabel(order.payment_status)} - ${order.request?.payment_method ?? "-"}`}
+                >
+                    <DetailRow label="Amount" value={formatMoney(order.final_price)} icon="cash-outline" />
+                    <DetailRow label="Payment Method" value={order.request?.payment_method} icon="card-outline" />
+                    <DetailRow label="Payment Status" value={formatStatusLabel(order.payment_status)} icon="wallet-outline" />
+                    <DetailRow label="Request Status" value={formatStatusLabel(order.request?.status)} icon="pulse-outline" />
+                    <View style={[styles.inlineBadge, { backgroundColor: `${requestStatusColor}22` }]}>
+                        <Text style={[styles.inlineBadgeText, { color: requestStatusColor }]}>
+                            {formatStatusLabel(order.request?.status)}
+                        </Text>
+                    </View>
+                </ExpandableSection>
 
                 {isCompleted ? (
                     <View style={[styles.ratingCard, { backgroundColor: theme.mode === "dark" ? theme.surfaceMuted : "#fffdf5", borderColor: theme.accent }]}>
@@ -335,68 +354,11 @@ export default function OrderDetailScreen() {
                                 </Text>
                             </View>
                         </View>
-                        <Pressable style={({ pressed }) => [styles.rateBtn, { backgroundColor: theme.primary }, pressed && styles.pressed]} onPress={handleOpenRating}>
+                        <Pressable style={({ pressed }) => [styles.rateBtn, { backgroundColor: ACTION_BG }, pressed && styles.pressed]} onPress={handleOpenRating}>
                             <Text style={styles.rateBtnText}>{hasRated ? "Update Rating" : "Rate Vendor"}</Text>
                         </Pressable>
                     </View>
                 ) : null}
-
-                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Order Summary</Text>
-                <SectionCard>
-                    <DetailRow label="Order Ref" value={ref ?? compactId("Or", order.id)} icon="document-text-outline" />
-                    <DetailRow label="Request Ref" value={compactId("Rq", order.request_id)} icon="git-merge-outline" />
-                    <DetailRow label="Payment Status" value={order.payment_status} icon="wallet-outline" />
-                    <DetailRow label="Created" value={formatDateTime(order.created_at)} icon="calendar-outline" />
-                </SectionCard>
-
-                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Vendor</Text>
-                <SectionCard>
-                    <DetailRow label="Vendor Ref" value={compactId("Vn", order.vendor?.id)} icon="storefront-outline" />
-                    <DetailRow label="Name" value={order.vendor?.name} icon="person-circle-outline" />
-                    <DetailRow label="Email" value={order.vendor?.email} icon="mail-outline" />
-                    <DetailRow label="Phone" value={order.vendor?.phone} icon="call-outline" />
-                </SectionCard>
-
-                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Pickup Window</Text>
-                <SectionCard>
-                    <View style={styles.windowRow}>
-                        <View style={styles.windowCol}>
-                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>From</Text>
-                            <Text style={[styles.windowValue, { color: theme.primary }]}>{pickupFrom}</Text>
-                        </View>
-                        <View style={[styles.windowDivider, { backgroundColor: theme.border }]} />
-                        <View style={styles.windowCol}>
-                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>To</Text>
-                            <Text style={[styles.windowValue, { color: theme.primary }]}>{pickupTo}</Text>
-                        </View>
-                    </View>
-                </SectionCard>
-
-                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Request Snapshot</Text>
-                <SectionCard>
-                    <DetailRow label="Address" value={order.request?.pickup_address} icon="location-outline" />
-                    <DetailRow label="Coordinates" value={pickupCoords} icon="navigate-outline" />
-                    <DetailRow label="Payment Method" value={order.request?.payment_method} icon="card-outline" />
-                    <DetailRow label="Request Status" value={order.request?.status} icon="pulse-outline" />
-                </SectionCard>
-
-                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Services</Text>
-                {order.services?.length ? (
-                    order.services.map((service, idx) => (
-                        <SectionCard key={`${service.category_id}-${idx}`}>
-                            <View style={styles.serviceTitleRow}>
-                                <Ionicons name="construct-outline" size={14} color={theme.primary} />
-                                <Text style={[styles.serviceTitle, { color: theme.primary }]}>Service {idx + 1}</Text>
-                            </View>
-                            <DetailRow label="Category" value={`Ct${idx + 1}`} icon="pricetag-outline" />
-                            <DetailRow label="Name" value={service.category_name} icon="grid-outline" />
-                            <DetailRow label="Unit" value={service.selected_unit} icon="cube-outline" />
-                            <DetailRow label="Quantity" value={service.quantity_value} icon="layers-outline" />
-                        </SectionCard>
-                    ))
-                ) : (
-                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>No services in this order.</Text>
-                )}
 
                 <View style={[styles.disputeCard, { backgroundColor: theme.mode === "dark" ? theme.surfaceMuted : "#fff7ed", borderColor: theme.accent }]}>
                     <View style={styles.disputeContent}>
@@ -408,7 +370,7 @@ export default function OrderDetailScreen() {
                             </Text>
                         </View>
                     </View>
-                    <Pressable style={({ pressed }) => [styles.disputeBtn, { backgroundColor: theme.primary }, pressed && styles.pressed]} onPress={() => setShowDisputeModal(true)}>
+                    <Pressable style={({ pressed }) => [styles.disputeBtn, { backgroundColor: ACTION_BG }, pressed && styles.pressed]} onPress={() => setShowDisputeModal(true)}>
                         <Text style={styles.disputeBtnText}>Report Dispute</Text>
                     </Pressable>
                 </View>
@@ -443,7 +405,7 @@ export default function OrderDetailScreen() {
                             style={({ pressed }) => [
                                 styles.paymentOption,
                                 styles.paymentOptionPrimary,
-                                { backgroundColor: theme.primary, borderColor: theme.primary },
+                                { backgroundColor: ACTION_BG, borderColor: ACTION_BG },
                                 pressed && styles.pressed,
                                 isPaymentProcessing && styles.disabled,
                             ]}
@@ -452,18 +414,44 @@ export default function OrderDetailScreen() {
                         >
                             <View style={styles.paymentOptionLeft}>
                                 <View style={[styles.paymentOptionIcon, { backgroundColor: "rgba(255,255,255,0.16)" }]}>
-                                    <Ionicons name="card-outline" size={18} color={theme.primaryContrast} />
+                                    <Ionicons name="card-outline" size={18} color="#ffffff" />
                                 </View>
                                 <View style={styles.paymentOptionTextWrap}>
-                                    <Text style={[styles.paymentOptionTitle, { color: theme.primaryContrast }]}>
+                                    <Text style={[styles.paymentOptionTitle, { color: "#ffffff" }]}>
                                         Pay with Khalti
                                     </Text>
-                                    <Text style={[styles.paymentOptionSubtitle, { color: theme.primaryContrast }]}>
+                                    <Text style={[styles.paymentOptionSubtitle, { color: "#ffffff" }]}>
                                         Opens Khalti checkout
                                     </Text>
                                 </View>
                             </View>
-                            <Ionicons name="open-outline" size={16} color={theme.primaryContrast} />
+                            <Ionicons name="open-outline" size={16} color="#ffffff" />
+                        </Pressable>
+
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.paymentOption,
+                                { backgroundColor: theme.surfaceMuted, borderColor: theme.border },
+                                pressed && styles.pressed,
+                                isPaymentProcessing && styles.disabled,
+                            ]}
+                            disabled={isPaymentProcessing}
+                            onPress={handleEsewaPayment}
+                        >
+                            <View style={styles.paymentOptionLeft}>
+                                <View style={[styles.paymentOptionIcon, { backgroundColor: theme.primarySoft }]}>
+                                    <Ionicons name="phone-portrait-outline" size={18} color={theme.primary} />
+                                </View>
+                                <View style={styles.paymentOptionTextWrap}>
+                                    <Text style={[styles.paymentOptionTitle, { color: theme.text }]}>
+                                        eSewa
+                                    </Text>
+                                    <Text style={[styles.paymentOptionSubtitle, { color: theme.textMuted }]}>
+                                        Coming soon
+                                    </Text>
+                                </View>
+                            </View>
+                            <Ionicons name="time-outline" size={16} color={theme.textMuted} />
                         </Pressable>
 
                         <Pressable
@@ -482,7 +470,7 @@ export default function OrderDetailScreen() {
                                 </View>
                                 <View style={styles.paymentOptionTextWrap}>
                                     <Text style={[styles.paymentOptionTitle, { color: theme.text }]}>
-                                        Record cash payment
+                                        Paid as Cash
                                     </Text>
                                     <Text style={[styles.paymentOptionSubtitle, { color: theme.textMuted }]}>
                                         Marks this order as paid by cash
@@ -503,7 +491,7 @@ export default function OrderDetailScreen() {
             />
             <ReportDisputeModal
                 visible={showDisputeModal}
-                orderRef={String(ref ?? compactId("Or", order.id))}
+                orderRef={String(ref ?? compactId("Or", order?.id))}
                 isSubmitting={createDisputeMutation.isPending}
                 onClose={() => setShowDisputeModal(false)}
                 onSubmit={handleSubmitDispute}
@@ -551,15 +539,14 @@ const styles = StyleSheet.create({
         color: "#ffffff",
     },
     statusPill: {
-        backgroundColor: PRIMARY_ACCENT,
         borderRadius: 999,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
     },
     statusText: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: "700",
-        color: "#073b3a",
+        color: "#ffffff",
         textTransform: "capitalize",
     },
     heroMetaRow: {
@@ -612,23 +599,23 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     ratingTitle: {
-        fontSize: 13,
+        fontSize: 15,
         color: "#111827",
         fontWeight: "700",
     },
     ratingSubtitle: {
         marginTop: 2,
-        fontSize: 11,
+        fontSize: 13,
         color: "#6b7280",
     },
     disputeTitle: {
-        fontSize: 13,
+        fontSize: 15,
         color: "#111827",
         fontWeight: "700",
     },
     disputeSubtitle: {
         marginTop: 2,
-        fontSize: 11,
+        fontSize: 13,
         color: "#6b7280",
     },
     rateBtn: {
@@ -647,43 +634,44 @@ const styles = StyleSheet.create({
     },
     rateBtnText: {
         color: "#ffffff",
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: "700",
     },
     disputeBtnText: {
         color: "#ffffff",
-        fontSize: 12,
-        fontWeight: "700",
-    },
-    sectionTitle: {
         fontSize: 14,
         fontWeight: "700",
-        color: PRIMARY,
-        marginVertical: 8,
     },
-    section: {
-        backgroundColor: SECTION_BG,
+    paymentSummaryCard: {
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: SECTION_BORDER,
         padding: 12,
         marginBottom: 10,
-        shadowColor: "#173b82",
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 2,
-        overflow: "hidden",
-        position: "relative",
     },
-    sectionGloss: {
-        position: "absolute",
-        top: -10,
-        left: -18,
-        right: -18,
-        height: 24,
-        backgroundColor: "#ffffffb8",
-        transform: [{ rotate: "-2deg" }],
+    paymentSummaryTop: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        marginBottom: 12,
+    },
+    summaryLabel: {
+        fontSize: 12,
+        fontWeight: "700",
+        marginBottom: 4,
+    },
+    paymentAmount: {
+        fontSize: 22,
+        fontWeight: "800",
+    },
+    paymentBadge: {
+        borderRadius: 999,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+    },
+    paymentBadgeText: {
+        fontSize: 12,
+        fontWeight: "800",
     },
     windowRow: {
         flexDirection: "row",
@@ -699,15 +687,18 @@ const styles = StyleSheet.create({
         height: 34,
     },
     windowLabel: {
-        fontSize: 11,
+        fontSize: 12,
         color: MUTED,
         marginBottom: 2,
         fontWeight: "600",
     },
     windowValue: {
-        fontSize: 12,
+        fontSize: 14,
         color: PRIMARY,
         fontWeight: "700",
+    },
+    detailSpacer: {
+        height: 10,
     },
     detailRow: {
         flexDirection: "row",
@@ -726,15 +717,22 @@ const styles = StyleSheet.create({
         flex: 0.95,
     },
     detailLabel: {
-        fontSize: 11,
+        fontSize: 12,
         color: MUTED,
+        fontWeight: "600",
     },
     detailValue: {
         flex: 1.35,
         textAlign: "right",
-        fontSize: 12,
+        fontSize: 14,
         color: PRIMARY,
         fontWeight: "700",
+    },
+    serviceBlock: {
+        borderWidth: 1,
+        borderRadius: 12,
+        padding: 10,
+        marginBottom: 10,
     },
     serviceTitleRow: {
         flexDirection: "row",
@@ -743,13 +741,24 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     serviceTitle: {
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: "700",
         color: PRIMARY,
     },
     emptyText: {
         color: MUTED,
+        fontSize: 14,
+    },
+    inlineBadge: {
+        alignSelf: "flex-start",
+        borderRadius: 999,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        marginBottom: 10,
+    },
+    inlineBadgeText: {
         fontSize: 12,
+        fontWeight: "800",
     },
     paymentOverlay: {
         position: "absolute",
@@ -839,3 +848,6 @@ const styles = StyleSheet.create({
         opacity: 0.86,
     },
 });
+
+
+

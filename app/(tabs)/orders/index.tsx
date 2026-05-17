@@ -1,29 +1,14 @@
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useMyOrders } from "@/hooks/orders/useOrder";
+import { formatDate, formatMoney } from "@/utils/formatters";
+import { formatStatusLabel, getOrderStatusColor } from "@/utils/statusHelpers";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const PAGE_SIZE = 10;
-
-const STATUS_COLORS: Record<string, string> = {
-    ACCEPTED: "#ebbc01",
-    PICKED_UP: "#f97316",
-    IN_PROGRESS: "#3b82f6",
-    DELIVERING: "#8b5cf6",
-    COMPLETED: "#22c55e",
-    CANCELLED: "#ef4444",
-};
-
-const formatDate = (iso?: string) => {
-    if (!iso) return "-";
-    const d = new Date(iso);
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-};
-
-const formatStatus = (s: string) => s.replace(/_/g, " ");
 
 const getOrderCategoryLabel = (order: any) => {
     if (Array.isArray(order?.services) && order.services.length > 0) {
@@ -58,7 +43,7 @@ export default function OrdersScreen() {
                     <Text style={[styles.emptyText, { color: theme.textMuted }]}>No orders found.</Text>
                 ) : (
                     orders.map((order, index) => {
-                        const color = STATUS_COLORS[order.order_status] ?? "#9ca3af";
+                        const color = getOrderStatusColor(order.order_status);
                         const orderRef = `Or${index + 1}`;
                         return (
                             <Pressable
@@ -80,12 +65,12 @@ export default function OrdersScreen() {
                                         {getOrderCategoryLabel(order)}
                                     </Text>
                                     <Text style={[styles.meta, { color: theme.textSoft }]}>
-                                        {orderRef} · {formatDate(order.created_at)} · Rs {order.final_price}
+                                        {orderRef} - {formatDate(order.created_at)} - {formatMoney(order.final_price)}
                                     </Text>
                                 </View>
                                 <View style={[styles.pill, { backgroundColor: `${color}22` }]}>
                                     <Text style={[styles.pillText, { color }]}>
-                                        {formatStatus(order.order_status)}
+                                        {formatStatusLabel(order.order_status)}
                                     </Text>
                                 </View>
                             </Pressable>
@@ -151,17 +136,19 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     pageBtnText: {
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: "700",
     },
     paginationText: {
         minWidth: 68,
         textAlign: "center",
-        fontSize: 12,
+        fontSize: 13,
     },
     emptyText: {
         textAlign: "center",
         marginTop: 24,
+        fontSize: 15,
+        fontWeight: "600",
     },
     card: {
         borderRadius: 16,
@@ -189,12 +176,12 @@ const styles = StyleSheet.create({
         marginLeft: 10,
     },
     title: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: "600",
     },
     meta: {
         marginTop: 2,
-        fontSize: 12,
+        fontSize: 13,
     },
     pill: {
         borderRadius: 999,
@@ -202,7 +189,8 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
     },
     pillText: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: "700",
     },
 });
+

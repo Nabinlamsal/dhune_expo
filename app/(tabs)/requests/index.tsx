@@ -6,6 +6,8 @@ import { useMyRequests } from "@/hooks/orders/useRequest";
 import { getOffersByRequest } from "@/services/orders/offer_service";
 import { RequestStatus } from "@/types/orders/orders-enums";
 import { Offer } from "@/types/orders/offers";
+import { formatDate } from "@/utils/formatters";
+import { formatStatusLabel, getRequestStatusColor } from "@/utils/statusHelpers";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useQueries } from "@tanstack/react-query";
@@ -13,21 +15,6 @@ import { useState } from "react";
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const PAGE_SIZE = 10;
-
-const REQUEST_STATUS_COLOR: Record<RequestStatus, string> = {
-    OPEN: "#ebbc01",
-    ORDER_CREATED: "#22c55e",
-    CANCELLED: "#ef4444",
-    EXPIRED: "#9ca3af",
-};
-
-const formatDate = (iso?: string) => {
-    if (!iso) return "-";
-    const d = new Date(iso);
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-};
-
-const formatStatus = (s: string) => s.replace(/_/g, " ");
 
 const getCategoryLabel = (request: any) => {
     const firstService = request?.services?.[0];
@@ -133,7 +120,7 @@ export default function RequestsScreen() {
                     <Text style={[styles.emptyText, { color: theme.textMuted }]}>No requests found.</Text>
                 ) : (
                     requests.map((req: any, index) => {
-                        const statusColor = REQUEST_STATUS_COLOR[req.status as RequestStatus] ?? "#9ca3af";
+                        const statusColor = getRequestStatusColor(req.status as RequestStatus);
                         const requestRef = `Rq${index + 1}`;
                         const offers = offersMap.get(String(req.id)) ?? [];
                         const pendingOffers = offers.filter((offer) => offer.status === "PENDING");
@@ -159,7 +146,7 @@ export default function RequestsScreen() {
                                             {getCategoryLabel(req)}
                                         </Text>
                                         <Text style={[styles.meta, { color: theme.textSoft }]}>
-                                            {requestRef} · {formatDate(req.created_at)}
+                                            {requestRef} - {formatDate(req.created_at)}
                                         </Text>
                                         {req.status === "OPEN" ? (
                                             <Text style={[styles.bidCount, { color: theme.success }]}>
@@ -169,7 +156,7 @@ export default function RequestsScreen() {
                                     </View>
                                     <View style={[styles.pill, { backgroundColor: `${statusColor}22` }]}>
                                         <Text style={[styles.pillText, { color: statusColor }]}>
-                                            {formatStatus(String(req.status ?? ""))}
+                                            {formatStatusLabel(String(req.status ?? ""))}
                                         </Text>
                                     </View>
                                 </Pressable>
@@ -249,20 +236,22 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     pageBtnText: {
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: "700",
     },
     paginationText: {
         minWidth: 68,
         textAlign: "center",
-        fontSize: 12,
+        fontSize: 13,
     },
     emptyText: {
         textAlign: "center",
         marginTop: 24,
+        fontSize: 15,
+        fontWeight: "600",
     },
     createCard: {
-        backgroundColor: "#0b2457",
+        backgroundColor: "#040947",
         borderRadius: 16,
         padding: 16,
         marginBottom: 12,
@@ -279,21 +268,21 @@ const styles = StyleSheet.create({
         paddingRight: 10,
     },
     createLabel: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: "700",
         textTransform: "uppercase",
         marginBottom: 2,
     },
     createTitle: {
         color: "#fff",
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: "700",
         marginBottom: 4,
     },
     createSub: {
         color: "#ffffff9e",
-        fontSize: 12,
-        lineHeight: 17,
+        fontSize: 14,
+        lineHeight: 20,
     },
     card: {
         borderRadius: 16,
@@ -321,16 +310,16 @@ const styles = StyleSheet.create({
         marginLeft: 10,
     },
     title: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: "600",
     },
     meta: {
         marginTop: 2,
-        fontSize: 12,
+        fontSize: 13,
     },
     bidCount: {
         marginTop: 2,
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: "700",
     },
     pill: {
@@ -339,8 +328,9 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
     },
     pillText: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: "700",
     },
 });
+
 
