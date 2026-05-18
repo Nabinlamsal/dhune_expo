@@ -1,12 +1,16 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
+import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import Toast from "react-native-toast-message";
 
 import {
-    initiateKhalti,
+    getEsewaOrderPayUrl,
+    initiateOrderPayment,
     payCash
 } from "@/services/payments/payments_service";
-import { InitiateKhaltiData, InitiateKhaltiPayload, InitiateKhaltiResponse } from "@/types/payments/payments";
+import { InitiateOrderPaymentData, InitiateOrderPaymentResponse } from "@/types/payments/payments";
+
+WebBrowser.maybeCompleteAuthSession();
 
 const getPaymentErrorMessage = (error: any, fallback: string) =>
     error?.response?.data?.message ||
@@ -14,49 +18,80 @@ const getPaymentErrorMessage = (error: any, fallback: string) =>
     error?.message ||
     fallback;
 
-const unwrapKhaltiResponse = (response: InitiateKhaltiResponse | InitiateKhaltiData) => {
+const unwrapOrderPaymentResponse = (response: InitiateOrderPaymentResponse | InitiateOrderPaymentData) => {
     const data = response && "data" in response ? response.data : response;
+    const paymentUrl = data?.payment_url ?? data?.paymentUrl ?? data?.redirect_url ?? data?.redirectUrl ?? data?.url;
 
-    if (!data?.payment_url) {
+    if (!paymentUrl) {
         throw new Error("Payment URL not received");
     }
 
-    return data;
+    return paymentUrl;
 };
 
-const KHALTI_REDIRECT_URL = "dhunemobile://payment-result";
+const getPaymentReturnUrl = (orderId: string) =>
+    Linking.createURL(`orders/${orderId}`, {
+        scheme: "dhune",
+    });
 
-const openKhaltiPaymentUrl = async (paymentUrl: string) => {
-    try {
-        const result = await WebBrowser.openAuthSessionAsync(
-            paymentUrl,
-            KHALTI_REDIRECT_URL
-        );
+const getPaymentResult = (url?: string | null) => {
+    if (!url) return null;
 
-        console.log("KHALTI AUTH SESSION RESULT:", result);
+    const params = Linking.parse(url).queryParams ?? {};
+    const payment = params.payment;
+    const result = Array.isArray(payment) ? payment[0] : payment;
+    return result == null ? null : String(result);
+};
 
-        if (result.type === "success" && result.url) {
-            if (result.url.includes("payment=success")) {
-                Toast.show({
-                    type: "success",
-                    text1: "Payment Successful",
-                    text2: "Your Khalti payment was completed",
-                });
-            } else if (
-                result.url.includes("payment=failed") ||
-                result.url.includes("payment=error")
-            ) {
-                Toast.show({
-                    type: "error",
-                    text1: "Payment Failed",
-                    text2: "Khalti payment was not completed",
-                });
-            }
-        }
-    } catch (error) {
-        console.log("KHALTI AUTH SESSION FAILED:", error);
-        await WebBrowser.openBrowserAsync(paymentUrl);
+const showPaymentResultToast = (paymentResult: string | null) => {
+    if (paymentResult === "success") {
+        Toast.show({
+            type: "success",
+            text1: "Payment successful",
+            text2: "Your order payment is being updated.",
+        });
+        return;
     }
+
+    if (paymentResult === "failed") {
+        Toast.show({
+            type: "error",
+            text1: "Payment failed",
+            text2: "Please try again.",
+        });
+        return;
+    }
+
+    if (paymentResult === "error") {
+        Toast.show({
+            type: "error",
+            text1: "Payment error",
+            text2: "Please try again in a moment.",
+        });
+    }
+};
+
+const refetchOrderPaymentQueries = async (queryClient: QueryClient, orderId: string) => {
+    await Promise.all([
+        queryClient.invalidateQueries({
+            queryKey: ["orders", "detail", orderId],
+        }),
+        queryClient.invalidateQueries({
+            queryKey: ["orders"],
+        }),
+        queryClient.invalidateQueries({
+            queryKey: ["orders", "my", "stats"],
+        }),
+    ]);
+};
+
+const openPaymentUrl = async (paymentUrl: string, orderId: string) => {
+    const returnUrl = getPaymentReturnUrl(orderId);
+    const result = await WebBrowser.openAuthSessionAsync(paymentUrl, returnUrl);
+    const returnedUrl = result.type === "success" ? result.url : null;
+
+    console.log("PAYMENT BROWSER RESULT:", result);
+    showPaymentResultToast(getPaymentResult(returnedUrl));
 };
 
 export const useCashPayment = () => {
@@ -64,9 +99,7 @@ export const useCashPayment = () => {
 
     return useMutation({
         mutationFn: async (orderId: string) => {
-            return await payCash({
-                order_id: orderId,
-            });
+            return await payCash(orderId);
         },
 
         onSuccess: (_, orderId) => {
@@ -76,12 +109,7 @@ export const useCashPayment = () => {
                 text2: "Cash payment recorded successfully",
             });
 
-            queryClient.invalidateQueries({
-                queryKey: ["orders", "detail", orderId],
-            });
-            queryClient.invalidateQueries({
-                queryKey: ["orders"],
-            });
+            void refetchOrderPaymentQueries(queryClient, orderId);
         },
 
         onError: (error: any) => {
@@ -98,21 +126,21 @@ export const useKhaltiPayment = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (payload: InitiateKhaltiPayload) => {
-            console.log("KHALTI PAYLOAD:", payload);
+        mutationFn: async (orderId: string) => {
+            const response = await initiateOrderPayment(orderId, {
+                method: "KHALTI",
+                return_url: getPaymentReturnUrl(orderId),
+            });
 
-            const response = await initiateKhalti(payload);
-
-            console.log("KHALTI RESPONSE:", response);
-
-            return unwrapKhaltiResponse(response);
+            return {
+                orderId,
+                paymentUrl: unwrapOrderPaymentResponse(response),
+            };
         },
 
-        onSuccess: async (data, payload) => {
-            console.log("KHALTI PAYMENT URL:", data.payment_url);
-
+        onSuccess: async ({ orderId, paymentUrl }) => {
             try {
-                await openKhaltiPaymentUrl(data.payment_url);
+                await openPaymentUrl(paymentUrl, orderId);
             } catch (error: any) {
                 Toast.show({
                     type: "error",
@@ -120,12 +148,7 @@ export const useKhaltiPayment = () => {
                     text2: getPaymentErrorMessage(error, "Please try again in a moment"),
                 });
             } finally {
-                queryClient.invalidateQueries({
-                    queryKey: ["orders", "detail", payload.order_id],
-                });
-                queryClient.invalidateQueries({
-                    queryKey: ["orders"],
-                });
+                await refetchOrderPaymentQueries(queryClient, orderId);
             }
         },
 
@@ -146,32 +169,20 @@ export const useEsewaPayment = () => {
 
     return useMutation({
         mutationFn: async (orderId: string) => {
-            const baseUrl = process.env.EXPO_PUBLIC_NETWORK_BASE_URL;
-
-            if (!baseUrl) {
-                throw new Error("Payment server URL is not configured");
-            }
-
-            const paymentUrl = `${baseUrl.replace(/\/$/, "")}/payments/esewa/pay/${orderId}`;
+            const paymentUrl = getEsewaOrderPayUrl(orderId);
 
             Toast.show({
                 type: "info",
                 text1: "Opening eSewa...",
             });
 
-            const result = await WebBrowser.openBrowserAsync(paymentUrl);
-            console.log("ESEWA BROWSER RESULT:", result);
+            await openPaymentUrl(paymentUrl, orderId);
 
-            return { orderId, result };
+            return { orderId };
         },
 
-        onSuccess: ({ orderId }) => {
-            queryClient.invalidateQueries({
-                queryKey: ["orders", "detail", orderId],
-            });
-            queryClient.invalidateQueries({
-                queryKey: ["orders"],
-            });
+        onSuccess: async ({ orderId }) => {
+            await refetchOrderPaymentQueries(queryClient, orderId);
         },
 
         onError: (error: any, orderId) => {
@@ -182,12 +193,7 @@ export const useEsewaPayment = () => {
             });
 
             if (orderId) {
-                queryClient.invalidateQueries({
-                    queryKey: ["orders", "detail", orderId],
-                });
-                queryClient.invalidateQueries({
-                    queryKey: ["orders"],
-                });
+                void refetchOrderPaymentQueries(queryClient, orderId);
             }
         },
     });

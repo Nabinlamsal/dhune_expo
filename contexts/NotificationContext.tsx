@@ -83,7 +83,7 @@ export const NotificationContext = createContext<NotificationContextValue | null
 );
 
 const getWsUrl = (token: string) => {
-    const baseUrl = process.env.EXPO_PUBLIC_NETWORK_BASE_URL ?? "";
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? "";
     const wsBase = baseUrl.replace(/^http:/i, "ws:").replace(/^https:/i, "wss:");
     return `${wsBase.replace(/\/$/, "")}/ws?token=${encodeURIComponent(token)}`;
 };

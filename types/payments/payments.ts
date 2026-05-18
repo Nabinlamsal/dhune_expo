@@ -21,29 +21,20 @@ export interface Payment {
     updatedAt?: string;
 }
 
-export interface PayCashPayload {
-    order_id: string;
-}
+export type OnlinePaymentMethod = "KHALTI" | "ESEWA";
 
-export interface InitiateKhaltiPayload {
-    order_id: string;
-    amount?: number;
-    purchase_order_id?: string;
-    purchase_order_name?: string;
+export interface InitiateOrderPaymentPayload {
+    method: OnlinePaymentMethod;
     return_url?: string;
 }
 
-export interface VerifyKhaltiPayload {
-    pidx: string;
-}
-
-export interface InitiateKhaltiData {
-    pidx: string;
-    payment_url: string;
-    expires_at?: string;
-    expires_in?: number;
+export interface InitiateOrderPaymentData {
+    payment_url?: string;
+    paymentUrl?: string;
+    redirect_url?: string;
+    redirectUrl?: string;
+    url?: string;
 }
 
 export type PayCashResponse = ApiResponse<Payment>;
-export type InitiateKhaltiResponse = ApiResponse<InitiateKhaltiData>;
-export type VerifyKhaltiResponse = ApiResponse<Payment>;
+export type InitiateOrderPaymentResponse = ApiResponse<InitiateOrderPaymentData>;

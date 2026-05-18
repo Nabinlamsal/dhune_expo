@@ -12,10 +12,9 @@ import { useEffect, useState } from "react";
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useOrderDetail } from "@/hooks/orders/useOrder";
-import { useCashPayment, useKhaltiPayment } from "@/hooks/payment/usePayment";
+import { useCashPayment, useEsewaPayment, useKhaltiPayment } from "@/hooks/payment/usePayment";
 import { compactId, formatCoordinates, formatDateTime, formatMoney } from "@/utils/formatters";
 import { formatStatusLabel, getOrderStatusColor, getPaymentStatusColor, getRequestStatusColor } from "@/utils/statusHelpers";
-import Toast from "react-native-toast-message";
 
 const PRIMARY = "#0b2457";
 const ACTION_BG = "#0b2457";
@@ -59,12 +58,13 @@ export default function OrderDetailScreen() {
     const [hasRated, setHasRated] = useState(false);
 
     const cashPaymentMutation = useCashPayment();
+    const esewaPaymentMutation = useEsewaPayment();
     const khaltiPaymentMutation = useKhaltiPayment();
     const [showPaymentModal, setShowPaymentModal] = useState(false);
 
     const orderId = String(order?.id ?? "");
     const isCompleted = order?.order_status === "COMPLETED";
-    const isPaymentProcessing = cashPaymentMutation.isPending || khaltiPaymentMutation.isPending;
+    const isPaymentProcessing = cashPaymentMutation.isPending || esewaPaymentMutation.isPending || khaltiPaymentMutation.isPending;
     const orderStatusColor = getOrderStatusColor(order?.order_status);
     const paymentStatusColor = getPaymentStatusColor(order?.payment_status);
     const requestStatusColor = getRequestStatusColor(order?.request?.status);
@@ -179,18 +179,15 @@ export default function OrderDetailScreen() {
     const handleKhaltiPayment = () => {
         if (!order || !orderId || isPaymentProcessing) return;
 
-        khaltiPaymentMutation.mutate({
-            order_id: orderId,
-        });
+        khaltiPaymentMutation.mutate(orderId);
         setShowPaymentModal(false);
     };
 
     const handleEsewaPayment = () => {
-        Toast.show({
-            type: "info",
-            text1: "Coming Soon",
-            text2: "eSewa payment is coming soon.",
-        });
+        if (!orderId || isPaymentProcessing) return;
+
+        esewaPaymentMutation.mutate(orderId);
+        setShowPaymentModal(false);
     };
 
     if (isLoading) {
@@ -444,14 +441,14 @@ export default function OrderDetailScreen() {
                                 </View>
                                 <View style={styles.paymentOptionTextWrap}>
                                     <Text style={[styles.paymentOptionTitle, { color: theme.text }]}>
-                                        eSewa
+                                        Pay with eSewa
                                     </Text>
                                     <Text style={[styles.paymentOptionSubtitle, { color: theme.textMuted }]}>
-                                        Coming soon
+                                        Opens eSewa checkout
                                     </Text>
                                 </View>
                             </View>
-                            <Ionicons name="time-outline" size={16} color={theme.textMuted} />
+                            <Ionicons name="open-outline" size={16} color={theme.primary} />
                         </Pressable>
 
                         <Pressable
