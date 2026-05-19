@@ -1,5 +1,34 @@
-export const formatStatusLabel = (status?: string | null) => {
+import type { TFunction } from "i18next";
+
+const STATUS_TRANSLATION_KEYS: Record<string, string> = {
+    ACCEPTED: "status.accepted",
+    ALL: "status.all",
+    CANCELLED: "status.cancelled",
+    COMPLETED: "status.completed",
+    DELIVERING: "status.delivering",
+    EXPIRED: "status.expired",
+    IN_PROGRESS: "status.inProgress",
+    OPEN: "status.open",
+    ORDER_CREATED: "status.orderCreated",
+    PAID: "status.paid",
+    PICKED_UP: "status.pickedUp",
+    PENDING: "status.pending",
+    REJECTED: "status.rejected",
+    UNPAID: "status.unpaid",
+};
+
+export const getStatusTranslationKey = (status?: string | null) => {
+    if (!status) return null;
+    return STATUS_TRANSLATION_KEYS[status] ?? null;
+};
+
+export const formatStatusLabel = (status?: string | null, t?: TFunction) => {
     if (!status) return "-";
+    const translationKey = getStatusTranslationKey(status);
+    if (translationKey && t) {
+        return t(translationKey);
+    }
+
     return status.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 };
 

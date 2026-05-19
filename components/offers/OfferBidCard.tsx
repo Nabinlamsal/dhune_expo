@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { formatDateTime, formatMoney } from "@/utils/formatters";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 type OfferLike = {
     id: string;
@@ -42,7 +43,8 @@ export default function OfferBidCard({
     highlight,
 }: OfferBidCardProps) {
     const { theme } = useAppTheme();
-    const vendorName = offer.vendor_name ?? "Verified Vendor";
+    const { t } = useTranslation();
+    const vendorName = offer.vendor_name ?? t("offers.verifiedVendor");
     const ratingValue =
         typeof offer.average_rating === "number"
             ? offer.average_rating
@@ -56,9 +58,9 @@ export default function OfferBidCard({
     const hasRatings = ratingValue !== null;
     const vendorSub = hasRatings
         ? ratingCount !== null
-            ? `${ratingValue.toFixed(1)} (${ratingCount} reviews)`
-            : `${ratingValue.toFixed(1)} rating`
-        : "New vendor";
+            ? t("offers.reviews", { rating: ratingValue.toFixed(1), count: ratingCount })
+            : t("offers.rating", { rating: ratingValue.toFixed(1) })
+        : t("offers.newVendor");
     const distance = typeof offer.vendor_distance_km === "number" ? `${offer.vendor_distance_km.toFixed(1)} km away` : "";
     const disabled = Boolean(isAccepting || isRejecting);
 
@@ -81,18 +83,18 @@ export default function OfferBidCard({
 
                 {highlight ? (
                     <View style={[styles.badge, { backgroundColor: theme.primarySoft }]}>
-                        <Text style={[styles.badgeText, { color: theme.primary }]}>{highlight === "best_price" ? "Best Price" : "Fastest"}</Text>
+                        <Text style={[styles.badgeText, { color: theme.primary }]}>{highlight === "best_price" ? t("offers.bestPrice") : t("offers.fastest")}</Text>
                     </View>
                 ) : null}
             </View>
 
             <View style={styles.metrics}>
                 <View style={[styles.metricBox, { backgroundColor: theme.surfaceMuted }]}>
-                    <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Bid</Text>
+                    <Text style={[styles.metricLabel, { color: theme.textMuted }]}>{t("common.bid")}</Text>
                     <Text style={[styles.metricValue, { color: theme.text }]}>{formatMoney(offer.bid_price)}</Text>
                 </View>
                 <View style={[styles.metricBox, { backgroundColor: theme.surfaceMuted }]}>
-                    <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Completion</Text>
+                    <Text style={[styles.metricLabel, { color: theme.textMuted }]}>{t("common.completion")}</Text>
                     <Text style={[styles.metricValue, { color: theme.text }]} numberOfLines={1}>
                         {formatTime(offer.completion_time)}
                     </Text>
@@ -106,7 +108,7 @@ export default function OfferBidCard({
             ) : null}
 
             <View style={styles.footer}>
-                <Text style={[styles.metaText, { color: theme.textMuted }]}>{distance || "Near your pickup location"}</Text>
+                <Text style={[styles.metaText, { color: theme.textMuted }]}>{distance || t("offers.nearPickup")}</Text>
                 <View style={styles.actions}>
                     <Pressable
                         disabled={disabled}
@@ -118,7 +120,7 @@ export default function OfferBidCard({
                             disabled && styles.disabled,
                         ]}
                     >
-                        <Text style={[styles.rejectText, { color: theme.danger }]}>{isRejecting ? "Rejecting..." : "Reject"}</Text>
+                        <Text style={[styles.rejectText, { color: theme.danger }]}>{isRejecting ? t("common.rejecting") : t("common.reject")}</Text>
                     </Pressable>
                     <Pressable
                         disabled={disabled}
@@ -130,7 +132,7 @@ export default function OfferBidCard({
                             disabled && styles.disabled,
                         ]}
                     >
-                        <Text style={styles.acceptText}>{isAccepting ? "Accepting..." : "Accept"}</Text>
+                        <Text style={styles.acceptText}>{isAccepting ? t("common.accepting") : t("common.accept")}</Text>
                     </Pressable>
                 </View>
             </View>

@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import OfferBidCard from "./OfferBidCard";
 
@@ -39,6 +40,7 @@ export default function IncomingOfferPopup({
     isRejecting,
 }: OfferPopupProps) {
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
 
     if (!visible) return null;
 
@@ -47,7 +49,7 @@ export default function IncomingOfferPopup({
             <View style={[styles.popup, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }]}>
                 <View style={styles.header}>
                     <View>
-                        <Text style={[styles.eyebrow, { color: theme.primary }]}>New Vendor Offer</Text>
+                        <Text style={[styles.eyebrow, { color: theme.primary }]}>{t("offers.newVendorOffer")}</Text>
                         <Text style={[styles.title, { color: theme.text }]}>{requestLabel}</Text>
                     </View>
                     <Pressable onPress={onDismiss} hitSlop={10}>
@@ -65,7 +67,7 @@ export default function IncomingOfferPopup({
                 />
 
                 <Pressable style={({ pressed }) => [styles.linkBtn, { backgroundColor: theme.primarySoft }, pressed && styles.pressed]} onPress={onViewRequest}>
-                    <Text style={[styles.linkText, { color: theme.primary }]}>Open request details</Text>
+                    <Text style={[styles.linkText, { color: theme.primary }]}>{t("offers.openRequestDetails")}</Text>
                     <Ionicons name="arrow-forward" size={14} color={theme.primary} />
                 </Pressable>
             </View>

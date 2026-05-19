@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Pressable,
     SafeAreaView,
@@ -35,6 +36,7 @@ function AuthCardLayout({
     contentContainerStyle,
 }: Omit<AuthScreenProps, "scrollable">) {
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
 
     return (
         <View style={styles.contentWrap}>
@@ -45,7 +47,7 @@ function AuthCardLayout({
                     style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
                 >
                     <Ionicons name="arrow-back" size={20} color={theme.primary} />
-                    <Text style={[styles.backText, { color: theme.primary }]}>Back</Text>
+                    <Text style={[styles.backText, { color: theme.primary }]}>{t("common.back")}</Text>
                 </Pressable>
             ) : null}
 

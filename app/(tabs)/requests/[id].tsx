@@ -9,6 +9,7 @@ import { formatStatusLabel, getRequestStatusColor } from "@/utils/statusHelpers"
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const PRIMARY = "#0b2457";
@@ -74,6 +75,7 @@ const getFastestOfferId = (offers: Offer[]) => {
 export default function RequestDetailScreen() {
     const router = useRouter();
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
     const { id, ref } = useLocalSearchParams<{ id: string; ref?: string }>();
     const requestId = String(id ?? "");
 
@@ -96,10 +98,10 @@ export default function RequestDetailScreen() {
     const pickupCoords = formatCoordinates(request?.pickup_lat, request?.pickup_lng);
 
     const handleAccept = (offerId: string) => {
-        Alert.alert("Accept this offer?", "This will create the order and close remaining offers.", [
-            { text: "Cancel", style: "cancel" },
+        Alert.alert(t("offers.acceptPromptTitle"), t("offers.acceptPromptCloseOffers"), [
+            { text: t("common.cancel"), style: "cancel" },
             {
-                text: "Accept",
+                text: t("common.accept"),
                 style: "default",
                 onPress: () => {
                     acceptOfferMutation.mutate(
@@ -107,13 +109,13 @@ export default function RequestDetailScreen() {
                         {
                             onSuccess: (response) => {
                                 const orderId = response.data?.order_id;
-                                Alert.alert("Offer accepted", "Order created successfully.");
+                                Alert.alert(t("offers.offerAccepted"), t("offers.orderCreated"));
                                 if (orderId) {
                                     router.replace(`/orders/${orderId}` as any);
                                 }
                             },
                             onError: () => {
-                                Alert.alert("Could not accept", "Please try again.");
+                                Alert.alert(t("offers.couldNotAccept"), t("errors.defaultTryAgain"));
                             },
                         }
                     );
@@ -123,17 +125,17 @@ export default function RequestDetailScreen() {
     };
 
     const handleReject = (offerId: string) => {
-        Alert.alert("Reject this offer?", "You can still choose from other bids.", [
-            { text: "Cancel", style: "cancel" },
+        Alert.alert(t("offers.rejectPromptTitle"), t("offers.rejectPromptOtherBids"), [
+            { text: t("common.cancel"), style: "cancel" },
             {
-                text: "Reject",
+                text: t("common.reject"),
                 style: "destructive",
                 onPress: () => {
                     rejectOfferMutation.mutate(
                         { offer_id: offerId },
                         {
                             onError: () => {
-                                Alert.alert("Could not reject", "Please try again.");
+                                Alert.alert(t("offers.couldNotReject"), t("errors.defaultTryAgain"));
                             },
                         }
                     );
@@ -144,18 +146,18 @@ export default function RequestDetailScreen() {
 
     const handleCancelRequest = () => {
         if (!request) return;
-        Alert.alert("Cancel request?", "This request will be marked as cancelled.", [
-            { text: "Keep", style: "cancel" },
+        Alert.alert(t("requests.cancelRequestPrompt"), t("requests.cancelRequestPromptMessage"), [
+            { text: t("common.keep"), style: "cancel" },
             {
-                text: "Cancel Request",
+                text: t("requests.cancelRequest"),
                 style: "destructive",
                 onPress: () => {
                     cancelRequestMutation.mutate(request.id, {
                         onSuccess: () => {
-                            Alert.alert("Request cancelled", "Your request is now cancelled.");
+                            Alert.alert(t("requests.cancelled"), t("requests.cancelledMessage"));
                         },
                         onError: () => {
-                            Alert.alert("Could not cancel", "Please try again.");
+                            Alert.alert(t("requests.cancelFailed"), t("errors.defaultTryAgain"));
                         },
                     });
                 },
@@ -166,7 +168,7 @@ export default function RequestDetailScreen() {
     if (isLoading) {
         return (
             <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
-                <Text style={[styles.centerText, { color: theme.textMuted }]}>Loading request details...</Text>
+                <Text style={[styles.centerText, { color: theme.textMuted }]}>{t("requests.loadingDetails")}</Text>
             </SafeAreaView>
         );
     }
@@ -174,7 +176,7 @@ export default function RequestDetailScreen() {
     if (!request) {
         return (
             <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
-                <Text style={[styles.centerText, { color: theme.textMuted }]}>Request not found.</Text>
+                <Text style={[styles.centerText, { color: theme.textMuted }]}>{t("requests.requestNotFound")}</Text>
             </SafeAreaView>
         );
     }
@@ -183,16 +185,16 @@ export default function RequestDetailScreen() {
         <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
-                    title="Request Details"
-                    subtitle={ref ? `Reference ${ref}` : "Open request, bids, and pickup info."}
+                    title={t("requests.details")}
+                    subtitle={ref ? t("common.reference", { ref }) : t("requests.detailsSubtitle")}
                     backHref="/(tabs)/requests"
                 />
 
                 <View style={[styles.heroCard, { shadowColor: theme.shadow }]}>
                     <View style={styles.heroTop}>
-                        <Text style={styles.heroTitle}>Request Details</Text>
+                        <Text style={styles.heroTitle}>{t("requests.details")}</Text>
                         <View style={[styles.statusPill, { backgroundColor: statusColor }]}>
-                            <Text style={styles.statusText}>{formatStatusLabel(request.status)}</Text>
+                            <Text style={styles.statusText}>{formatStatusLabel(request.status, t)}</Text>
                         </View>
                     </View>
                     <View style={styles.heroMetaRow}>
@@ -214,15 +216,15 @@ export default function RequestDetailScreen() {
                             disabled={cancelRequestMutation.isPending}
                             style={({ pressed }) => [styles.cancelBtn, pressed && styles.pressed, cancelRequestMutation.isPending && styles.disabled]}
                         >
-                            <Text style={styles.cancelBtnText}>{cancelRequestMutation.isPending ? "Cancelling..." : "Cancel Request"}</Text>
+                            <Text style={styles.cancelBtnText}>{cancelRequestMutation.isPending ? t("common.cancelling") : t("requests.cancelRequest")}</Text>
                         </Pressable>
                     </View>
                 ) : null}
 
-                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Offers & Bids</Text>
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>{t("requests.offersAndBids")}</Text>
                 <SectionCard>
                     {offersLoading ? (
-                        <Text style={[styles.emptyText, { color: theme.textMuted }]}>Loading bids...</Text>
+                        <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t("requests.loadingBids")}</Text>
                     ) : pendingOffers.length ? (
                         <View style={styles.offerStack}>
                             {pendingOffers.map((offer) => {
@@ -247,45 +249,45 @@ export default function RequestDetailScreen() {
                             })}
                         </View>
                     ) : (
-                        <Text style={[styles.emptyText, { color: theme.textMuted }]}>No active offers yet. Vendors will appear here once they bid.</Text>
+                        <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t("requests.noActiveOffers")}</Text>
                     )}
                 </SectionCard>
 
-                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Pickup & Location</Text>
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>{t("requests.pickupLocation")}</Text>
                 <SectionCard>
                     <View style={styles.windowRow}>
                         <View style={styles.windowCol}>
-                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>From</Text>
+                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>{t("common.from")}</Text>
                             <Text style={[styles.windowValue, { color: theme.primary }]}>{pickupFrom}</Text>
                         </View>
                         <View style={[styles.windowDivider, { backgroundColor: theme.border }]} />
                         <View style={styles.windowCol}>
-                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>To</Text>
+                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>{t("common.to")}</Text>
                             <Text style={[styles.windowValue, { color: theme.primary }]}>{pickupTo}</Text>
                         </View>
                     </View>
                     <View style={styles.detailSpacer} />
-                    <DetailRow label="Address" value={request.pickup_address} icon="location-outline" />
-                    <DetailRow label="Coordinates" value={pickupCoords} icon="navigate-outline" />
-                    <DetailRow label="Created" value={formatDateTime(request.created_at)} icon="calendar-outline" />
-                    <DetailRow label="Payment Method" value={request.payment_method ?? "-"} icon="wallet-outline" />
+                    <DetailRow label={t("common.address")} value={request.pickup_address} icon="location-outline" />
+                    <DetailRow label={t("common.coordinates")} value={pickupCoords} icon="navigate-outline" />
+                    <DetailRow label={t("common.created")} value={formatDateTime(request.created_at)} icon="calendar-outline" />
+                    <DetailRow label={t("common.paymentMethod")} value={request.payment_method ?? "-"} icon="wallet-outline" />
                 </SectionCard>
 
-                <Text style={[styles.sectionTitle, { color: theme.primary }]}>Service Details</Text>
+                <Text style={[styles.sectionTitle, { color: theme.primary }]}>{t("requests.serviceDetails")}</Text>
                 {request.services?.length ? (
                     request.services.map((service, idx) => (
                         <SectionCard key={`${service.category_id}-${idx}`}>
                             <View style={styles.serviceTitleRow}>
                                 <Ionicons name="construct-outline" size={14} color={theme.primary} />
-                                <Text style={[styles.serviceTitle, { color: theme.primary }]}>Service {idx + 1}</Text>
+                                <Text style={[styles.serviceTitle, { color: theme.primary }]}>{t("common.service", { number: idx + 1 })}</Text>
                             </View>
-                            <DetailRow label="Unit" value={service.selected_unit} icon="cube-outline" />
-                            <DetailRow label="Quantity" value={service.quantity_value} icon="layers-outline" />
-                            <DetailRow label="Description" value={service.description ?? "-"} icon="reader-outline" />
+                            <DetailRow label={t("common.unit")} value={service.selected_unit} icon="cube-outline" />
+                            <DetailRow label={t("common.quantity")} value={service.quantity_value} icon="layers-outline" />
+                            <DetailRow label={t("common.description")} value={service.description ?? "-"} icon="reader-outline" />
                         </SectionCard>
                     ))
                 ) : (
-                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>No services in this request.</Text>
+                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t("requests.noServices")}</Text>
                 )}
             </ScrollView>
         </SafeAreaView>

@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useQueries } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const PAGE_SIZE = 10;
@@ -29,6 +30,7 @@ const getCategoryLabel = (request: any) => {
 export default function RequestsScreen() {
     const router = useRouter();
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
     const [page, setPage] = useState(0);
     const offset = page * PAGE_SIZE;
     const { data, isLoading, isFetching } = useMyRequests(PAGE_SIZE, offset);
@@ -54,15 +56,15 @@ export default function RequestsScreen() {
     });
 
     const handleAccept = (offerId: string) => {
-        Alert.alert("Accept this offer?", "This creates your order immediately.", [
-            { text: "Cancel", style: "cancel" },
+        Alert.alert(t("offers.acceptPromptTitle"), t("offers.acceptPromptCreateOrder"), [
+            { text: t("common.cancel"), style: "cancel" },
             {
-                text: "Accept",
+                text: t("common.accept"),
                 onPress: () => {
                     acceptOfferMutation.mutate(
                         { offer_id: offerId },
                         {
-                            onError: () => Alert.alert("Could not accept", "Please try again."),
+                            onError: () => Alert.alert(t("offers.couldNotAccept"), t("errors.defaultTryAgain")),
                         }
                     );
                 },
@@ -71,16 +73,16 @@ export default function RequestsScreen() {
     };
 
     const handleReject = (offerId: string) => {
-        Alert.alert("Reject this offer?", "This bid will be removed from your options.", [
-            { text: "Cancel", style: "cancel" },
+        Alert.alert(t("offers.rejectPromptTitle"), t("offers.rejectPromptOptions"), [
+            { text: t("common.cancel"), style: "cancel" },
             {
-                text: "Reject",
+                text: t("common.reject"),
                 style: "destructive",
                 onPress: () => {
                     rejectOfferMutation.mutate(
                         { offer_id: offerId },
                         {
-                            onError: () => Alert.alert("Could not reject", "Please try again."),
+                            onError: () => Alert.alert(t("offers.couldNotReject"), t("errors.defaultTryAgain")),
                         }
                     );
                 },
@@ -92,8 +94,8 @@ export default function RequestsScreen() {
         <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
-                    title="Requests"
-                    subtitle="Track open pickups and incoming bids."
+                    title={t("navigation.requests")}
+                    subtitle={t("requests.subtitle")}
                 />
 
                 <Pressable
@@ -105,19 +107,19 @@ export default function RequestsScreen() {
                     onPress={() => router.push("/(tabs)/requests/create")}
                 >
                     <View style={styles.createLeft}>
-                        <Text style={[styles.createLabel, { color: theme.accent }]}>New Request</Text>
-                        <Text style={styles.createTitle}>Create Laundry Request</Text>
+                        <Text style={[styles.createLabel, { color: theme.accent }]}>{t("requests.newRequest")}</Text>
+                        <Text style={styles.createTitle}>{t("requests.createLaundryRequest")}</Text>
                         <Text style={styles.createSub}>
-                            Add one or more service categories with units and item details.
+                            {t("requests.submitHint")}
                         </Text>
                     </View>
                     <Ionicons name="add-circle" size={36} color={theme.accent} />
                 </Pressable>
 
                 {isLoading ? (
-                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>Loading requests...</Text>
+                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t("requests.loadingRequests")}</Text>
                 ) : requests.length === 0 ? (
-                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>No requests found.</Text>
+                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t("requests.noRequestsFound")}</Text>
                 ) : (
                     requests.map((req: any, index) => {
                         const statusColor = getRequestStatusColor(req.status as RequestStatus);
@@ -150,13 +152,13 @@ export default function RequestsScreen() {
                                         </Text>
                                         {req.status === "OPEN" ? (
                                             <Text style={[styles.bidCount, { color: theme.success }]}>
-                                                {pendingOffers.length} active {pendingOffers.length === 1 ? "bid" : "bids"}
+                                                {pendingOffers.length} {pendingOffers.length === 1 ? t("requests.activeBid") : t("requests.activeBids")}
                                             </Text>
                                         ) : null}
                                     </View>
                                     <View style={[styles.pill, { backgroundColor: `${statusColor}22` }]}>
                                         <Text style={[styles.pillText, { color: statusColor }]}>
-                                            {formatStatusLabel(String(req.status ?? ""))}
+                                            {formatStatusLabel(String(req.status ?? ""), t)}
                                         </Text>
                                     </View>
                                 </Pressable>
@@ -188,10 +190,10 @@ export default function RequestsScreen() {
                                 (!canGoBack || isFetching) && styles.disabled,
                             ]}
                         >
-                            <Text style={[styles.pageBtnText, { color: theme.text }]}>Previous</Text>
+                            <Text style={[styles.pageBtnText, { color: theme.text }]}>{t("common.previous")}</Text>
                         </Pressable>
                         <Text style={[styles.paginationText, { color: theme.textMuted }]}>
-                            Page {page + 1}
+                            {t("common.page")} {page + 1}
                             {isFetching ? " ..." : ""}
                         </Text>
                         <Pressable
@@ -204,7 +206,7 @@ export default function RequestsScreen() {
                                 (!canGoNext || isFetching) && styles.disabled,
                             ]}
                         >
-                            <Text style={[styles.pageBtnText, { color: theme.text }]}>Next</Text>
+                            <Text style={[styles.pageBtnText, { color: theme.text }]}>{t("common.next")}</Text>
                         </Pressable>
                     </View>
                 ) : null}

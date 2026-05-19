@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQueries } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert, Animated, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const REQUEST_STATUS_COLOR: Record<RequestStatus, string> = {
@@ -30,8 +31,6 @@ const ORDER_STATUS_COLOR: Record<string, string> = {
     CANCELLED: "#ef4444",
     ALL: "#9ca3af",
 };
-
-const formatStatus = (s: string) => s.replace(/_/g, " ");
 
 const formatDate = (iso?: string) => {
     if (!iso) return "-";
@@ -96,6 +95,7 @@ function StatCard({
 }
 
 function StatusPill({ status, type }: { status: string; type: "request" | "order" }) {
+    const { t } = useTranslation();
     const color =
         type === "request"
             ? REQUEST_STATUS_COLOR[status as RequestStatus] ?? "#9ca3af"
@@ -103,20 +103,21 @@ function StatusPill({ status, type }: { status: string; type: "request" | "order
     return (
         <View style={[styles.pill, { backgroundColor: `${color}22` }]}>
             <View style={[styles.pillDot, { backgroundColor: color }]} />
-            <Text style={[styles.pillText, { color }]}>{formatStatus(status)}</Text>
+            <Text style={[styles.pillText, { color }]}>{t(`status.${status.toLowerCase().replace(/_([a-z])/g, (_, char) => char.toUpperCase())}`, { defaultValue: status.replace(/_/g, " ") })}</Text>
         </View>
     );
 }
 
 function SectionHeader({ title, onPress }: { title: string; onPress?: () => void }) {
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
 
     return (
         <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
             {onPress && (
                 <Pressable onPress={onPress}>
-                    <Text style={[styles.seeAll, { color: theme.accent }]}>See all</Text>
+                    <Text style={[styles.seeAll, { color: theme.accent }]}>{t("home.seeAll")}</Text>
                 </Pressable>
             )}
         </View>
@@ -137,6 +138,7 @@ function EmptyState({ label }: { label: string }) {
 export default function HomeScreen() {
     const router = useRouter();
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
     const { data: requestStats } = useMyRequestStats();
     const { data: orderStats } = useMyOrderStats();
     const { data: requestsData } = useMyRequests(6, 0);
@@ -206,7 +208,7 @@ export default function HomeScreen() {
                     <View style={styles.header}>
                         <ScreenHeader
                             title="Dhune.np"
-                            subtitle="Your laundry activity, requests, and orders."
+                            subtitle={t("home.subtitle")}
                             rightSlot={<NotificationButton />}
                         />
                     </View>
@@ -216,9 +218,9 @@ export default function HomeScreen() {
                         onPress={() => router.push("/(tabs)/requests/create")}
                     >
                         <View style={styles.ctaLeft}>
-                            <Text style={[styles.ctaLabel, { color: theme.accent }]}>Ready for laundry?</Text>
-                            <Text style={styles.ctaTitle}>Create a Request</Text>
-                            <Text style={styles.ctaSub}>Vendors bid, you choose the best offer.</Text>
+                            <Text style={[styles.ctaLabel, { color: theme.accent }]}>{t("home.ctaLabel")}</Text>
+                            <Text style={styles.ctaTitle}>{t("home.createRequest")}</Text>
+                            <Text style={styles.ctaSub}>{t("home.ctaSubtitle")}</Text>
                         </View>
                         <View style={styles.ctaIconWrap}>
                             <Ionicons name="add-circle" size={42} color={theme.accent} />
@@ -227,18 +229,18 @@ export default function HomeScreen() {
 
                     <View style={styles.statsGrid}>
                         <StatCard
-                            label="Open Requests"
+                            label={t("home.openRequests")}
                             value={requestStats?.open_requests ?? 0}
                             icon="file-tray-outline"
                             accent
                         />
                         <StatCard
-                            label="Total Requests"
+                            label={t("home.totalRequests")}
                             value={requestStats?.total_requests ?? 0}
                             icon="document-text-outline"
                         />
                         <StatCard
-                            label="Active Orders"
+                            label={t("home.activeOrders")}
                             value={
                                 (orderStats?.data?.accepted_orders ?? 0) +
                                 (orderStats?.data?.in_progress_orders ?? 0) +
@@ -248,15 +250,15 @@ export default function HomeScreen() {
                             accent
                         />
                         <StatCard
-                            label="Completed"
+                            label={t("common.completed")}
                             value={orderStats?.data?.completed_orders ?? 0}
                             icon="checkmark-circle-outline"
                         />
                     </View>
 
-                    <SectionHeader title="Recent Requests" onPress={() => router.push("/(tabs)/requests")} />
+                    <SectionHeader title={t("home.recentRequests")} onPress={() => router.push("/(tabs)/requests")} />
                     {recentRequests.length === 0 ? (
-                        <EmptyState label="No requests yet" />
+                        <EmptyState label={t("home.noRequests")} />
                     ) : (
                         recentRequests.map((req: any, index) => (
                             <Pressable
@@ -284,9 +286,9 @@ export default function HomeScreen() {
                         ))
                     )}
 
-                    <SectionHeader title="Recent Orders" onPress={() => router.push("/(tabs)/orders")} />
+                    <SectionHeader title={t("home.recentOrders")} onPress={() => router.push("/(tabs)/orders")} />
                     {recentOrders.length === 0 ? (
-                        <EmptyState label="No orders yet" />
+                        <EmptyState label={t("home.noOrders")} />
                     ) : (
                         recentOrders.map((order, index) => (
                             <Pressable
@@ -332,10 +334,10 @@ export default function HomeScreen() {
                         router.push(`/requests/${incomingOffer.request.id}?ref=${encodeURIComponent("Offer")}` as any)
                     }
                     onAccept={() => {
-                        Alert.alert("Accept this offer?", "This creates the order with this vendor.", [
-                            { text: "Cancel", style: "cancel" },
+                        Alert.alert(t("offers.acceptPromptTitle"), t("offers.acceptPromptVendor"), [
+                            { text: t("common.cancel"), style: "cancel" },
                             {
-                                text: "Accept",
+                                text: t("common.accept"),
                                 onPress: () => {
                                     acceptOfferMutation.mutate(
                                         { offer_id: incomingOffer.offer.id },
@@ -348,7 +350,7 @@ export default function HomeScreen() {
                                                 }
                                             },
                                             onError: () => {
-                                                Alert.alert("Could not accept", "Please try again.");
+                                                Alert.alert(t("offers.couldNotAccept"), t("errors.defaultTryAgain"));
                                             },
                                         }
                                     );
@@ -357,10 +359,10 @@ export default function HomeScreen() {
                         ]);
                     }}
                     onReject={() => {
-                        Alert.alert("Reject this offer?", "You can still choose another vendor bid.", [
-                            { text: "Cancel", style: "cancel" },
+                        Alert.alert(t("offers.rejectPromptTitle"), t("offers.rejectPromptStillChoose"), [
+                            { text: t("common.cancel"), style: "cancel" },
                             {
-                                text: "Reject",
+                                text: t("common.reject"),
                                 style: "destructive",
                                 onPress: () => {
                                     rejectOfferMutation.mutate(
@@ -370,7 +372,7 @@ export default function HomeScreen() {
                                                 setDismissedOfferId(incomingOffer.offer.id);
                                             },
                                             onError: () => {
-                                                Alert.alert("Could not reject", "Please try again.");
+                                                Alert.alert(t("offers.couldNotReject"), t("errors.defaultTryAgain"));
                                             },
                                         }
                                     );

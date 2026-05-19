@@ -6,6 +6,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { useChangePassword } from "@/hooks/auth/useChangePassword";
 import { useForgotPassword } from "@/hooks/auth/useForgotPassword";
 import { useResetPassword } from "@/hooks/auth/useResetPassword";
+import { useLanguage } from "@/hooks/useLanguage";
 import { useMyProfile } from "@/hooks/users/useMyProfile";
 import { clearTemporaryCache } from "@/services/cache/app-cache.service";
 import {
@@ -34,7 +35,6 @@ import {
 import SettingsOptionTile from "./components/SettingsOptionTile";
 import SettingsSwitchTile from "./components/SettingsSwitchTile";
 
-type LanguageOption = "english" | "nepali";
 type ExpandableKey =
     | "changePassword"
     | "forgotPassword"
@@ -169,6 +169,7 @@ export default function ProfileSettingsScreen() {
     const resetPassword = useResetPassword();
     const queryClient = useQueryClient();
     const { theme, mode, preference, setMode } = useAppTheme();
+    const { currentLanguage, setLanguage, t } = useLanguage();
 
     const colors = useMemo(
         () => ({
@@ -192,7 +193,6 @@ export default function ProfileSettingsScreen() {
     const [newPassword, setNewPassword] = useState("");
     const [resetOtp, setResetOtp] = useState("");
     const [resetNewPassword, setResetNewPassword] = useState("");
-    const [selectedLanguage, setSelectedLanguage] = useState<LanguageOption>("english");
     const [expandedSection, setExpandedSection] = useState<ExpandableKey>(null);
     const [showCacheModal, setShowCacheModal] = useState(false);
     const [isClearingCache, setIsClearingCache] = useState(false);
@@ -246,7 +246,7 @@ export default function ProfileSettingsScreen() {
 
     const handleChangePassword = async () => {
         if (!oldPassword || !newPassword) {
-            Alert.alert("Missing fields", "Please enter your old and new password.");
+            Alert.alert(t("settings.missingFields"), t("settings.missingPasswordFields"));
             return;
         }
 
@@ -258,9 +258,9 @@ export default function ProfileSettingsScreen() {
 
             setOldPassword("");
             setNewPassword("");
-            Alert.alert("Password updated", "Your password has been changed.");
+            Alert.alert(t("settings.passwordUpdated"), t("settings.passwordUpdatedMessage"));
         } catch {
-            Alert.alert("Update failed", "Please try again.");
+            Alert.alert(t("settings.updateFailed"), t("errors.defaultTryAgain"));
         }
     };
 
@@ -268,15 +268,15 @@ export default function ProfileSettingsScreen() {
         const email = data?.Email?.trim();
 
         if (!email) {
-            Alert.alert("Missing email", "No email is available for this account.");
+            Alert.alert(t("settings.missingEmail"), t("settings.missingEmailMessage"));
             return;
         }
 
         try {
             await forgotPassword.mutateAsync({ email });
-            Alert.alert("OTP sent", `A password reset OTP was sent to ${email}.`);
+            Alert.alert(t("settings.otpSent"), t("settings.otpSentMessage", { email }));
         } catch {
-            Alert.alert("Request failed", "Please try again.");
+            Alert.alert(t("settings.requestFailed"), t("errors.defaultTryAgain"));
         }
     };
 
@@ -284,12 +284,12 @@ export default function ProfileSettingsScreen() {
         const email = data?.Email?.trim();
 
         if (!email) {
-            Alert.alert("Missing email", "No email is available for this account.");
+            Alert.alert(t("settings.missingEmail"), t("settings.missingEmailMessage"));
             return;
         }
 
         if (!resetOtp.trim() || !resetNewPassword) {
-            Alert.alert("Missing fields", "Enter the OTP and your new password.");
+            Alert.alert(t("settings.missingFields"), t("settings.missingResetFields"));
             return;
         }
 
@@ -301,9 +301,9 @@ export default function ProfileSettingsScreen() {
             });
             setResetOtp("");
             setResetNewPassword("");
-            Alert.alert("Password reset", "Your password has been reset successfully.");
+            Alert.alert(t("settings.passwordReset"), t("settings.passwordResetMessage"));
         } catch {
-            Alert.alert("Reset failed", "Please check the OTP and try again.");
+            Alert.alert(t("settings.resetFailed"), t("settings.resetFailedMessage"));
         }
     };
 
@@ -315,7 +315,7 @@ export default function ProfileSettingsScreen() {
             setShowCacheModal(false);
             setSnackbarVisible(true);
         } catch {
-            Alert.alert("Could not clear cache", "Please try again in a moment.");
+            Alert.alert(t("settings.cacheClearFailed"), t("settings.cacheClearFailedMessage"));
         } finally {
             setIsClearingCache(false);
         }
@@ -349,8 +349,8 @@ export default function ProfileSettingsScreen() {
 
             if (finalStatus !== "granted") {
                 Alert.alert(
-                    "Notifications disabled",
-                    "Notification permission was not granted, so this setting remains off."
+                    t("settings.notificationsDisabled"),
+                    t("settings.notificationsDisabledMessage")
                 );
                 setPushNotificationsEnabled(false);
                 await setPushNotificationsPreference(false);
@@ -360,7 +360,7 @@ export default function ProfileSettingsScreen() {
             setPushNotificationsEnabled(true);
             await setPushNotificationsPreference(true);
         } catch {
-            Alert.alert("Could not update preference", "Please try again.");
+            Alert.alert(t("settings.updatePreferenceFailed"), t("errors.defaultTryAgain"));
         } finally {
             setIsUpdatingPushPreference(false);
         }
@@ -390,8 +390,8 @@ export default function ProfileSettingsScreen() {
 
             if (finalStatus !== "granted") {
                 Alert.alert(
-                    "Location access denied",
-                    "Location permission was not granted, so this setting remains off."
+                    t("settings.locationDenied"),
+                    t("settings.locationDeniedMessage")
                 );
                 setLocationServicesEnabled(false);
                 await setLocationServicesPreference(false);
@@ -401,7 +401,7 @@ export default function ProfileSettingsScreen() {
             setLocationServicesEnabled(true);
             await setLocationServicesPreference(true);
         } catch {
-            Alert.alert("Could not update preference", "Please try again.");
+            Alert.alert(t("settings.updatePreferenceFailed"), t("errors.defaultTryAgain"));
         } finally {
             setIsUpdatingLocationPreference(false);
         }
@@ -415,8 +415,8 @@ export default function ProfileSettingsScreen() {
             >
                 <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
                     <ScreenHeader
-                        title="Settings & Privacy"
-                        subtitle="Security controls, support, and accessibility."
+                        title={t("settings.settingsPrivacy")}
+                        subtitle={t("settings.securityControlsSubtitle")}
                         backHref="/(tabs)/profile"
                     />
 
@@ -429,42 +429,42 @@ export default function ProfileSettingsScreen() {
                             },
                         ]}
                     >
-                        <Text style={[styles.groupTitle, { color: colors.primary }]}>Security</Text>
+                        <Text style={[styles.groupTitle, { color: colors.primary }]}>{t("settings.security")}</Text>
 
                         <ExpandableSection
-                            label="Security"
-                            title="Change Password"
-                            subtitle="Update your password from here."
+                            label={t("settings.security")}
+                            title={t("settings.changePassword")}
+                            subtitle={t("settings.changePasswordSubtitle")}
                             expanded={expandedSection === "changePassword"}
                             onPress={() => toggleSection("changePassword")}
                             colors={colors}
                         >
                             <View style={styles.field}>
-                                <Text style={[styles.label, { color: colors.primary }]}>Old Password</Text>
+                                <Text style={[styles.label, { color: colors.primary }]}>{t("settings.oldPassword")}</Text>
                                 <PasswordInput
-                                    placeholder="Enter old password"
+                                    placeholder={t("settings.enterOldPassword")}
                                     value={oldPassword}
                                     onChangeText={setOldPassword}
                                 />
                             </View>
                             <View style={styles.field}>
-                                <Text style={[styles.label, { color: colors.primary }]}>New Password</Text>
+                                <Text style={[styles.label, { color: colors.primary }]}>{t("settings.newPassword")}</Text>
                                 <PasswordInput
-                                    placeholder="Enter new password"
+                                    placeholder={t("settings.enterNewPassword")}
                                     value={newPassword}
                                     onChangeText={setNewPassword}
                                 />
                             </View>
                             <Button
-                                title={changePassword.isPending ? "Updating..." : "Change Password"}
+                                title={changePassword.isPending ? t("settings.updating") : t("settings.changePassword")}
                                 onPress={handleChangePassword}
                             />
                         </ExpandableSection>
 
                         <ExpandableSection
-                            label="Security"
-                            title="Forgot Password"
-                            subtitle="Request an OTP and reset your password securely."
+                            label={t("settings.security")}
+                            title={t("settings.forgotPassword")}
+                            subtitle={t("settings.forgotPasswordSubtitle")}
                             expanded={expandedSection === "forgotPassword"}
                             onPress={() => toggleSection("forgotPassword")}
                             colors={colors}
@@ -480,11 +480,11 @@ export default function ProfileSettingsScreen() {
                             >
                                 <Ionicons name="mail-outline" size={15} color={colors.primary} />
                                 <Text style={[styles.infoText, { color: colors.text }]}>
-                                    {data?.Email || "No email available"}
+                                    {data?.Email || t("settings.noEmailAvailable")}
                                 </Text>
                             </View>
                             <View style={styles.field}>
-                                <Text style={[styles.label, { color: colors.primary }]}>Verification OTP</Text>
+                                <Text style={[styles.label, { color: colors.primary }]}>{t("settings.verificationOtp")}</Text>
                                 <Input
                                     placeholder="Enter 6-digit OTP"
                                     value={resetOtp}
@@ -494,20 +494,20 @@ export default function ProfileSettingsScreen() {
                                 />
                             </View>
                             <View style={styles.field}>
-                                <Text style={[styles.label, { color: colors.primary }]}>New Password</Text>
+                                <Text style={[styles.label, { color: colors.primary }]}>{t("settings.newPassword")}</Text>
                                 <PasswordInput
-                                    placeholder="Create a new password"
+                                    placeholder={t("forms.createPasswordPlaceholder")}
                                     value={resetNewPassword}
                                     onChangeText={setResetNewPassword}
                                 />
                             </View>
                             <Button
-                                title={forgotPassword.isPending ? "Sending..." : "Send OTP"}
+                                title={forgotPassword.isPending ? t("common.sending") : t("settings.sendOtp")}
                                 variant="secondary"
                                 onPress={handleForgotPassword}
                             />
                             <Button
-                                title={resetPassword.isPending ? "Resetting..." : "Reset Password"}
+                                title={resetPassword.isPending ? t("settings.resetting") : t("settings.resetPassword")}
                                 onPress={handleResetPassword}
                             />
                         </ExpandableSection>
@@ -523,57 +523,57 @@ export default function ProfileSettingsScreen() {
                             },
                         ]}
                     >
-                        <Text style={[styles.groupTitle, { color: colors.primary }]}>Accessibility</Text>
+                        <Text style={[styles.groupTitle, { color: colors.primary }]}>{t("settings.accessibility")}</Text>
 
                         <ExpandableSection
-                            label="Accessibility"
-                            title="Languages"
-                            subtitle="Select the language preference for the UI."
+                            label={t("settings.accessibility")}
+                            title={t("settings.languages")}
+                            subtitle={t("settings.languageSubtitle")}
                             expanded={expandedSection === "language"}
                             onPress={() => toggleSection("language")}
                             colors={colors}
                         >
                             <SettingToggleRow
                                 label="English"
-                                description="Use English labels across the app."
-                                active={selectedLanguage === "english"}
-                                onPress={() => setSelectedLanguage("english")}
+                                description={t("settings.languageEnglishDescription")}
+                                active={currentLanguage === "en"}
+                                onPress={() => void setLanguage("en")}
                                 colors={colors}
                             />
                             <SettingToggleRow
-                                label="Nepali"
-                                description="UI-only toggle for Nepali language preference."
-                                active={selectedLanguage === "nepali"}
-                                onPress={() => setSelectedLanguage("nepali")}
+                                label="नेपाली"
+                                description={t("settings.languageNepaliDescription")}
+                                active={currentLanguage === "np"}
+                                onPress={() => void setLanguage("np")}
                                 colors={colors}
                             />
                         </ExpandableSection>
 
                         <ExpandableSection
-                            label="Accessibility"
-                            title="Screen Mode"
-                            subtitle="Choose how the app should appear."
+                            label={t("settings.accessibility")}
+                            title={t("settings.screenMode")}
+                            subtitle={t("settings.screenModeSubtitle")}
                             expanded={expandedSection === "screenMode"}
                             onPress={() => toggleSection("screenMode")}
                             colors={colors}
                         >
                             <SettingToggleRow
-                                label="System"
-                                description="Follow your device appearance automatically."
+                                label={t("settings.system")}
+                                description={t("settings.systemDescription")}
                                 active={preference === "system"}
                                 onPress={() => void setMode("system")}
                                 colors={colors}
                             />
                             <SettingToggleRow
-                                label="Light"
-                                description="Use the brighter Dhune interface."
+                                label={t("settings.light")}
+                                description={t("settings.lightDescription")}
                                 active={preference !== "system" && mode === "light"}
                                 onPress={() => void setMode("light")}
                                 colors={colors}
                             />
                             <SettingToggleRow
-                                label="Dark"
-                                description="Reduce glare with a darker interface."
+                                label={t("settings.dark")}
+                                description={t("settings.darkDescription")}
                                 active={preference !== "system" && mode === "dark"}
                                 onPress={() => void setMode("dark")}
                                 colors={colors}
@@ -590,11 +590,11 @@ export default function ProfileSettingsScreen() {
                             },
                         ]}
                     >
-                        <Text style={[styles.groupTitle, { color: colors.primary }]}>Preferences</Text>
+                        <Text style={[styles.groupTitle, { color: colors.primary }]}>{t("settings.preferences")}</Text>
                         <SettingsSwitchTile
                             icon="notifications-outline"
-                            title="Push Notifications"
-                            subtitle="Receive app notifications and updates"
+                            title={t("settings.pushNotifications")}
+                            subtitle={t("settings.pushNotificationsSubtitle")}
                             value={pushNotificationsEnabled}
                             onValueChange={(value) => void handlePushNotificationsToggle(value)}
                             disabled={isLoadingPreferences || isUpdatingPushPreference}
@@ -613,8 +613,8 @@ export default function ProfileSettingsScreen() {
                         />
                         <SettingsSwitchTile
                             icon="location-outline"
-                            title="Location Services"
-                            subtitle="Allow access to device location"
+                            title={t("settings.locationServices")}
+                            subtitle={t("settings.locationServicesSubtitle")}
                             value={locationServicesEnabled}
                             onValueChange={(value) => void handleLocationServicesToggle(value)}
                             disabled={isLoadingPreferences || isUpdatingLocationPreference}
@@ -635,9 +635,9 @@ export default function ProfileSettingsScreen() {
                     <View>
                         <SettingsOptionTile
                             icon="trash-outline"
-                            label="Memory"
-                            title="Clear Cache"
-                            subtitle="Remove temporary app data without affecting your account or current sign-in."
+                            label={t("settings.memory")}
+                            title={t("settings.clearCache")}
+                            subtitle={t("settings.cacheDescription")}
                             onPress={() => setShowCacheModal(true)}
                             tone="danger"
                             colors={{ ...colors, primarySoft: theme.primarySoft }}
@@ -647,9 +647,9 @@ export default function ProfileSettingsScreen() {
 
                         <SettingsOptionTile
                             icon="help-buoy-outline"
-                            label="Support"
-                            title="Help Center"
-                            subtitle="Support contacts, FAQs, terms, and privacy resources."
+                            label={t("settings.support")}
+                            title={t("settings.helpCenter")}
+                            subtitle={t("settings.helpCenterDescription")}
                             onPress={() => router.push("/profile/settings/help-center")}
                             colors={{ ...colors, primarySoft: theme.primarySoft }}
                         />
@@ -672,9 +672,9 @@ export default function ProfileSettingsScreen() {
                                 },
                             ]}
                         >
-                            <Text style={[styles.modalTitle, { color: colors.text }]}>Clear App Cache</Text>
+                            <Text style={[styles.modalTitle, { color: colors.text }]}>{t("settings.clearAppCache")}</Text>
                             <Text style={[styles.modalMessage, { color: colors.textMuted }]}>
-                                This will remove temporary stored data and may improve app performance.
+                                {t("settings.clearCacheMessage")}
                             </Text>
                             <View style={styles.modalActions}>
                                 <Pressable
@@ -687,7 +687,7 @@ export default function ProfileSettingsScreen() {
                                         },
                                     ]}
                                 >
-                                    <Text style={[styles.modalButtonText, { color: colors.text }]}>Cancel</Text>
+                                    <Text style={[styles.modalButtonText, { color: colors.text }]}>{t("common.cancel")}</Text>
                                 </Pressable>
                                 <Pressable
                                     onPress={() => void handleClearCache()}
@@ -701,7 +701,7 @@ export default function ProfileSettingsScreen() {
                                     disabled={isClearingCache}
                                 >
                                     <Text style={[styles.modalButtonText, { color: "#ffffff" }]}>
-                                        {isClearingCache ? "Clearing..." : "Clear Cache"}
+                                        {isClearingCache ? t("settings.clearing") : t("settings.clearCache")}
                                     </Text>
                                 </Pressable>
                             </View>
@@ -714,7 +714,7 @@ export default function ProfileSettingsScreen() {
                         <View style={[styles.snackbar, { backgroundColor: colors.success }]}>
                             <Ionicons name="checkmark-circle" size={18} color={colors.successContrast} />
                             <Text style={[styles.snackbarText, { color: colors.successContrast }]}>
-                                Cache cleared successfully
+                                {t("settings.cacheCleared")}
                             </Text>
                         </View>
                     </View>

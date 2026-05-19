@@ -7,12 +7,14 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { useResetPassword } from "@/hooks/auth/useResetPassword";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert, StyleSheet, Text, View } from "react-native";
 
 export default function ResetPasswordScreen() {
     const params = useLocalSearchParams<{ email?: string }>();
     const resetPassword = useResetPassword();
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
     const [email, setEmail] = useState(typeof params.email === "string" ? params.email : "");
     const [otp, setOtp] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -22,7 +24,7 @@ export default function ResetPasswordScreen() {
         const trimmedOtp = otp.trim();
 
         if (!trimmedEmail || !trimmedOtp || !newPassword) {
-            Alert.alert("Missing details", "Please complete all fields.");
+            Alert.alert(t("auth.missingDetails"), t("auth.missingFieldsMessage"));
             return;
         }
 
@@ -33,23 +35,23 @@ export default function ResetPasswordScreen() {
                 new_password: newPassword,
             });
 
-            Alert.alert("Password reset", "You can now log in with your new password.");
+            Alert.alert(t("settings.passwordReset"), t("auth.passwordResetLoginMessage"));
             router.replace("/(auth)/login");
         } catch {
-            Alert.alert("Reset failed", "Please check the OTP and try again.");
+            Alert.alert(t("settings.resetFailed"), t("settings.resetFailedMessage"));
         }
     };
 
     return (
         <KeyboardWrapper>
             <AuthScreen
-                title="Reset Password"
-                subtitle="Enter the OTP sent to your email and set a new password."
+                title={t("settings.resetPassword")}
+                subtitle={t("auth.resetPasswordSubtitle")}
                 showBackButton
                 onBackPress={() => router.back()}
             >
                 <View style={styles.field}>
-                    <Text style={[styles.label, { color: theme.primary }]}>Email</Text>
+                    <Text style={[styles.label, { color: theme.primary }]}>{t("common.email")}</Text>
                     <Input
                         placeholder="example@gmail.com"
                         value={email}
@@ -60,7 +62,7 @@ export default function ResetPasswordScreen() {
                 </View>
 
                 <View style={styles.field}>
-                    <Text style={[styles.label, { color: theme.primary }]}>OTP</Text>
+                    <Text style={[styles.label, { color: theme.primary }]}>{t("common.otp")}</Text>
                     <Input
                         placeholder="123456"
                         value={otp}
@@ -71,16 +73,16 @@ export default function ResetPasswordScreen() {
                 </View>
 
                 <View style={styles.field}>
-                    <Text style={[styles.label, { color: theme.primary }]}>New Password</Text>
+                    <Text style={[styles.label, { color: theme.primary }]}>{t("settings.newPassword")}</Text>
                     <PasswordInput
-                        placeholder="Enter new password"
+                        placeholder={t("settings.enterNewPassword")}
                         value={newPassword}
                         onChangeText={setNewPassword}
                     />
                 </View>
 
                 <Button
-                    title={resetPassword.isPending ? "Resetting..." : "Reset Password"}
+                    title={resetPassword.isPending ? t("settings.resetting") : t("settings.resetPassword")}
                     onPress={handleSubmit}
                 />
             </AuthScreen>

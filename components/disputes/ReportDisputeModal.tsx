@@ -3,6 +3,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 type ReportDisputeModalProps = {
@@ -17,9 +18,9 @@ type ReportDisputeModalProps = {
     onClose: () => void;
 };
 
-const DISPUTE_OPTIONS: { label: string; value: DisputeType }[] = [
-    { label: "Torn or Damaged Clothes", value: "damage" },
-    { label: "Missing or Lost Clothes", value: "missing" },
+const DISPUTE_OPTIONS: { labelKey: string; value: DisputeType }[] = [
+    { labelKey: "disputes.tornDamaged", value: "damage" },
+    { labelKey: "disputes.missingLost", value: "missing" },
 ];
 
 export default function ReportDisputeModal({
@@ -30,6 +31,7 @@ export default function ReportDisputeModal({
     onClose,
 }: ReportDisputeModalProps) {
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
     const [disputeType, setDisputeType] = useState<DisputeType | null>(null);
     const [description, setDescription] = useState("");
     const [image, setImage] = useState<DisputeUploadFile | null>(null);
@@ -93,8 +95,8 @@ export default function ReportDisputeModal({
                 <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
                     <View style={styles.header}>
                         <View>
-                            <Text style={[styles.eyebrow, { color: theme.primary }]}>Order Support</Text>
-                            <Text style={[styles.title, { color: theme.text }]}>Report Vendor Dispute</Text>
+                            <Text style={[styles.eyebrow, { color: theme.primary }]}>{t("disputes.orderSupport")}</Text>
+                            <Text style={[styles.title, { color: theme.text }]}>{t("orders.reportDispute")}</Text>
                         </View>
                         <Pressable onPress={onClose} hitSlop={8}>
                             <Ionicons name="close" size={18} color={theme.textMuted} />
@@ -102,11 +104,11 @@ export default function ReportDisputeModal({
                     </View>
 
                     <View style={[styles.refCard, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}>
-                        <Text style={[styles.refLabel, { color: theme.textMuted }]}>Order reference</Text>
+                        <Text style={[styles.refLabel, { color: theme.textMuted }]}>{t("disputes.orderReference")}</Text>
                         <Text style={[styles.refValue, { color: theme.text }]}>{orderRef}</Text>
                     </View>
 
-                    <Text style={[styles.label, { color: theme.textMuted }]}>Dispute type</Text>
+                    <Text style={[styles.label, { color: theme.textMuted }]}>{t("disputes.disputeType")}</Text>
                     <View style={styles.optionList}>
                         {DISPUTE_OPTIONS.map((option) => {
                             const active = disputeType === option.value;
@@ -128,15 +130,15 @@ export default function ReportDisputeModal({
                                         {active ? <View style={[styles.radioDot, { backgroundColor: theme.primary }]} /> : null}
                                     </View>
                                     <Text style={[styles.optionText, { color: active ? theme.primary : theme.text }]}>
-                                        {option.label}
+                                        {t(option.labelKey)}
                                     </Text>
                                 </Pressable>
                             );
                         })}
                     </View>
-                    {showTypeError ? <Text style={[styles.errorText, { color: theme.danger }]}>Please choose a dispute type.</Text> : null}
+                    {showTypeError ? <Text style={[styles.errorText, { color: theme.danger }]}>{t("disputes.typeError")}</Text> : null}
 
-                    <Text style={[styles.label, { color: theme.textMuted }]}>Description</Text>
+                    <Text style={[styles.label, { color: theme.textMuted }]}>{t("common.description")}</Text>
                     <TextInput
                         value={description}
                         onChangeText={(value) => {
@@ -145,7 +147,7 @@ export default function ReportDisputeModal({
                                 setShowDescriptionError(false);
                             }
                         }}
-                        placeholder="Describe what was damaged or missing so admin can review it."
+                        placeholder={t("disputes.descriptionPlaceholder")}
                         placeholderTextColor={theme.inputPlaceholder}
                         multiline
                         numberOfLines={4}
@@ -153,27 +155,27 @@ export default function ReportDisputeModal({
                         textAlignVertical="top"
                         maxLength={400}
                     />
-                    {showDescriptionError ? <Text style={[styles.errorText, { color: theme.danger }]}>Please add a short description.</Text> : null}
+                    {showDescriptionError ? <Text style={[styles.errorText, { color: theme.danger }]}>{t("disputes.descriptionError")}</Text> : null}
 
-                    <Text style={[styles.label, { color: theme.textMuted }]}>Proof image</Text>
+                    <Text style={[styles.label, { color: theme.textMuted }]}>{t("disputes.proofImage")}</Text>
                     <View style={styles.uploadRow}>
                         <Pressable style={({ pressed }) => [styles.uploadBtn, { backgroundColor: theme.primarySoft }, pressed && styles.pressed]} onPress={pickImage}>
                             <Ionicons name="image-outline" size={16} color={theme.primary} />
-                            <Text style={[styles.uploadBtnText, { color: theme.primary }]}>{image ? "Change Image" : "Choose Image"}</Text>
+                            <Text style={[styles.uploadBtnText, { color: theme.primary }]}>{image ? t("disputes.changeImage") : t("disputes.chooseImage")}</Text>
                         </Pressable>
                         {image ? (
                             <Pressable style={({ pressed }) => [styles.clearBtn, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }, pressed && styles.pressed]} onPress={() => setImage(null)}>
-                                <Text style={[styles.clearBtnText, { color: theme.textMuted }]}>Remove</Text>
+                                <Text style={[styles.clearBtnText, { color: theme.textMuted }]}>{t("disputes.remove")}</Text>
                             </Pressable>
                         ) : null}
                     </View>
                     <Text style={[styles.fileName, { color: theme.textMuted }]} numberOfLines={1}>
-                        {image?.name ?? "Optional"}
+                        {image?.name ?? t("disputes.optionalProof")}
                     </Text>
 
                     <View style={styles.footer}>
                         <Pressable style={({ pressed }) => [styles.ghostBtn, { backgroundColor: theme.surfaceMuted }, pressed && styles.pressed]} onPress={onClose}>
-                            <Text style={[styles.ghostText, { color: theme.text }]}>Cancel</Text>
+                        <Text style={[styles.ghostText, { color: theme.text }]}>{t("common.cancel")}</Text>
                         </Pressable>
                         <Pressable
                             disabled={!canSubmit || isSubmitting}
@@ -185,7 +187,7 @@ export default function ReportDisputeModal({
                                 (!canSubmit || isSubmitting) && styles.disabled,
                             ]}
                         >
-                            <Text style={styles.submitText}>{isSubmitting ? "Submitting..." : "Submit Dispute"}</Text>
+                            <Text style={styles.submitText}>{isSubmitting ? t("common.submitting") : t("disputes.submitDispute")}</Text>
                         </Pressable>
                     </View>
                 </View>

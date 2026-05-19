@@ -1,3 +1,7 @@
+import i18n from "@/i18n";
+
+const getFormatterLocale = () => (i18n.language === "np" ? "ne-NP" : "en-US");
+
 export const compactId = (prefix: string, value?: string | null) => {
     if (!value) return "-";
     const sum = Array.from(value).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
@@ -9,7 +13,7 @@ export const formatDate = (value?: string | null) => {
     const date = new Date(value);
     if (Number.isNaN(date.valueOf())) return value;
 
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString(getFormatterLocale(), {
         month: "short",
         day: "numeric",
         year: "numeric",
@@ -21,7 +25,7 @@ export const formatDateTime = (value?: string | null) => {
     const date = new Date(value);
     if (Number.isNaN(date.valueOf())) return value;
 
-    return date.toLocaleString("en-US", {
+    return date.toLocaleString(getFormatterLocale(), {
         month: "short",
         day: "numeric",
         hour: "numeric",
@@ -36,7 +40,9 @@ export const formatMoney = (amount?: number | string | null) => {
         return "Rs -";
     }
 
-    return `Rs ${numericAmount.toLocaleString("en-US", {
+    const currencyPrefix = i18n.language === "np" ? "रु" : "Rs";
+
+    return `${currencyPrefix} ${numericAmount.toLocaleString(getFormatterLocale(), {
         maximumFractionDigits: 2,
     })}`;
 };

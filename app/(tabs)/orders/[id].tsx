@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useOrderDetail } from "@/hooks/orders/useOrder";
@@ -49,6 +50,7 @@ function DetailRow({ label, value, icon }: DetailRowProps) {
 export default function OrderDetailScreen() {
     const { id, ref } = useLocalSearchParams<{ id: string; ref?: string }>();
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
     const { data: order, isLoading } = useOrderDetail(String(id ?? ""));
     const upsertRatingMutation = useUpsertOrderRating();
     const createDisputeMutation = useCreateDispute();
@@ -127,10 +129,10 @@ export default function OrderDetailScreen() {
                     await AsyncStorage.setItem(getRatedStorageKey(orderId), "1");
                     setHasRated(true);
                     setShowRatingModal(false);
-                    Alert.alert("Thanks for your rating", "Your feedback helps us improve vendor quality.");
+                    Alert.alert(t("orders.thanksRating"), t("orders.thanksRatingMessage"));
                 },
                 onError: () => {
-                    Alert.alert("Could not save rating", "Please try again in a moment.");
+                    Alert.alert(t("orders.couldNotSaveRating"), t("errors.tryAgainMoment"));
                 },
             }
         );
@@ -146,7 +148,7 @@ export default function OrderDetailScreen() {
         image?: { uri: string; name: string; mimeType?: string | null } | null;
     }) => {
         if (!orderId) {
-            Alert.alert("Missing order", "Please reopen this order and try again.");
+            Alert.alert(t("orders.missingOrder"), t("orders.missingOrderMessage"));
             return;
         }
 
@@ -160,10 +162,10 @@ export default function OrderDetailScreen() {
             {
                 onSuccess: () => {
                     setShowDisputeModal(false);
-                    Alert.alert("Dispute submitted", "Your report has been sent for review.");
+                    Alert.alert(t("orders.disputeSubmitted"), t("orders.disputeSubmittedMessage"));
                 },
                 onError: (error: any) => {
-                    Alert.alert("Could not submit dispute", error?.message ?? "Please try again in a moment.");
+                    Alert.alert(t("orders.couldNotSubmitDispute"), error?.message ?? t("errors.tryAgainMoment"));
                 },
             }
         );
@@ -193,7 +195,7 @@ export default function OrderDetailScreen() {
     if (isLoading) {
         return (
             <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
-                <Text style={[styles.centerText, { color: theme.textMuted }]}>Loading order details...</Text>
+                <Text style={[styles.centerText, { color: theme.textMuted }]}>{t("orders.loadingDetails")}</Text>
             </SafeAreaView>
         );
     }
@@ -201,7 +203,7 @@ export default function OrderDetailScreen() {
     if (!order) {
         return (
             <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
-                <Text style={[styles.centerText, { color: theme.textMuted }]}>Order not found.</Text>
+                <Text style={[styles.centerText, { color: theme.textMuted }]}>{t("orders.notFound")}</Text>
             </SafeAreaView>
         );
     }
@@ -210,16 +212,16 @@ export default function OrderDetailScreen() {
         <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
-                    title="Order Details"
-                    subtitle={ref ? `Reference ${ref}` : "Status, vendor, and service snapshot."}
+                    title={t("orders.details")}
+                    subtitle={ref ? t("common.reference", { ref }) : t("orders.detailsSubtitle")}
                     backHref="/(tabs)/orders"
                 />
 
                 <View style={[styles.heroCard, { shadowColor: theme.shadow }]}>
                     <View style={styles.heroTop}>
-                        <Text style={styles.heroTitle}>Order Details</Text>
+                        <Text style={styles.heroTitle}>{t("orders.details")}</Text>
                         <View style={[styles.statusPill, { backgroundColor: orderStatusColor }]}>
-                            <Text style={styles.statusText}>{formatStatusLabel(order.order_status)}</Text>
+                            <Text style={styles.statusText}>{formatStatusLabel(order.order_status, t)}</Text>
                         </View>
                     </View>
                     <View style={styles.heroMetaRow}>
@@ -241,12 +243,12 @@ export default function OrderDetailScreen() {
                 <View style={[styles.paymentSummaryCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                     <View style={styles.paymentSummaryTop}>
                         <View>
-                            <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>Payment Due</Text>
+                            <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>{t("orders.paymentDue")}</Text>
                             <Text style={[styles.paymentAmount, { color: theme.text }]}>{formatMoney(order.final_price)}</Text>
                         </View>
                         <View style={[styles.paymentBadge, { backgroundColor: `${paymentStatusColor}22` }]}>
                             <Text style={[styles.paymentBadgeText, { color: paymentStatusColor }]}>
-                                {formatStatusLabel(order.payment_status)}
+                                {formatStatusLabel(order.payment_status, t)}
                             </Text>
                         </View>
                     </View>
@@ -265,77 +267,77 @@ export default function OrderDetailScreen() {
                         >
                             <Text style={styles.rateBtnText}>
                                 {isPaymentProcessing
-                                    ? "Processing..."
-                                    : "Pay Now"}
+                                    ? t("payments.processing")
+                                    : t("payments.payNow")}
                             </Text>
                         </Pressable>
                     ) : null}
                 </View>
                 <ExpandableSection
-                    title="Vendor Details"
+                    title={t("orders.vendorDetails")}
                     icon="storefront-outline"
                     summary={order.vendor?.name ?? compactId("Vn", order.vendor?.id)}
                 >
-                    <DetailRow label="Name" value={order.vendor?.name} icon="person-circle-outline" />
-                    <DetailRow label="Email" value={order.vendor?.email} icon="mail-outline" />
-                    <DetailRow label="Phone" value={order.vendor?.phone} icon="call-outline" />
+                    <DetailRow label={t("common.name")} value={order.vendor?.name} icon="person-circle-outline" />
+                    <DetailRow label={t("common.email")} value={order.vendor?.email} icon="mail-outline" />
+                    <DetailRow label={t("common.phone")} value={order.vendor?.phone} icon="call-outline" />
                 </ExpandableSection>
 
                 <ExpandableSection
-                    title="Pickup & Delivery"
+                    title={t("orders.pickupDelivery")}
                     icon="location-outline"
                     summary={order.request?.pickup_address ?? pickupFrom}
                 >
                     <View style={styles.windowRow}>
                         <View style={styles.windowCol}>
-                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>From</Text>
+                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>{t("common.from")}</Text>
                             <Text style={[styles.windowValue, { color: theme.primary }]}>{pickupFrom}</Text>
                         </View>
                         <View style={[styles.windowDivider, { backgroundColor: theme.border }]} />
                         <View style={styles.windowCol}>
-                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>To</Text>
+                            <Text style={[styles.windowLabel, { color: theme.textMuted }]}>{t("common.to")}</Text>
                             <Text style={[styles.windowValue, { color: theme.primary }]}>{pickupTo}</Text>
                         </View>
                     </View>
                     <View style={styles.detailSpacer} />
-                    <DetailRow label="Address" value={order.request?.pickup_address} icon="location-outline" />
-                    <DetailRow label="Coordinates" value={pickupCoords} icon="navigate-outline" />
+                    <DetailRow label={t("common.address")} value={order.request?.pickup_address} icon="location-outline" />
+                    <DetailRow label={t("common.coordinates")} value={pickupCoords} icon="navigate-outline" />
                 </ExpandableSection>
 
                 <ExpandableSection
-                    title="Service Details"
+                    title={t("orders.serviceDetails")}
                     icon="construct-outline"
-                    summary={`${order.services?.length ?? 0} service${order.services?.length === 1 ? "" : "s"}`}
+                    summary={t("common.servicesCount", { count: order.services?.length ?? 0 })}
                 >
                     {order.services?.length ? (
                         order.services.map((service, idx) => (
                         <View key={`${service.category_id}-${idx}`} style={[styles.serviceBlock, { borderColor: theme.border }]}>
                             <View style={styles.serviceTitleRow}>
                                 <Ionicons name="construct-outline" size={14} color={theme.primary} />
-                                <Text style={[styles.serviceTitle, { color: theme.primary }]}>Service {idx + 1}</Text>
+                                <Text style={[styles.serviceTitle, { color: theme.primary }]}>{t("common.service", { number: idx + 1 })}</Text>
                             </View>
-                            <DetailRow label="Name" value={service.category_name} icon="grid-outline" />
-                            <DetailRow label="Unit" value={service.selected_unit} icon="cube-outline" />
-                            <DetailRow label="Quantity" value={service.quantity_value} icon="layers-outline" />
+                            <DetailRow label={t("common.name")} value={service.category_name} icon="grid-outline" />
+                            <DetailRow label={t("common.unit")} value={service.selected_unit} icon="cube-outline" />
+                            <DetailRow label={t("common.quantity")} value={service.quantity_value} icon="layers-outline" />
                         </View>
                         ))
                     ) : (
-                        <Text style={[styles.emptyText, { color: theme.textMuted }]}>No services in this order.</Text>
+                        <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t("orders.noServices")}</Text>
                     )}
                 </ExpandableSection>
 
                 <ExpandableSection
-                    title="Payment Details"
+                    title={t("payments.paymentDetails")}
                     icon="card-outline"
-                    summary={`${formatStatusLabel(order.payment_status)} - ${order.request?.payment_method ?? "-"}`}
+                    summary={`${formatStatusLabel(order.payment_status, t)} - ${order.request?.payment_method ?? "-"}`}
                 >
-                    <DetailRow label="Amount" value={formatMoney(order.final_price)} icon="cash-outline" />
-                    <DetailRow label="Payment Method" value={order.request?.payment_method} icon="card-outline" />
-                    <DetailRow label="Payment Status" value={formatStatusLabel(order.payment_status)} icon="wallet-outline" />
-                    <DetailRow label="Request Status" value={formatStatusLabel(order.request?.status)} icon="pulse-outline" />
+                    <DetailRow label={t("common.amount")} value={formatMoney(order.final_price)} icon="cash-outline" />
+                    <DetailRow label={t("common.paymentMethod")} value={order.request?.payment_method} icon="card-outline" />
+                    <DetailRow label={t("payments.paymentStatus")} value={formatStatusLabel(order.payment_status, t)} icon="wallet-outline" />
+                    <DetailRow label={t("orders.requestStatus")} value={formatStatusLabel(order.request?.status, t)} icon="pulse-outline" />
                     <View style={[styles.inlineBadge, { backgroundColor: `${requestStatusColor}22` }]}>
                         <Text style={[styles.inlineBadgeText, { color: requestStatusColor }]}>
-                            {formatStatusLabel(order.request?.status)}
+                            {formatStatusLabel(order.request?.status, t)}
                         </Text>
                     </View>
                 </ExpandableSection>
@@ -345,14 +347,14 @@ export default function OrderDetailScreen() {
                         <View style={styles.ratingContent}>
                             <Ionicons name={hasRated ? "checkmark-done-circle" : "star"} size={18} color={hasRated ? "#16a34a" : "#f59e0b"} />
                             <View style={{ flex: 1 }}>
-                                <Text style={[styles.ratingTitle, { color: theme.text }]}>{hasRated ? "Vendor already rated" : "Rate your vendor"}</Text>
+                                <Text style={[styles.ratingTitle, { color: theme.text }]}>{hasRated ? t("orders.ratedTitle") : t("orders.rateVendorTitle")}</Text>
                                 <Text style={[styles.ratingSubtitle, { color: theme.textMuted }]}>
-                                    {hasRated ? "You can submit again to update your rating anytime." : "Order completed. Share your review and star rating."}
+                                    {hasRated ? t("orders.ratedSubtitle") : t("orders.ratingSubtitle")}
                                 </Text>
                             </View>
                         </View>
                         <Pressable style={({ pressed }) => [styles.rateBtn, { backgroundColor: ACTION_BG }, pressed && styles.pressed]} onPress={handleOpenRating}>
-                            <Text style={styles.rateBtnText}>{hasRated ? "Update Rating" : "Rate Vendor"}</Text>
+                            <Text style={styles.rateBtnText}>{hasRated ? t("orders.updateRating") : t("orders.rateVendor")}</Text>
                         </Pressable>
                     </View>
                 ) : null}
@@ -361,14 +363,14 @@ export default function OrderDetailScreen() {
                     <View style={styles.disputeContent}>
                         <Ionicons name="shield-checkmark-outline" size={18} color="#b45309" />
                         <View style={{ flex: 1 }}>
-                            <Text style={[styles.disputeTitle, { color: theme.text }]}>Issue with this order?</Text>
+                            <Text style={[styles.disputeTitle, { color: theme.text }]}>{t("orders.issueTitle")}</Text>
                             <Text style={[styles.disputeSubtitle, { color: theme.textMuted }]}>
-                                Report torn, damaged, missing, or lost clothes for admin review.
+                                {t("orders.issueSubtitle")}
                             </Text>
                         </View>
                     </View>
                     <Pressable style={({ pressed }) => [styles.disputeBtn, { backgroundColor: ACTION_BG }, pressed && styles.pressed]} onPress={() => setShowDisputeModal(true)}>
-                        <Text style={styles.disputeBtnText}>Report Dispute</Text>
+                        <Text style={styles.disputeBtnText}>{t("orders.reportDispute")}</Text>
                     </Pressable>
                 </View>
             </ScrollView>
@@ -384,7 +386,7 @@ export default function OrderDetailScreen() {
                                 <Ionicons name="wallet-outline" size={18} color={theme.primary} />
                             </View>
                             <View style={styles.paymentHeaderText}>
-                                <Text style={[styles.paymentTitle, { color: theme.text }]}>Choose payment</Text>
+                                <Text style={[styles.paymentTitle, { color: theme.text }]}>{t("orders.choosePayment")}</Text>
                                 <Text style={[styles.paymentSubtitle, { color: theme.textMuted }]}>
                                     Rs {order.final_price}
                                 </Text>
@@ -415,10 +417,10 @@ export default function OrderDetailScreen() {
                                 </View>
                                 <View style={styles.paymentOptionTextWrap}>
                                     <Text style={[styles.paymentOptionTitle, { color: "#ffffff" }]}>
-                                        Pay with Khalti
+                                        {t("payments.payWithKhalti")}
                                     </Text>
                                     <Text style={[styles.paymentOptionSubtitle, { color: "#ffffff" }]}>
-                                        Opens Khalti checkout
+                                        {t("payments.khaltiSubtitle")}
                                     </Text>
                                 </View>
                             </View>
@@ -441,10 +443,10 @@ export default function OrderDetailScreen() {
                                 </View>
                                 <View style={styles.paymentOptionTextWrap}>
                                     <Text style={[styles.paymentOptionTitle, { color: theme.text }]}>
-                                        Pay with eSewa
+                                        {t("payments.payWithEsewa")}
                                     </Text>
                                     <Text style={[styles.paymentOptionSubtitle, { color: theme.textMuted }]}>
-                                        Opens eSewa checkout
+                                        {t("payments.esewaSubtitle")}
                                     </Text>
                                 </View>
                             </View>
@@ -467,10 +469,10 @@ export default function OrderDetailScreen() {
                                 </View>
                                 <View style={styles.paymentOptionTextWrap}>
                                     <Text style={[styles.paymentOptionTitle, { color: theme.text }]}>
-                                        Paid as Cash
+                                        {t("payments.paidAsCash")}
                                     </Text>
                                     <Text style={[styles.paymentOptionSubtitle, { color: theme.textMuted }]}>
-                                        Marks this order as paid by cash
+                                        {t("payments.cashSubtitle")}
                                     </Text>
                                 </View>
                             </View>

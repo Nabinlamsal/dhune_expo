@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 type RateVendorModalProps = {
@@ -21,6 +22,7 @@ export default function RateVendorModal({
     onClose,
 }: RateVendorModalProps) {
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
     const [rating, setRating] = useState(5);
     const [review, setReview] = useState("");
     const [showReviewError, setShowReviewError] = useState(false);
@@ -52,15 +54,15 @@ export default function RateVendorModal({
                 <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
                     <View style={styles.header}>
                         <View>
-                            <Text style={[styles.eyebrow, { color: theme.primary }]}>Completed Order</Text>
-                            <Text style={[styles.title, { color: theme.text }]}>Rate {vendorName ?? "your vendor"}</Text>
+                            <Text style={[styles.eyebrow, { color: theme.primary }]}>{t("ratings.completedOrder")}</Text>
+                            <Text style={[styles.title, { color: theme.text }]}>{t("ratings.rateVendorName", { name: vendorName ?? t("ratings.yourVendor") })}</Text>
                         </View>
                         <Pressable onPress={onClose} hitSlop={8}>
                             <Ionicons name="close" size={18} color={theme.textMuted} />
                         </Pressable>
                     </View>
 
-                    <Text style={[styles.label, { color: theme.textMuted }]}>How was your experience?</Text>
+                    <Text style={[styles.label, { color: theme.textMuted }]}>{t("ratings.experienceQuestion")}</Text>
                     <View style={styles.starsRow}>
                         {Array.from({ length: 5 }).map((_, idx) => {
                             const value = idx + 1;
@@ -73,7 +75,7 @@ export default function RateVendorModal({
                         })}
                     </View>
 
-                    <Text style={[styles.label, { color: theme.textMuted }]}>Review</Text>
+                    <Text style={[styles.label, { color: theme.textMuted }]}>{t("ratings.review")}</Text>
                     <TextInput
                         value={review}
                         onChangeText={(value) => {
@@ -82,7 +84,7 @@ export default function RateVendorModal({
                                 setShowReviewError(false);
                             }
                         }}
-                        placeholder="Share a short review about service quality, timeliness, and care."
+                        placeholder={t("ratings.reviewPlaceholder")}
                         placeholderTextColor={theme.inputPlaceholder}
                         multiline
                         numberOfLines={4}
@@ -90,11 +92,11 @@ export default function RateVendorModal({
                         textAlignVertical="top"
                         maxLength={280}
                     />
-                    {showReviewError ? <Text style={[styles.errorText, { color: theme.danger }]}>Please add at least 3 characters in your review.</Text> : null}
+                    {showReviewError ? <Text style={[styles.errorText, { color: theme.danger }]}>{t("ratings.reviewTooShort")}</Text> : null}
 
                     <View style={styles.footer}>
                         <Pressable style={({ pressed }) => [styles.ghostBtn, { backgroundColor: theme.surfaceMuted }, pressed && styles.pressed]} onPress={onClose}>
-                            <Text style={[styles.ghostText, { color: theme.text }]}>Maybe later</Text>
+                            <Text style={[styles.ghostText, { color: theme.text }]}>{t("ratings.maybeLater")}</Text>
                         </Pressable>
                         <Pressable
                             disabled={!canSubmit || isSubmitting}
@@ -106,7 +108,7 @@ export default function RateVendorModal({
                                 (!canSubmit || isSubmitting) && styles.disabled,
                             ]}
                         >
-                            <Text style={styles.submitText}>{isSubmitting ? "Saving..." : "Submit Rating"}</Text>
+                            <Text style={styles.submitText}>{isSubmitting ? t("common.saving") : t("ratings.submitRating")}</Text>
                         </Pressable>
                     </View>
                 </View>

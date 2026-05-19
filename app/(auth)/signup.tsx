@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AuthScreen from "@/components/ui/AuthScreen";
 import PasswordInput from "@/components/ui/PasswordInput";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 
 type AccountType = "user" | "business";
 
@@ -57,6 +58,7 @@ const buildSignupFormData = (params: {
 export default function SignupScreen() {
     const signup = useSignup();
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
     const [accountType, setAccountType] = useState<AccountType>("user");
     const [name, setName] = useState("");
     const [owner, setOwner] = useState("");
@@ -81,12 +83,12 @@ export default function SignupScreen() {
         const trimmedPhone = phone.trim();
 
         if (!trimmedName || !trimmedEmail || !trimmedPhone || !password) {
-            Alert.alert("Missing details", "Please complete all required fields.");
+            Alert.alert(t("auth.missingDetails"), t("auth.missingRequiredFields"));
             return;
         }
 
         if (accountType === "business" && (!owner.trim() || !businessType.trim())) {
-            Alert.alert("Missing details", "Please complete the business details.");
+            Alert.alert(t("auth.missingDetails"), t("auth.missingBusinessDetails"));
             return;
         }
 
@@ -117,17 +119,17 @@ export default function SignupScreen() {
                 return;
             }
 
-            Alert.alert("Signup complete", response.message || "Account created successfully.");
+            Alert.alert(t("auth.signupComplete"), response.message || t("auth.signupSuccessFallback"));
             router.replace("/(auth)/login");
         } catch {
-            Alert.alert("Signup failed", "Please review your details and try again.");
+            Alert.alert(t("auth.signupFailed"), t("auth.signupFailedMessage"));
         }
     };
 
     return (
         <AuthScreen
-            title="Create Account"
-            subtitle="Set up a personal or business account to request pickups, compare offers, and manage laundry operations."
+            title={t("auth.createAccount")}
+            subtitle={t("auth.createAccountSubtitle")}
             showBackButton
             onBackPress={() => router.back()}
             scrollable
@@ -147,7 +149,7 @@ export default function SignupScreen() {
                     onPress={() => router.replace("/(auth)/login")}
                 >
                     <Text style={[styles.loginText, { color: theme.textMuted }]}>
-                        Already have an account? <Text style={[styles.loginHighlight, { color: theme.primary }]}>Login</Text>
+                        {t("auth.alreadyHaveAccount")} <Text style={[styles.loginHighlight, { color: theme.primary }]}>{t("auth.login")}</Text>
                     </Text>
                 </Pressable>
             }
@@ -168,7 +170,7 @@ export default function SignupScreen() {
                             accountType === "user" && { color: "#0b2457" },
                         ]}
                     >
-                        Normal User
+                        {t("auth.normalUser")}
                     </Text>
                 </Pressable>
 
@@ -187,7 +189,7 @@ export default function SignupScreen() {
                             accountType === "business" && { color: "#0b2457" },
                         ]}
                     >
-                        Business
+                        {t("auth.business")}
                     </Text>
                 </Pressable>
             </View>
@@ -195,7 +197,7 @@ export default function SignupScreen() {
             {accountType === "user" && (
                 <>
                     <View style={styles.field}>
-                        <Text style={[styles.label, { color: theme.primary }]}>Full Name</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("auth.fullName")}</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
                             placeholderTextColor={theme.inputPlaceholder}
@@ -206,22 +208,22 @@ export default function SignupScreen() {
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={[styles.label, { color: theme.primary }]}>Phone</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("common.phone")}</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
                             placeholderTextColor={theme.inputPlaceholder}
-                            placeholder="+977 98XXXXXXXX"
+                            placeholder={t("forms.phonePlaceholder")}
                             value={phone}
                             onChangeText={setPhone}
                         />
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={[styles.label, { color: theme.primary }]}>Email</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("common.email")}</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
                             placeholderTextColor={theme.inputPlaceholder}
-                            placeholder="example@email.com"
+                            placeholder={t("forms.emailPlaceholder")}
                             value={email}
                             onChangeText={setEmail}
                             autoCapitalize="none"
@@ -230,9 +232,9 @@ export default function SignupScreen() {
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={[styles.label, { color: theme.primary }]}>Password</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("common.password")}</Text>
                         <PasswordInput
-                            placeholder="Create a strong password"
+                            placeholder={t("forms.createPasswordPlaceholder")}
                             value={password}
                             onChangeText={setPassword}
                         />
@@ -243,67 +245,67 @@ export default function SignupScreen() {
             {accountType === "business" && (
                 <>
                     <View style={styles.field}>
-                        <Text style={[styles.label, { color: theme.primary }]}>Business Name</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("auth.businessName")}</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
                             placeholderTextColor={theme.inputPlaceholder}
-                            placeholder="Everest Hospital Pvt Ltd"
+                            placeholder={t("forms.businessNamePlaceholder")}
                             value={name}
                             onChangeText={setName}
                         />
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={[styles.label, { color: theme.primary }]}>Owner Name</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("auth.ownerName")}</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
                             placeholderTextColor={theme.inputPlaceholder}
-                            placeholder="Owner's legal name"
+                            placeholder={t("forms.ownerLegalNamePlaceholder")}
                             value={owner}
                             onChangeText={setOwner}
                         />
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={[styles.label, { color: theme.primary }]}>Business Type</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("auth.businessType")}</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
                             placeholderTextColor={theme.inputPlaceholder}
-                            placeholder="Hotel, Hospital, Hostel"
+                            placeholder={t("forms.businessTypePlaceholder")}
                             value={businessType}
                             onChangeText={setBusinessType}
                         />
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={[styles.label, { color: theme.primary }]}>Registration Number</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("auth.registrationNumber")}</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
                             placeholderTextColor={theme.inputPlaceholder}
-                            placeholder="Official registration number"
+                            placeholder={t("forms.officialRegistrationPlaceholder")}
                             value={registrationNumber}
                             onChangeText={setRegistrationNumber}
                         />
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={[styles.label, { color: theme.primary }]}>Registration Document</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("auth.registrationDocument")}</Text>
                         <Pressable style={[styles.uploadButton, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]} onPress={pickDocument}>
                             <Ionicons name="document-outline" size={18} color={theme.primary} />
                             <Text style={[styles.uploadText, { color: theme.text }]}>
                                 {documentFile
                                     ? documentFile.name
-                                    : "Upload registration document"}
+                                    : t("auth.uploadRegistrationDocument")}
                             </Text>
                         </Pressable>
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={[styles.label, { color: theme.primary }]}>Email</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("common.email")}</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
                             placeholderTextColor={theme.inputPlaceholder}
-                            placeholder="business@email.com"
+                            placeholder={t("forms.businessEmailPlaceholder")}
                             value={email}
                             onChangeText={setEmail}
                             autoCapitalize="none"
@@ -312,20 +314,20 @@ export default function SignupScreen() {
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={[styles.label, { color: theme.primary }]}>Phone</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("common.phone")}</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
                             placeholderTextColor={theme.inputPlaceholder}
-                            placeholder="+977 98XXXXXXXX"
+                            placeholder={t("forms.phonePlaceholder")}
                             value={phone}
                             onChangeText={setPhone}
                         />
                     </View>
 
                     <View style={styles.field}>
-                        <Text style={[styles.label, { color: theme.primary }]}>Password</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("common.password")}</Text>
                         <PasswordInput
-                            placeholder="Create a strong password"
+                            placeholder={t("forms.createPasswordPlaceholder")}
                             value={password}
                             onChangeText={setPassword}
                         />
@@ -335,7 +337,7 @@ export default function SignupScreen() {
 
             <Pressable style={[styles.button, { backgroundColor: theme.mode === "dark" ? theme.primary : "#040947" }]} onPress={handleSignup}>
                 <Text style={styles.buttonText}>
-                    {signup.isPending ? "Creating..." : "Create Account"}
+                    {signup.isPending ? t("auth.creating") : t("auth.createAccount")}
                 </Text>
             </Pressable>
         </AuthScreen>

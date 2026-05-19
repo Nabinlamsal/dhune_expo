@@ -6,18 +6,20 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { useForgotPassword } from "@/hooks/auth/useForgotPassword";
 import { router } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert, StyleSheet, Text, View } from "react-native";
 
 export default function ForgotPasswordScreen() {
     const forgotPassword = useForgotPassword();
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
     const [email, setEmail] = useState("");
 
     const handleSubmit = async () => {
         const trimmedEmail = email.trim();
 
         if (!trimmedEmail) {
-            Alert.alert("Missing email", "Please enter your email address.");
+            Alert.alert(t("settings.missingEmail"), t("auth.missingEmailMessage"));
             return;
         }
 
@@ -28,20 +30,20 @@ export default function ForgotPasswordScreen() {
                 params: { email: trimmedEmail },
             });
         } catch {
-            Alert.alert("Request failed", "Please try again.");
+            Alert.alert(t("settings.requestFailed"), t("errors.defaultTryAgain"));
         }
     };
 
     return (
         <KeyboardWrapper>
             <AuthScreen
-                title="Forgot Password"
-                subtitle="Enter your registered email address to receive a reset OTP."
+                title={t("settings.forgotPassword")}
+                subtitle={t("auth.forgotPasswordSubtitle")}
                 showBackButton
                 onBackPress={() => router.back()}
             >
                 <View style={styles.field}>
-                    <Text style={[styles.label, { color: theme.primary }]}>Email</Text>
+                    <Text style={[styles.label, { color: theme.primary }]}>{t("common.email")}</Text>
                     <Input
                         placeholder="example@gmail.com"
                         value={email}
@@ -52,7 +54,7 @@ export default function ForgotPasswordScreen() {
                 </View>
 
                 <Button
-                    title={forgotPassword.isPending ? "Sending..." : "Send OTP"}
+                    title={forgotPassword.isPending ? t("common.sending") : t("settings.sendOtp")}
                     onPress={handleSubmit}
                 />
             </AuthScreen>

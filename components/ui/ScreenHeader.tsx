@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 type ScreenHeaderProps = {
     title: string;
@@ -18,6 +19,7 @@ export default function ScreenHeader({
     rightSlot,
 }: ScreenHeaderProps) {
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
 
     return (
         <View style={styles.wrap}>
@@ -35,7 +37,7 @@ export default function ScreenHeader({
                                 pressed && styles.pressed,
                             ]}
                             accessibilityRole="button"
-                            accessibilityLabel="Go back"
+                            accessibilityLabel={t("common.goBack")}
                         >
                             <Ionicons name="chevron-back" size={16} color={theme.primary} />
                         </Pressable>

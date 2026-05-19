@@ -1,6 +1,7 @@
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, View } from "react-native";
 
 export const unstable_settings = {
@@ -16,13 +17,14 @@ function CenterTabButton({
 }) {
     const selected = !!accessibilityState?.selected;
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
 
     return (
         <View style={styles.centerWrap}>
             <Pressable
                 onPress={onPress}
                 accessibilityRole="button"
-                accessibilityLabel="Create request"
+                accessibilityLabel={t("navigation.createRequest")}
                 style={({ pressed }) => [
                     styles.centerBtn,
                     {
@@ -46,6 +48,7 @@ function CenterTabButton({
 
 export default function TabsLayout() {
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
 
     return (
         <Tabs
@@ -75,7 +78,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="home"
                 options={{
-                    title: "Home",
+                    title: t("navigation.home"),
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
                             name={focused ? "home" : "home-outline"}
@@ -89,7 +92,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="requests"
                 options={{
-                    title: "Requests",
+                    title: t("navigation.requests"),
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
                             name={focused ? "file-tray" : "file-tray-outline"}
@@ -129,7 +132,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="orders"
                 options={{
-                    title: "Orders",
+                    title: t("navigation.orders"),
                     popToTopOnBlur: true,
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
@@ -145,7 +148,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="profile"
                 options={{
-                    title: "Profile",
+                    title: t("navigation.profile"),
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
                             name={focused ? "person" : "person-outline"}

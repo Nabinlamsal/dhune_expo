@@ -12,10 +12,12 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { extractErrorMessage, isEmailNotVerifiedError } from "@/services/auth/auth-error";
 import { useLogin } from "../../hooks/auth/useLogin";
 import { LoginRequest } from "../../types/auth/login";
+import { useTranslation } from "react-i18next";
 
 export default function LoginScreen() {
     const { mutate, isPending } = useLogin();
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
 
     const [emailOrPhone, setEmailOrPhone] = useState("");
     const [password, setPassword] = useState("");
@@ -47,7 +49,7 @@ export default function LoginScreen() {
                     return;
                 }
 
-                Alert.alert("Login failed", extractErrorMessage(err));
+                Alert.alert(t("auth.loginFailed"), extractErrorMessage(err));
             },
         });
     };
@@ -55,8 +57,8 @@ export default function LoginScreen() {
     return (
         <KeyboardWrapper>
             <AuthScreen
-                title="Welcome Back"
-                subtitle="Sign in to manage pickup requests, track orders, and stay updated in one place."
+                title={t("auth.welcomeBack")}
+                subtitle={t("auth.welcomeSubtitle")}
                 header={
                     <View style={styles.logoContainer}>
                         <Image
@@ -73,14 +75,14 @@ export default function LoginScreen() {
                         onPress={() => router.replace("/(auth)/signup")}
                     >
                         <Text style={[styles.signupText, { color: theme.textMuted }]}>
-                            Don&apos;t have an account?{" "}
-                            <Text style={[styles.signupHighlight, { color: theme.primary }]}>Sign Up</Text>
+                            {t("auth.dontHaveAccount")}{" "}
+                            <Text style={[styles.signupHighlight, { color: theme.primary }]}>{t("auth.signUp")}</Text>
                         </Text>
                     </Pressable>
                 }
             >
                 <View style={styles.field}>
-                    <Text style={[styles.label, { color: theme.primary }]}>Email or Phone</Text>
+                    <Text style={[styles.label, { color: theme.primary }]}>{t("auth.emailOrPhone")}</Text>
                     <Input
                         placeholder="example@gmail.com"
                         value={emailOrPhone}
@@ -91,35 +93,35 @@ export default function LoginScreen() {
 
                 <View style={styles.field}>
                     <View style={styles.passwordRow}>
-                        <Text style={[styles.label, { color: theme.primary }]}>Password</Text>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("common.password")}</Text>
                         <Pressable onPress={() => router.push("/(auth)/forgot-password")}>
-                            <Text style={[styles.forgot, { color: theme.primary }]}>Forgot?</Text>
+                            <Text style={[styles.forgot, { color: theme.primary }]}>{t("auth.forgot")}</Text>
                         </Pressable>
                     </View>
 
                     <PasswordInput
-                        placeholder="Enter password"
+                        placeholder={t("auth.enterPassword")}
                         value={password}
                         onChangeText={setPassword}
                     />
                 </View>
 
                 <Button
-                    title={isPending ? "Logging in..." : "Login"}
+                    title={isPending ? t("auth.loggingIn") : t("auth.login")}
                     onPress={handleLogin}
                 />
 
                 <View style={styles.dividerRow}>
                     <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-                    <Text style={[styles.dividerText, { color: theme.textMuted }]}>OR</Text>
+                    <Text style={[styles.dividerText, { color: theme.textMuted }]}>{t("auth.or")}</Text>
                     <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
                 </View>
 
                 <Pressable
                     onPress={() =>
                         Alert.alert(
-                            "Google login unavailable",
-                            "Google client authentication is not configured in this mobile build yet."
+                            t("auth.googleLoginUnavailable"),
+                            t("auth.googleLoginUnavailableMessage")
                         )
                     }
                     style={({ pressed }) => [
@@ -134,7 +136,7 @@ export default function LoginScreen() {
                     <View style={[styles.googleIconWrap, { backgroundColor: theme.card, borderColor: theme.border }]}>
                         <Text style={styles.googleIcon}>G</Text>
                     </View>
-                    <Text style={[styles.googleText, { color: theme.text }]}>Continue with Google</Text>
+                    <Text style={[styles.googleText, { color: theme.text }]}>{t("auth.continueWithGoogle")}</Text>
                 </Pressable>
             </AuthScreen>
         </KeyboardWrapper>

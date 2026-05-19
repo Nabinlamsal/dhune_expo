@@ -8,6 +8,7 @@ import { formatStatusLabel } from "@/utils/statusHelpers";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Alert,
     Image,
@@ -40,10 +41,6 @@ type OptionRowProps = {
     subtitle: string;
     onPress: () => void;
 };
-
-function formatBoolean(value: boolean): string {
-    return value ? "Yes" : "No";
-}
 
 function extractProfileImage(profile: MyProfile): string | null {
     const record = profile as MyProfile & Record<string, unknown>;
@@ -108,6 +105,7 @@ function OptionRow({ icon, title, subtitle, onPress }: OptionRowProps) {
 export default function ProfileScreen() {
     const { data, isLoading, isError, refetch, isFetching } = useMyProfile();
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
     const logout = useLogout();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -116,38 +114,38 @@ export default function ProfileScreen() {
 
         const role = data.Role as ProfileRole;
         const details: ProfileDetail[] = [
-            { label: "Email", value: data.Email || "-" },
-            { label: "Phone", value: data.Phone || "-" },
-            { label: "Joined", value: formatDate(data.CreatedAt) },
-            { label: "Verification", value: formatBoolean(data.IsVerified) },
+            { label: t("common.email"), value: data.Email || "-" },
+            { label: t("common.phone"), value: data.Phone || "-" },
+            { label: t("profile.joined"), value: formatDate(data.CreatedAt) },
+            { label: t("profile.verification"), value: data.IsVerified ? t("common.yes") : t("common.no") },
         ];
 
         if (data.BusinessProfile) {
             details.push(
-                { label: "Owner", value: data.BusinessProfile.OwnerName || "-" },
-                { label: "Business Type", value: data.BusinessProfile.BusinessType || "-" },
-                { label: "Registration", value: data.BusinessProfile.RegistrationNumber || "-" },
-                { label: "Approval", value: formatStatusLabel(data.BusinessProfile.ApprovalStatus) },
+                { label: t("auth.ownerName"), value: data.BusinessProfile.OwnerName || "-" },
+                { label: t("auth.businessType"), value: data.BusinessProfile.BusinessType || "-" },
+                { label: t("auth.registrationNumber"), value: data.BusinessProfile.RegistrationNumber || "-" },
+                { label: t("common.approval"), value: formatStatusLabel(data.BusinessProfile.ApprovalStatus, t) },
             );
         }
 
         return {
-            displayName: data.DisplayName || "Profile",
+            displayName: data.DisplayName || t("navigation.profile"),
             role,
             joinedAt: data.CreatedAt,
             avatarUrl: extractProfileImage(data),
             details,
         } satisfies ScreenProfile;
-    }, [data]);
+    }, [data, t]);
 
     const handleLogout = () => {
         Alert.alert(
-            "Log out",
-            "Are you sure you want to log out?",
+            t("profile.logout"),
+            t("profile.logoutConfirm"),
             [
-                { text: "Cancel", style: "cancel" },
+                { text: t("common.cancel"), style: "cancel" },
                 {
-                    text: "Log out",
+                    text: t("profile.logout"),
                     style: "destructive",
                     onPress: async () => {
                         try {
@@ -155,7 +153,7 @@ export default function ProfileScreen() {
                             await logout();
                             router.replace("/(auth)/login");
                         } catch {
-                            Alert.alert("Logout failed", "Please try again.");
+                            Alert.alert(t("profile.logoutFailed"), t("errors.defaultTryAgain"));
                         } finally {
                             setIsLoggingOut(false);
                         }
@@ -169,19 +167,19 @@ export default function ProfileScreen() {
         <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
-                    title="Profile"
-                    subtitle="Account details, updates, and privacy settings."
+                    title={t("navigation.profile")}
+                    subtitle={t("profile.detailsSubtitle")}
                 />
 
                 {isLoading ? (
                     <View style={[styles.stateCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                        <Text style={[styles.stateTitle, { color: theme.primary }]}>Loading profile...</Text>
+                        <Text style={[styles.stateTitle, { color: theme.primary }]}>{t("profile.loadingProfile")}</Text>
                     </View>
                 ) : null}
 
                 {isError ? (
                     <View style={[styles.stateCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                        <Text style={[styles.stateTitle, { color: theme.primary }]}>Could not load profile</Text>
+                        <Text style={[styles.stateTitle, { color: theme.primary }]}>{t("profile.couldNotLoadProfile")}</Text>
                         <Pressable
                             style={({ pressed }) => [
                                 styles.retryBtn,
@@ -190,7 +188,7 @@ export default function ProfileScreen() {
                             ]}
                             onPress={() => refetch()}
                         >
-                            <Text style={[styles.retryText, { color: theme.primary }]}>{isFetching ? "Retrying..." : "Try again"}</Text>
+                            <Text style={[styles.retryText, { color: theme.primary }]}>{isFetching ? t("common.retrying") : t("common.tryAgain")}</Text>
                         </Pressable>
                     </View>
                 ) : null}
@@ -211,12 +209,12 @@ export default function ProfileScreen() {
                             <View style={[styles.rolePill, { backgroundColor: theme.primary }]}>
                                 <Text style={styles.role}>{profile.role}</Text>
                             </View>
-                            <Text style={[styles.joined, { color: theme.textMuted }]}>Joined {formatDate(profile.joinedAt)}</Text>
+                            <Text style={[styles.joined, { color: theme.textMuted }]}>{t("profile.joinedWithDate", { date: formatDate(profile.joinedAt) })}</Text>
                         </View>
 
 
                         <View style={[styles.detailsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                            <Text style={[styles.detailsTitle, { color: theme.primary }]}>Account Overview</Text>
+                            <Text style={[styles.detailsTitle, { color: theme.primary }]}>{t("profile.accountOverview")}</Text>
                             {profile.details.map((item, index) => (
                                 <DetailRow key={`${item.label}-${index}`} label={item.label} value={item.value} />
                             ))}
@@ -225,14 +223,14 @@ export default function ProfileScreen() {
                         <View style={[styles.optionsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                             <OptionRow
                                 icon="create-outline"
-                                title="Update Profile Details"
-                                subtitle="Edit name, phone number, and profile picture."
+                                title={t("profile.updateDetails")}
+                                subtitle={t("profile.updateDetailsSubtitle")}
                                 onPress={() => router.push("/profile/edit")}
                             />
                             <OptionRow
                                 icon="settings-outline"
-                                title="Settings & Privacy"
-                                subtitle="Security and accessibility controls."
+                                title={t("settings.settingsPrivacy")}
+                                subtitle={t("settings.securityControlsSubtitle")}
                                 onPress={() => router.push("/profile/settings")}
                             />
                         </View>
@@ -242,7 +240,7 @@ export default function ProfileScreen() {
                             onPress={handleLogout}
                         >
                             <Ionicons name="log-out-outline" size={17} color={theme.danger} />
-                            <Text style={[styles.logoutText, { color: theme.danger }]}>{isLoggingOut ? "Logging out..." : "Log out"}</Text>
+                            <Text style={[styles.logoutText, { color: theme.danger }]}>{isLoggingOut ? t("profile.loggingOut") : t("profile.logout")}</Text>
                         </Pressable>
                     </>
                 ) : null}

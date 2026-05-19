@@ -7,6 +7,7 @@ import { useResendVerifyEmailOtp } from "@/hooks/auth/useResendVerifyEmailOtp";
 import { useVerifyEmail } from "@/hooks/auth/useVerifyEmail";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert, StyleSheet, Text, View } from "react-native";
 
 export default function VerifyEmailScreen() {
@@ -18,6 +19,7 @@ export default function VerifyEmailScreen() {
     const verifyEmail = useVerifyEmail();
     const resendOtp = useResendVerifyEmailOtp();
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
     const [email, setEmail] = useState(typeof params.email === "string" ? params.email : "");
     const [otp, setOtp] = useState("");
 
@@ -25,22 +27,22 @@ export default function VerifyEmailScreen() {
         const expiresIn = Number(params.expiresIn);
         if (Number.isFinite(expiresIn) && expiresIn > 0) {
             const minutes = Math.ceil(expiresIn / 60);
-            return `Enter the 6-digit OTP sent to your email. This code expires in about ${minutes} minute${minutes === 1 ? "" : "s"}.`;
+            return t("auth.verifyEmailSubtitleExpires", { count: minutes });
         }
 
         if (params.source === "login") {
-            return "Your email must be verified before you can log in. Enter the OTP sent to your email.";
+            return t("auth.verifyEmailLoginSubtitle");
         }
 
-        return "Enter the 6-digit OTP sent to your email.";
-    }, [params.expiresIn, params.source]);
+        return t("auth.verifyEmailSubtitle");
+    }, [params.expiresIn, params.source, t]);
 
     const handleVerify = async () => {
         const trimmedEmail = email.trim();
         const trimmedOtp = otp.trim();
 
         if (!trimmedEmail || !trimmedOtp) {
-            Alert.alert("Missing details", "Please enter your email and OTP.");
+            Alert.alert(t("auth.missingDetails"), t("auth.missingEmailOtp"));
             return;
         }
 
@@ -50,10 +52,10 @@ export default function VerifyEmailScreen() {
                 otp: trimmedOtp,
             });
 
-            Alert.alert("Email verified", "You can now log in to your account.");
+            Alert.alert(t("auth.emailVerified"), t("auth.emailVerifiedMessage"));
             router.replace("/(auth)/login");
         } catch {
-            Alert.alert("Verification failed", "Please check the OTP and try again.");
+            Alert.alert(t("auth.verificationFailed"), t("settings.resetFailedMessage"));
         }
     };
 
@@ -61,28 +63,28 @@ export default function VerifyEmailScreen() {
         const trimmedEmail = email.trim();
 
         if (!trimmedEmail) {
-            Alert.alert("Missing email", "Please enter your email first.");
+            Alert.alert(t("settings.missingEmail"), t("auth.enterEmailFirst"));
             return;
         }
 
         try {
             await resendOtp.mutateAsync({ email: trimmedEmail });
-            Alert.alert("OTP sent", "A new verification OTP has been sent.");
+            Alert.alert(t("settings.otpSent"), t("auth.newOtpSent"));
         } catch {
-            Alert.alert("Resend failed", "Please try again.");
+            Alert.alert(t("auth.resendFailed"), t("errors.defaultTryAgain"));
         }
     };
 
     return (
         <KeyboardWrapper>
             <AuthScreen
-                title="Verify Email"
+                title={t("auth.verifyEmail")}
                 subtitle={helperCopy}
                 showBackButton
                 onBackPress={() => router.back()}
             >
                 <View style={styles.field}>
-                    <Text style={[styles.label, { color: theme.primary }]}>Email</Text>
+                    <Text style={[styles.label, { color: theme.primary }]}>{t("common.email")}</Text>
                     <Input
                         placeholder="example@gmail.com"
                         value={email}
@@ -93,7 +95,7 @@ export default function VerifyEmailScreen() {
                 </View>
 
                 <View style={styles.field}>
-                    <Text style={[styles.label, { color: theme.primary }]}>OTP</Text>
+                    <Text style={[styles.label, { color: theme.primary }]}>{t("common.otp")}</Text>
                     <Input
                         placeholder="123456"
                         value={otp}
@@ -104,11 +106,11 @@ export default function VerifyEmailScreen() {
                 </View>
 
                 <Button
-                    title={verifyEmail.isPending ? "Verifying..." : "Verify Email"}
+                    title={verifyEmail.isPending ? t("auth.verifying") : t("auth.verifyEmail")}
                     onPress={handleVerify}
                 />
                 <Button
-                    title={resendOtp.isPending ? "Sending..." : "Resend OTP"}
+                    title={resendOtp.isPending ? t("common.sending") : t("auth.resendOtp")}
                     onPress={handleResend}
                     variant="secondary"
                 />

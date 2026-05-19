@@ -6,6 +6,7 @@ import { formatStatusLabel, getOrderStatusColor } from "@/utils/statusHelpers";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const PAGE_SIZE = 10;
@@ -21,6 +22,7 @@ const getOrderCategoryLabel = (order: any) => {
 export default function OrdersScreen() {
     const router = useRouter();
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
     const [page, setPage] = useState(0);
     const offset = page * PAGE_SIZE;
     const { data, isLoading, isFetching } = useMyOrders(PAGE_SIZE, offset);
@@ -33,14 +35,14 @@ export default function OrdersScreen() {
         <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
-                    title="Orders"
-                    subtitle="Follow active deliveries and completed drops."
+                    title={t("navigation.orders")}
+                    subtitle={t("orders.subtitle")}
                 />
 
                 {isLoading ? (
-                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>Loading orders...</Text>
+                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t("orders.loadingOrders")}</Text>
                 ) : orders.length === 0 ? (
-                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>No orders found.</Text>
+                    <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t("orders.noOrdersFound")}</Text>
                 ) : (
                     orders.map((order, index) => {
                         const color = getOrderStatusColor(order.order_status);
@@ -70,7 +72,7 @@ export default function OrdersScreen() {
                                 </View>
                                 <View style={[styles.pill, { backgroundColor: `${color}22` }]}>
                                     <Text style={[styles.pillText, { color }]}>
-                                        {formatStatusLabel(order.order_status)}
+                                        {formatStatusLabel(order.order_status, t)}
                                     </Text>
                                 </View>
                             </Pressable>
@@ -90,10 +92,10 @@ export default function OrdersScreen() {
                                 (!canGoBack || isFetching) && styles.disabled,
                             ]}
                         >
-                            <Text style={[styles.pageBtnText, { color: theme.text }]}>Previous</Text>
+                            <Text style={[styles.pageBtnText, { color: theme.text }]}>{t("common.previous")}</Text>
                         </Pressable>
                         <Text style={[styles.paginationText, { color: theme.textMuted }]}>
-                            Page {page + 1}
+                            {t("common.page")} {page + 1}
                             {isFetching ? " ..." : ""}
                         </Text>
                         <Pressable
@@ -106,7 +108,7 @@ export default function OrdersScreen() {
                                 (!canGoNext || isFetching) && styles.disabled,
                             ]}
                         >
-                            <Text style={[styles.pageBtnText, { color: theme.text }]}>Next</Text>
+                            <Text style={[styles.pageBtnText, { color: theme.text }]}>{t("common.next")}</Text>
                         </Pressable>
                     </View>
                 ) : null}
