@@ -3,10 +3,12 @@ import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useNotifications } from "@/hooks/notifications/useNotifications";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 
 export default function NotificationButton() {
     const { unreadCount } = useNotifications();
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
 
     return (
         <Pressable
@@ -21,7 +23,7 @@ export default function NotificationButton() {
                 pressed && styles.pressed,
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Notifications"
+            accessibilityLabel={t("notifications.title")}
         >
             <Ionicons name="notifications-outline" size={20} color={theme.primary} />
             {unreadCount > 0 ? (

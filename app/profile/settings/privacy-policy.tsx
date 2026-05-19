@@ -1,17 +1,20 @@
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
-import { privacyPolicySections } from "./content";
+import { useTranslation } from "react-i18next";
+import { getPrivacyPolicySections } from "./content";
 
 export default function PrivacyPolicyScreen() {
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
+    const privacyPolicySections = getPrivacyPolicySections(t);
 
     return (
         <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
-                    title="Privacy Policy"
-                    subtitle="Placeholder structure until final legal copy is approved."
+                    title={t("privacyPolicy.title")}
+                    subtitle={t("privacyPolicy.subtitle")}
                     backHref="/profile/settings/help-center"
                 />
 
@@ -25,8 +28,7 @@ export default function PrivacyPolicyScreen() {
                     ]}
                 >
                     <Text style={[styles.documentLead, { color: theme.textMuted }]}>
-                        This draft content is provided to complete the full help and legal navigation flow.
-                        Replace it with approved policy language before production release.
+                        {t("privacyPolicy.lead")}
                     </Text>
 
                     {privacyPolicySections.map((section, index) => (

@@ -1,17 +1,20 @@
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
-import { termsOfServiceSections } from "./content";
+import { useTranslation } from "react-i18next";
+import { getTermsOfServiceSections } from "./content";
 
 export default function TermsOfServiceScreen() {
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
+    const termsOfServiceSections = getTermsOfServiceSections(t);
 
     return (
         <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
-                    title="Terms of Service"
-                    subtitle="Placeholder structure until final legal copy is approved."
+                    title={t("termsOfService.title")}
+                    subtitle={t("termsOfService.subtitle")}
                     backHref="/profile/settings/help-center"
                 />
 
@@ -25,8 +28,7 @@ export default function TermsOfServiceScreen() {
                     ]}
                 >
                     <Text style={[styles.documentLead, { color: theme.textMuted }]}>
-                        This draft content is a UI-ready placeholder for the final Dhune terms. Replace
-                        each section with approved legal text before release.
+                        {t("termsOfService.lead")}
                     </Text>
 
                     {termsOfServiceSections.map((section, index) => (

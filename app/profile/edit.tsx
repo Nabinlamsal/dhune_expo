@@ -10,6 +10,7 @@ import { MyProfile } from "@/types/users/my-profile";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Alert,
     AlertButton,
@@ -54,6 +55,7 @@ function extractProfileImage(profile: MyProfile): string | null {
 export default function EditProfileScreen() {
     const { data } = useMyProfile();
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
     const updateProfile = useUpdateMyProfile();
     const uploadProfileImage = useUploadProfileImage();
     const deleteProfileImage = useDeleteProfileImage();
@@ -84,17 +86,17 @@ export default function EditProfileScreen() {
                 setLocalAvatarUri(response.imageUrl);
             }
 
-            Alert.alert("Profile image updated", "Your profile image has been updated.");
+            Alert.alert(t("profileEdit.imageUpdated"), t("profileEdit.imageUpdatedMessage"));
         } catch {
             setLocalAvatarUri(data ? extractProfileImage(data) : null);
-            Alert.alert("Upload failed", "Please try again with another image.");
+            Alert.alert(t("profileEdit.uploadFailed"), t("profileEdit.uploadFailedMessage"));
         }
     };
 
     const handlePickFromGallery = async () => {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
-            Alert.alert("Permission needed", "Gallery access is required to choose a profile photo.");
+            Alert.alert(t("profileEdit.permissionNeeded"), t("profileEdit.galleryPermissionMessage"));
             return;
         }
 
@@ -113,7 +115,7 @@ export default function EditProfileScreen() {
     const handleTakePhoto = async () => {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         if (!permission.granted) {
-            Alert.alert("Permission needed", "Camera access is required to take a profile photo.");
+            Alert.alert(t("profileEdit.permissionNeeded"), t("profileEdit.cameraPermissionMessage"));
             return;
         }
 
@@ -131,32 +133,32 @@ export default function EditProfileScreen() {
 
     const handleDeletePhoto = async () => {
         if (!localAvatarUri) {
-            Alert.alert("No photo", "There is no profile photo to delete.");
+            Alert.alert(t("profileEdit.noPhoto"), t("profileEdit.noPhotoMessage"));
             return;
         }
 
         try {
             await deleteProfileImage.mutateAsync();
             setLocalAvatarUri(null);
-            Alert.alert("Photo deleted", "Your profile photo has been removed.");
+            Alert.alert(t("profileEdit.photoDeleted"), t("profileEdit.photoDeletedMessage"));
         } catch {
-            Alert.alert("Delete failed", "Please try again.");
+            Alert.alert(t("profileEdit.deleteFailed"), t("errors.defaultTryAgain"));
         }
     };
 
     const openPhotoActions = () => {
-        const options = ["Choose from Gallery", "Take Photo"];
+        const options = [t("profileEdit.chooseFromGallery"), t("profileEdit.takePhoto")];
         const actions = [
             () => void handlePickFromGallery(),
             () => void handleTakePhoto(),
         ];
 
         if (localAvatarUri) {
-            options.push("Delete Photo");
+            options.push(t("profileEdit.deletePhoto"));
             actions.push(() => void handleDeletePhoto());
         }
 
-        options.push("Cancel");
+        options.push(t("common.cancel"));
 
         if (Platform.OS === "ios") {
             const cancelButtonIndex = options.length - 1;
@@ -178,20 +180,20 @@ export default function EditProfileScreen() {
         }
 
         const menu: AlertButton[] = [
-            { text: "Choose from Gallery", onPress: () => void handlePickFromGallery() },
-            { text: "Take Photo", onPress: () => void handleTakePhoto() },
+            { text: t("profileEdit.chooseFromGallery"), onPress: () => void handlePickFromGallery() },
+            { text: t("profileEdit.takePhoto"), onPress: () => void handleTakePhoto() },
         ];
 
         if (localAvatarUri) {
             menu.push({
-                text: "Delete Photo",
+                text: t("profileEdit.deletePhoto"),
                 style: "destructive",
                 onPress: () => void handleDeletePhoto(),
             } as const);
         }
 
-        menu.push({ text: "Cancel", style: "cancel" } as const);
-        Alert.alert("Profile Photo", "Choose an action.", menu);
+        menu.push({ text: t("common.cancel"), style: "cancel" } as const);
+        Alert.alert(t("profileEdit.profilePhoto"), t("profileEdit.chooseAction"), menu);
     };
 
     const handleSave = async () => {
@@ -199,12 +201,12 @@ export default function EditProfileScreen() {
         const normalizedPhone = normalizePhone(phone);
 
         if (!trimmedName) {
-            Alert.alert("Invalid name", "Please enter your name.");
+            Alert.alert(t("profileEdit.invalidName"), t("profileEdit.enterNameMessage"));
             return;
         }
 
         if (normalizedPhone.length !== 10) {
-            Alert.alert("Invalid phone", "Phone number must contain exactly 10 digits.");
+            Alert.alert(t("profileEdit.invalidPhone"), t("profileEdit.phoneLengthMessage"));
             return;
         }
 
@@ -214,9 +216,9 @@ export default function EditProfileScreen() {
                 phone: normalizedPhone,
             });
 
-            Alert.alert("Profile updated", "Your profile details have been updated.");
+            Alert.alert(t("profileEdit.profileUpdated"), t("profileEdit.profileUpdatedMessage"));
         } catch {
-            Alert.alert("Update failed", "Please try again.");
+            Alert.alert(t("settings.updateFailed"), t("errors.defaultTryAgain"));
         }
     };
 
@@ -228,8 +230,8 @@ export default function EditProfileScreen() {
             >
                 <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
                     <ScreenHeader
-                        title="Update Profile"
-                        subtitle="Edit your account details."
+                        title={t("profileEdit.title")}
+                        subtitle={t("profileEdit.subtitle")}
                         backHref="/(tabs)/profile"
                     />
 
@@ -254,20 +256,22 @@ export default function EditProfileScreen() {
                                     />
                                 </View>
                             </Pressable>
-                            <Text style={[styles.photoTitle, { color: theme.primary }]}>Profile Picture</Text>
+                            <Text style={[styles.photoTitle, { color: theme.primary }]}>
+                                {t("profileEdit.profilePicture")}
+                            </Text>
                             <Text style={[styles.photoSubtitle, { color: theme.textMuted }]}>
                                 {uploadProfileImage.isPending
-                                    ? "Uploading selected image..."
+                                    ? t("profileEdit.uploadingImage")
                                     : deleteProfileImage.isPending
-                                        ? "Deleting profile image..."
-                                        : "Tap the image to choose from gallery, take a photo, or delete it."}
+                                        ? t("profileEdit.deletingImage")
+                                        : t("profileEdit.photoHint")}
                             </Text>
                         </View>
 
                         <View style={styles.field}>
-                            <Text style={[styles.label, { color: theme.primary }]}>Name</Text>
+                            <Text style={[styles.label, { color: theme.primary }]}>{t("common.name")}</Text>
                             <Input
-                                placeholder="Enter your name"
+                                placeholder={t("forms.enterName")}
                                 value={name}
                                 onChangeText={setName}
                                 autoCapitalize="words"
@@ -275,19 +279,21 @@ export default function EditProfileScreen() {
                         </View>
 
                         <View style={styles.field}>
-                            <Text style={[styles.label, { color: theme.primary }]}>Phone</Text>
+                            <Text style={[styles.label, { color: theme.primary }]}>{t("common.phone")}</Text>
                             <Input
-                                placeholder="98XXXXXXXX"
+                                placeholder={t("forms.phoneShortPlaceholder")}
                                 value={phone}
                                 onChangeText={(value) => setPhone(normalizePhone(value))}
                                 keyboardType="phone-pad"
                                 maxLength={10}
                             />
-                            <Text style={[styles.helper, { color: theme.textMuted }]}>Phone number must be exactly 10 digits.</Text>
+                            <Text style={[styles.helper, { color: theme.textMuted }]}>
+                                {t("profileEdit.phoneLengthHelper")}
+                            </Text>
                         </View>
 
                         <Button
-                            title={updateProfile.isPending ? "Saving..." : "Save Changes"}
+                            title={updateProfile.isPending ? t("common.saving") : t("profileEdit.saveChanges")}
                             onPress={handleSave}
                         />
                     </View>

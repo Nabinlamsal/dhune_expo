@@ -3,6 +3,7 @@ import { useNotifications } from "@/hooks/notifications/useNotifications";
 import { NotificationItem } from "@/types/notifications";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
     ActivityIndicator,
     FlatList,
@@ -14,11 +15,11 @@ import {
     View,
 } from "react-native";
 
-const formatDateTime = (value: string) => {
+const formatDateTime = (value: string, locale: string) => {
     const parsed = new Date(value);
     if (Number.isNaN(parsed.valueOf())) return value;
 
-    return parsed.toLocaleString("en-US", {
+    return parsed.toLocaleString(locale, {
         month: "short",
         day: "numeric",
         hour: "numeric",
@@ -39,6 +40,12 @@ function NotificationCard({
     onMarkRead: () => void;
 }) {
     const { theme } = useAppTheme();
+    const { t, i18n } = useTranslation();
+    const locale = i18n.language === "np" ? "ne-NP" : "en-US";
+    const typeLabel = t(`notifications.types.${item.type}`, { defaultValue: getTypeLabel(item.type) });
+    const entityLabel = item.entity_id
+        ? t("notifications.entityUpdate", { entity: item.entity_type })
+        : item.entity_type;
 
     return (
         <Pressable
@@ -61,14 +68,16 @@ function NotificationCard({
             </View>
             <View style={styles.cardBody}>
                 <View style={styles.cardHeader}>
-                    <Text style={[styles.typeTag, { color: theme.primary }]}>{getTypeLabel(item.type)}</Text>
-                    <Text style={[styles.timestamp, { color: theme.textMuted }]}>{formatDateTime(item.created_at)}</Text>
+                    <Text style={[styles.typeTag, { color: theme.primary }]}>{typeLabel}</Text>
+                    <Text style={[styles.timestamp, { color: theme.textMuted }]}>
+                        {formatDateTime(item.created_at, locale)}
+                    </Text>
                 </View>
                 <Text style={[styles.title, { color: theme.text }]}>{item.title}</Text>
                 <Text style={[styles.body, { color: theme.textMuted }]}>{item.body}</Text>
                 <View style={styles.footerRow}>
                     <Text style={[styles.entityMeta, { color: theme.textMuted }]}>
-                        {item.entity_type} {item.entity_id ? "update" : ""}
+                        {entityLabel}
                     </Text>
                     {!item.is_read ? (
                         <Pressable
@@ -79,10 +88,10 @@ function NotificationCard({
                                 pressed && styles.markReadPressed,
                             ]}
                         >
-                            <Text style={styles.markReadText}>Mark read</Text>
+                            <Text style={styles.markReadText}>{t("notifications.markRead")}</Text>
                         </Pressable>
                     ) : (
-                        <Text style={[styles.readState, { color: theme.success }]}>Read</Text>
+                        <Text style={[styles.readState, { color: theme.success }]}>{t("notifications.read")}</Text>
                     )}
                 </View>
             </View>
@@ -109,20 +118,22 @@ export default function NotificationsScreen() {
         reconnect,
 } = useNotifications();
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
 
     const emptyText = useMemo(() => {
-        if (!isReady) return "Loading notifications...";
-        if (unreadOnly) return "No unread notifications.";
-        return "No notifications yet.";
-    }, [isReady, unreadOnly]);
+        if (!isReady) return t("notifications.loading");
+        if (unreadOnly) return t("notifications.noUnread");
+        return t("notifications.noNotifications");
+    }, [isReady, t, unreadOnly]);
 
     return (
         <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <View style={styles.header}>
                 <View style={styles.headerCopy}>
-                    <Text style={[styles.headerTitle, { color: theme.primary }]}>Notifications</Text>
+                    <Text style={[styles.headerTitle, { color: theme.primary }]}>{t("notifications.title")}</Text>
                     <Text style={[styles.headerMeta, { color: theme.textMuted }]}>
-                        {unreadCount} unread | {isSocketConnected ? "Live" : "Offline"}
+                        {t("notifications.unreadCount", { count: unreadCount })} |{" "}
+                        {isSocketConnected ? t("notifications.live") : t("notifications.offline")}
                     </Text>
                 </View>
                 {!isSocketConnected ? (
@@ -135,7 +146,9 @@ export default function NotificationsScreen() {
                         ]}
                     >
                         <Ionicons name="refresh" size={14} color={theme.primary} />
-                        <Text style={[styles.reconnectText, { color: theme.primary }]}>Reconnect</Text>
+                        <Text style={[styles.reconnectText, { color: theme.primary }]}>
+                            {t("notifications.reconnect")}
+                        </Text>
                     </Pressable>
                 ) : null}
             </View>
@@ -161,7 +174,7 @@ export default function NotificationsScreen() {
                             { color: unreadOnly ? theme.primaryContrast : theme.primary },
                         ]}
                     >
-                        {unreadOnly ? "Unread only" : "All notifications"}
+                        {unreadOnly ? t("notifications.unreadOnly") : t("notifications.allNotifications")}
                     </Text>
                 </Pressable>
 
@@ -176,7 +189,7 @@ export default function NotificationsScreen() {
                         pressed && styles.markAllPressed,
                     ]}
                 >
-                    <Text style={styles.markAllText}>Mark all read</Text>
+                    <Text style={styles.markAllText}>{t("notifications.markAllRead")}</Text>
                 </Pressable>
             </View>
 
@@ -279,6 +292,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
+        flexWrap: "wrap",
         gap: 10,
     },
     filterChip: {
@@ -291,6 +305,7 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         paddingHorizontal: 12,
         paddingVertical: 8,
+        flexShrink: 1,
     },
     filterChipActive: {
         backgroundColor: "#0b2457",
@@ -303,6 +318,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: "#0b2457",
         fontWeight: "700",
+        flexShrink: 1,
     },
     filterTextActive: {
         color: "#ffffff",
@@ -312,6 +328,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 8,
         backgroundColor: "#ebbc01",
+        flexShrink: 1,
     },
     markAllDisabled: {
         opacity: 0.45,
@@ -323,6 +340,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: "800",
         color: "#0b2457",
+        textAlign: "center",
     },
     listContent: {
         paddingHorizontal: 16,
@@ -418,6 +436,7 @@ const styles = StyleSheet.create({
         fontSize: 11,
         color: "#ffffff",
         fontWeight: "700",
+        textAlign: "center",
     },
     readState: {
         fontSize: 11,

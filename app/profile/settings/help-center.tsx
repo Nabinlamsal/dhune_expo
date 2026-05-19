@@ -3,21 +3,24 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { router } from "expo-router";
 import { Linking, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import ContactSupportCard from "./components/ContactSupportCard";
 import FAQAccordion from "./components/FAQAccordion";
 import SettingsOptionTile from "./components/SettingsOptionTile";
-import { helpCenterFaqs, SUPPORT_EMAIL, SUPPORT_PHONE } from "./content";
+import { getHelpCenterFaqs, SUPPORT_EMAIL, SUPPORT_PHONE } from "./content";
 
 export default function HelpCenterScreen() {
     const { theme } = useAppTheme();
+    const { t } = useTranslation();
     const [expandedQuestion, setExpandedQuestion] = useState<number | null>(0);
+    const helpCenterFaqs = getHelpCenterFaqs(t);
 
     return (
         <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
                 <ScreenHeader
-                    title="Help Center"
-                    subtitle="Support contacts, answers, and legal information."
+                    title={t("helpCenter.title")}
+                    subtitle={t("helpCenter.subtitle")}
                     backHref="/profile/settings"
                 />
 
@@ -30,12 +33,12 @@ export default function HelpCenterScreen() {
                         },
                     ]}
                 >
-                    <Text style={[styles.heroEyebrow, { color: theme.primary }]}>Support</Text>
+                    <Text style={[styles.heroEyebrow, { color: theme.primary }]}>{t("settings.support")}</Text>
                     <Text style={[styles.heroTitle, { color: theme.text }]}>
-                        Get help quickly when something blocks your Dhune experience.
+                        {t("helpCenter.heroTitle")}
                     </Text>
                     <Text style={[styles.heroText, { color: theme.textMuted }]}>
-                        Reach support directly, browse common answers, or review platform policies.
+                        {t("helpCenter.heroText")}
                     </Text>
                 </View>
 
@@ -48,13 +51,15 @@ export default function HelpCenterScreen() {
                         },
                     ]}
                 >
-                    <Text style={[styles.sectionTitle, { color: theme.primary }]}>Contact Support</Text>
+                    <Text style={[styles.sectionTitle, { color: theme.primary }]}>
+                        {t("helpCenter.contactSupport")}
+                    </Text>
                     <View style={styles.stack}>
                         <ContactSupportCard
                             icon="mail-outline"
-                            title="Support Email"
+                            title={t("helpCenter.supportEmail")}
                             value={SUPPORT_EMAIL}
-                            caption="Tap to compose an email"
+                            caption={t("helpCenter.emailCaption")}
                             onPress={() => void Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
                             colors={{
                                 card: theme.surfaceMuted,
@@ -67,9 +72,9 @@ export default function HelpCenterScreen() {
                         />
                         <ContactSupportCard
                             icon="call-outline"
-                            title="Call Center"
+                            title={t("helpCenter.callCenter")}
                             value={SUPPORT_PHONE}
-                            caption="Tap to place a phone call"
+                            caption={t("helpCenter.callCaption")}
                             onPress={() => void Linking.openURL(`tel:${SUPPORT_PHONE}`)}
                             colors={{
                                 card: theme.surfaceMuted,
@@ -92,7 +97,9 @@ export default function HelpCenterScreen() {
                         },
                     ]}
                 >
-                    <Text style={[styles.sectionTitle, { color: theme.primary }]}>Frequently Asked Questions</Text>
+                    <Text style={[styles.sectionTitle, { color: theme.primary }]}>
+                        {t("helpCenter.faqTitle")}
+                    </Text>
                     <View style={styles.stack}>
                         {helpCenterFaqs.map((item, index) => (
                             <FAQAccordion
@@ -126,12 +133,12 @@ export default function HelpCenterScreen() {
                         },
                     ]}
                 >
-                    <Text style={[styles.sectionTitle, { color: theme.primary }]}>Legal</Text>
+                    <Text style={[styles.sectionTitle, { color: theme.primary }]}>{t("helpCenter.legal")}</Text>
                     <View style={styles.stack}>
                         <SettingsOptionTile
                             icon="document-text-outline"
-                            title="Terms of Service"
-                            subtitle="Review the structure of Dhune's terms and platform rules."
+                            title={t("termsOfService.title")}
+                            subtitle={t("helpCenter.termsSubtitle")}
                             onPress={() => router.push("/profile/settings/terms-of-service")}
                             colors={{
                                 card: theme.surfaceMuted,
@@ -146,8 +153,8 @@ export default function HelpCenterScreen() {
                         />
                         <SettingsOptionTile
                             icon="shield-checkmark-outline"
-                            title="Privacy Policy"
-                            subtitle="Read how data is collected, used, and protected."
+                            title={t("privacyPolicy.title")}
+                            subtitle={t("helpCenter.privacySubtitle")}
                             onPress={() => router.push("/profile/settings/privacy-policy")}
                             colors={{
                                 card: theme.surfaceMuted,
