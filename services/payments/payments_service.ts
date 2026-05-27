@@ -1,4 +1,5 @@
 import { api } from "@/libs/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
     InitiateOrderPaymentPayload,
     InitiateOrderPaymentResponse,
@@ -26,12 +27,20 @@ export const initiateOrderPayment = async (
     });
 };
 
-export const getEsewaOrderPayUrl = (orderId: string) => {
+export const getEsewaOrderPayUrl = async (orderId: string, returnUrl?: string) => {
     const baseUrl = process.env.EXPO_PUBLIC_API_URL;
 
     if (!baseUrl) {
         throw new Error("Payment server URL is not configured");
     }
 
-    return `${baseUrl.replace(/\/$/, "")}/payments/orders/esewa/pay/${orderId}`;
+    const url = new URL(`${baseUrl.replace(/\/$/, "")}/payments/orders/esewa/pay/${orderId}`);
+    const token = await AsyncStorage.getItem("token");
+    if (token) {
+        url.searchParams.set("token", token);
+    }
+    if (returnUrl) {
+        url.searchParams.set("redirect", returnUrl);
+    }
+    return url.toString();
 };
