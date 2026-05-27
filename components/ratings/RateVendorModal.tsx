@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import KeyboardWrapper from "@/components/ui/KeyboardWrapper";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
@@ -51,6 +52,12 @@ export default function RateVendorModal({
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={[styles.overlay, { backgroundColor: theme.overlay }]}>
+                <KeyboardWrapper
+                    dismissOnTap={false}
+                    style={styles.keyboard}
+                    contentContainerStyle={styles.keyboardContent}
+                    scrollViewProps={{ showsVerticalScrollIndicator: false }}
+                >
                 <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
                     <View style={styles.header}>
                         <View>
@@ -112,6 +119,7 @@ export default function RateVendorModal({
                         </Pressable>
                     </View>
                 </View>
+                </KeyboardWrapper>
             </View>
         </Modal>
     );
@@ -122,6 +130,13 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         padding: 18,
+    },
+    keyboard: {
+        width: "100%",
+    },
+    keyboardContent: {
+        justifyContent: "center",
+        paddingVertical: 18,
     },
     card: {
         borderRadius: 18,

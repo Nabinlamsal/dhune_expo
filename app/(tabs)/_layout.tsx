@@ -1,6 +1,7 @@
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import type { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
+import { Tabs, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -8,39 +9,40 @@ export const unstable_settings = {
     initialRouteName: "home",
 };
 
-function CenterTabButton({
-    onPress,
-    accessibilityState,
-}: {
-    onPress?: (...args: any[]) => void;
-    accessibilityState?: { selected?: boolean };
-}) {
+function CenterTabButton({ onPress, accessibilityState, style, children }: BottomTabBarButtonProps) {
     const selected = !!accessibilityState?.selected;
     const { theme } = useAppTheme();
     const { t } = useTranslation();
+    const router = useRouter();
 
     return (
-        <View style={styles.centerWrap}>
+        <View style={[styles.centerWrap, style]}>
             <Pressable
-                onPress={onPress}
+                onPress={(event) => {
+                    onPress?.(event);
+                    router.push("/(tabs)/requests/create");
+                }}
                 accessibilityRole="button"
                 accessibilityLabel={t("navigation.createRequest")}
+                accessibilityState={accessibilityState}
                 style={({ pressed }) => [
                     styles.centerBtn,
                     {
-                        backgroundColor: theme.accent,
-                        borderColor: theme.mode === "dark" ? "#2b2b2b" : theme.card,
+                        backgroundColor: theme.mode === "dark" ? "#16377a" : theme.primary,
+                        borderColor: theme.mode === "dark" ? "#2b2b2b" : theme.border,
                         shadowColor: theme.shadow,
                     },
                     selected && styles.centerBtnActive,
                     pressed && styles.centerPressed,
                 ]}
             >
-                <Ionicons
-                    name="add"
-                    color="#040947"
-                    size={34}
-                />
+                {children ?? (
+                    <Ionicons
+                        name="add"
+                        color="#ffffff"
+                        size={24}
+                    />
+                )}
             </Pressable>
         </View>
     );
@@ -104,7 +106,7 @@ export default function TabsLayout() {
             />
 
             <Tabs.Screen
-                name="requests/create"
+                name="create"
                 options={{
                     title: "",
                     tabBarLabel: () => null,
@@ -115,7 +117,7 @@ export default function TabsLayout() {
                         <Ionicons
                             name={focused ? "add" : "add"}
                             color="white"
-                            size={30}
+                            size={24}
                         />
                     ),
                 }}
@@ -164,24 +166,24 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
     centerWrap: {
-        top: -24,
+        top: -4,
         justifyContent: "center",
         alignItems: "center",
     },
     centerBtn: {
-        width: 60,
-        height: 60,
-        borderRadius: 32,
+        width: 46,
+        height: 46,
+        borderRadius: 16,
         alignItems: "center",
         justifyContent: "center",
-        borderWidth: 4,
-        shadowOpacity: 0.24,
-        shadowRadius: 14,
-        shadowOffset: { width: 0, height: 6 },
-        elevation: 9,
+        borderWidth: 1,
+        shadowOpacity: 0.18,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 5,
     },
     centerBtnActive: {
-        transform: [{ scale: 1.03 }],
+        transform: [{ scale: 1.02 }],
     },
     centerPressed: {
         transform: [{ scale: 0.96 }],

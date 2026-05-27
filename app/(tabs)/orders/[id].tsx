@@ -8,6 +8,7 @@ import { useUpsertOrderRating } from "@/hooks/ratings/useRating";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -48,10 +49,11 @@ function DetailRow({ label, value, icon }: DetailRowProps) {
 }
 
 export default function OrderDetailScreen() {
-    const { id, ref } = useLocalSearchParams<{ id: string; ref?: string }>();
+    const { id, ref, payment } = useLocalSearchParams<{ id: string; ref?: string; payment?: string }>();
+    const queryClient = useQueryClient();
     const { theme } = useAppTheme();
     const { t } = useTranslation();
-    const { data: order, isLoading } = useOrderDetail(String(id ?? ""));
+    const { data: order, isLoading, refetch: refetchOrderDetail } = useOrderDetail(String(id ?? ""));
     const upsertRatingMutation = useUpsertOrderRating();
     const createDisputeMutation = useCreateDispute();
 
@@ -108,6 +110,16 @@ export default function OrderDetailScreen() {
             active = false;
         };
     }, [isCompleted, orderId, hasRated]);
+
+    useEffect(() => {
+        if (!id || !payment) return;
+
+        void Promise.all([
+            refetchOrderDetail(),
+            queryClient.invalidateQueries({ queryKey: ["orders"] }),
+            queryClient.invalidateQueries({ queryKey: ["orders", "my", "stats"] }),
+        ]);
+    }, [id, payment, queryClient, refetchOrderDetail]);
 
     const handleOpenRating = async () => {
         if (!orderId) return;

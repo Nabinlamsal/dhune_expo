@@ -116,8 +116,6 @@ export default function ProfileScreen() {
         const details: ProfileDetail[] = [
             { label: t("common.email"), value: data.Email || "-" },
             { label: t("common.phone"), value: data.Phone || "-" },
-            { label: t("profile.joined"), value: formatDate(data.CreatedAt) },
-            { label: t("profile.verification"), value: data.IsVerified ? t("common.yes") : t("common.no") },
         ];
 
         if (data.BusinessProfile) {

@@ -1,11 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import KeyboardWrapper from "@/components/ui/KeyboardWrapper";
 import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
     Pressable,
     SafeAreaView,
-    ScrollView,
     StyleProp,
     StyleSheet,
     Text,
@@ -94,11 +94,13 @@ export default function AuthScreen({
             <View style={[styles.bgTop, { backgroundColor: theme.primarySoft, opacity: theme.mode === "dark" ? 0.45 : 1 }]} />
             <View style={[styles.bgBottom, { backgroundColor: theme.accentSoft, opacity: theme.mode === "dark" ? 0.8 : 1 }]} />
             {scrollable ? (
-                <ScrollView
-                    bounces={false}
+                <KeyboardWrapper
                     contentContainerStyle={styles.scrollContent}
-                    keyboardShouldPersistTaps="handled"
-                    showsVerticalScrollIndicator={false}
+                    dismissOnTap={false}
+                    scrollViewProps={{
+                        bounces: false,
+                        showsVerticalScrollIndicator: false,
+                    }}
                 >
                     <AuthCardLayout
                         title={title}
@@ -111,7 +113,7 @@ export default function AuthScreen({
                     >
                         {children}
                     </AuthCardLayout>
-                </ScrollView>
+                </KeyboardWrapper>
             ) : (
                 <AuthCardLayout
                     title={title}

@@ -1,5 +1,6 @@
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import KeyboardWrapper from "@/components/ui/KeyboardWrapper";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useDeleteProfileImage } from "@/hooks/users/useDeleteProfileImage";
@@ -16,11 +17,9 @@ import {
     AlertButton,
     ActionSheetIOS,
     Image,
-    KeyboardAvoidingView,
     Platform,
     Pressable,
     SafeAreaView,
-    ScrollView,
     StyleSheet,
     Text,
     View,
@@ -224,11 +223,11 @@ export default function EditProfileScreen() {
 
     return (
         <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
-            <KeyboardAvoidingView
-                style={styles.safe}
-                behavior={Platform.OS === "ios" ? "padding" : undefined}
+            <KeyboardWrapper
+                contentContainerStyle={styles.container}
+                scrollViewProps={{ showsVerticalScrollIndicator: false }}
+                dismissOnTap={false}
             >
-                <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
                     <ScreenHeader
                         title={t("profileEdit.title")}
                         subtitle={t("profileEdit.subtitle")}
@@ -297,8 +296,7 @@ export default function EditProfileScreen() {
                             onPress={handleSave}
                         />
                     </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
+            </KeyboardWrapper>
         </SafeAreaView>
     );
 }

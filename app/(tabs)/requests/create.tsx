@@ -1,4 +1,5 @@
 import Input from "@/components/ui/Input";
+import KeyboardWrapper from "@/components/ui/KeyboardWrapper";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useActiveCategories } from "@/hooks/catalog/useCategory";
@@ -20,7 +21,6 @@ import {
     Platform,
     Pressable,
     SafeAreaView,
-    ScrollView,
     StyleSheet,
     Text,
     View,
@@ -379,7 +379,11 @@ export default function CreateRequestScreen() {
 
     return (
         <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
-            <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+            <KeyboardWrapper
+                contentContainerStyle={styles.scroll}
+                scrollViewProps={{ showsVerticalScrollIndicator: false }}
+                dismissOnTap={false}
+            >
                 <ScreenHeader
                     title={t("requests.createRequest")}
                     subtitle={t("requests.createSubtitle")}
@@ -419,7 +423,7 @@ export default function CreateRequestScreen() {
                             ) : (
                                 <View>
                                     <Pressable
-                                        style={[styles.dropdownTrigger, { borderColor: theme.border, backgroundColor: theme.inputBackground }]}
+                                        style={[styles.dropdownTrigger, { borderColor: theme.inputBorder, backgroundColor: theme.inputBackground }]}
                                         onPress={() =>
                                             setOpenCategoryFor((current) =>
                                                 current === service.id ? null : service.id
@@ -437,7 +441,7 @@ export default function CreateRequestScreen() {
                                     </Pressable>
 
                                     {openCategoryFor === service.id && (
-                                        <View style={[styles.dropdownMenu, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                                        <View style={[styles.dropdownMenu, { backgroundColor: theme.surface, borderColor: theme.borderStrong }]}>
                                             {categories.map((category) => {
                                                 const active = service.category_id === category.id;
                                                 return (
@@ -445,7 +449,10 @@ export default function CreateRequestScreen() {
                                                         key={category.id}
                                                         style={[
                                                             styles.dropdownOption,
-                                                            active && { backgroundColor: theme.primarySoft },
+                                                            {
+                                                                backgroundColor: active ? theme.primarySoft : theme.surface,
+                                                                borderTopColor: theme.border,
+                                                            },
                                                         ]}
                                                         onPress={() => {
                                                             const defaultUnit = category.allowed_units[0] ?? "";
@@ -705,7 +712,7 @@ export default function CreateRequestScreen() {
                 </View>
 
                 <View style={{ height: 110 }} />
-            </ScrollView>
+            </KeyboardWrapper>
 
             <View style={[styles.footer, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
                 <Pressable
@@ -725,12 +732,15 @@ export default function CreateRequestScreen() {
                 onRequestClose={() => setActivePicker(null)}
             >
                 <View style={[styles.modalBackdrop, { backgroundColor: theme.overlay }]}>
-                    <View style={[styles.modalCard, { backgroundColor: theme.card }]}>
+                    <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                         {activePicker && (
                             <DateTimePicker
                                 mode="date"
                                 value={pickupDate}
                                 display={Platform.OS === "ios" ? "spinner" : "default"}
+                                textColor={theme.text}
+                                accentColor={theme.primary}
+                                themeVariant={theme.mode}
                                 onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
                                     if (event.type === "dismissed") {
                                         setActivePicker(null);
@@ -746,7 +756,7 @@ export default function CreateRequestScreen() {
                         )}
                         {Platform.OS === "ios" && (
                             <Pressable style={[styles.doneBtn, { backgroundColor: theme.primary }]} onPress={() => setActivePicker(null)}>
-                                <Text style={styles.doneBtnText}>{t("common.done")}</Text>
+                                <Text style={[styles.doneBtnText, { color: theme.primaryContrast }]}>{t("common.done")}</Text>
                             </Pressable>
                         )}
                     </View>
