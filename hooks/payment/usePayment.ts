@@ -29,10 +29,7 @@ const unwrapOrderPaymentResponse = (response: InitiateOrderPaymentResponse | Ini
     return paymentUrl;
 };
 
-const getPaymentReturnUrl = (orderId: string) =>
-    Linking.createURL(`orders/${orderId}`, {
-        scheme: "dhune",
-    });
+const getPaymentReturnUrl = (orderId: string) => `dhune://orders/${encodeURIComponent(orderId)}`;
 
 const getPaymentResult = (url?: string | null) => {
     if (!url) return null;
@@ -47,8 +44,8 @@ const showPaymentResultToast = (paymentResult: string | null) => {
     if (paymentResult === "success") {
         Toast.show({
             type: "success",
-            text1: "Payment successful",
-            text2: "Your order payment is being updated.",
+            text1: "Payment verification completed",
+            text2: "Refreshing order status.",
         });
         return;
     }
@@ -91,6 +88,14 @@ const openPaymentUrl = async (paymentUrl: string, orderId: string) => {
     const returnedUrl = result.type === "success" ? result.url : null;
 
     console.log("PAYMENT BROWSER RESULT:", result);
+    if (result.type === "cancel" || result.type === "dismiss") {
+        Toast.show({
+            type: "info",
+            text1: "Payment window closed",
+            text2: "Pull to refresh if payment was completed.",
+        });
+        return;
+    }
     showPaymentResultToast(getPaymentResult(returnedUrl));
 };
 
@@ -169,7 +174,8 @@ export const useEsewaPayment = () => {
 
     return useMutation({
         mutationFn: async (orderId: string) => {
-            const paymentUrl = getEsewaOrderPayUrl(orderId);
+            const returnUrl = getPaymentReturnUrl(orderId);
+            const paymentUrl = await getEsewaOrderPayUrl(orderId, returnUrl);
 
             Toast.show({
                 type: "info",
