@@ -109,6 +109,8 @@ export default function CreateRequestScreen() {
     const router = useRouter();
     const { theme } = useAppTheme();
     const { t } = useTranslation();
+    const actionPrimary = theme.mode === "dark" ? "#0b2457" : theme.primary;
+    const actionPrimaryContrast = "#ffffff";
 
     const { data: categories = [], isLoading: isLoadingCategories } = useActiveCategories();
     const createRequestMutation = useCreateRequest();
@@ -502,7 +504,7 @@ export default function CreateRequestScreen() {
                                                     style={[
                                                         styles.unitChip,
                                                         { backgroundColor: theme.card, borderColor: theme.border },
-                                                        active && { backgroundColor: theme.primary, borderColor: theme.primary },
+                                                        active && { backgroundColor: actionPrimary, borderColor: actionPrimary },
                                                     ]}
                                                     onPress={() =>
                                                         updateService(service.id, {
@@ -514,7 +516,7 @@ export default function CreateRequestScreen() {
                                                     }
                                                 >
                                                     <Text
-                                                        style={[styles.unitChipText, { color: active ? theme.primaryContrast : theme.text }]}
+                                                        style={[styles.unitChipText, { color: active ? actionPrimaryContrast : theme.text }]}
                                                     >
                                                         {UNIT_LABELS[unit]}
                                                     </Text>
@@ -672,16 +674,16 @@ export default function CreateRequestScreen() {
                                     style={[
                                         styles.rangeChip,
                                         { backgroundColor: theme.card, borderColor: theme.border },
-                                        active && { backgroundColor: theme.primary, borderColor: theme.primary },
+                                        active && { backgroundColor: actionPrimary, borderColor: actionPrimary },
                                     ]}
                                     onPress={() => setPickupRange(range.key)}
                                 >
                                     <Ionicons
                                         name={active ? "checkbox" : "square-outline"}
                                         size={14}
-                                        color={active ? theme.primaryContrast : theme.textMuted}
+                                        color={active ? actionPrimaryContrast : theme.textMuted}
                                     />
-                                    <Text style={[styles.rangeChipText, { color: active ? theme.primaryContrast : theme.text }]}>
+                                    <Text style={[styles.rangeChipText, { color: active ? actionPrimaryContrast : theme.text }]}>
                                         {range.label}
                                     </Text>
                                 </Pressable>
@@ -699,11 +701,11 @@ export default function CreateRequestScreen() {
                                 style={[
                                     styles.payCard,
                                     { backgroundColor: theme.card, borderColor: theme.border },
-                                    paymentMethod === method && { backgroundColor: theme.primary, borderColor: theme.primary },
+                                    paymentMethod === method && { backgroundColor: actionPrimary, borderColor: actionPrimary },
                                 ]}
                                 onPress={() => setPaymentMethod(method)}
                             >
-                                <Text style={[styles.payText, { color: paymentMethod === method ? theme.primaryContrast : theme.text }]}>
+                                <Text style={[styles.payText, { color: paymentMethod === method ? actionPrimaryContrast : theme.text }]}>
                                     {method === "CASH" ? t("common.cash") : t("common.online")}
                                 </Text>
                             </Pressable>
@@ -716,7 +718,7 @@ export default function CreateRequestScreen() {
 
             <View style={[styles.footer, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
                 <Pressable
-                    style={[styles.submitBtn, { backgroundColor: theme.primary }, createRequestMutation.isPending && styles.submitBtnDisabled]}
+                    style={[styles.submitBtn, { backgroundColor: actionPrimary }, createRequestMutation.isPending && styles.submitBtnDisabled]}
                     onPress={createRequestMutation.isPending ? undefined : handleCreateRequest}
                 >
                     <Text style={styles.submitText}>
@@ -739,7 +741,7 @@ export default function CreateRequestScreen() {
                                 value={pickupDate}
                                 display={Platform.OS === "ios" ? "spinner" : "default"}
                                 textColor={theme.text}
-                                accentColor={theme.primary}
+                                accentColor={actionPrimary}
                                 themeVariant={theme.mode}
                                 onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
                                     if (event.type === "dismissed") {
@@ -755,8 +757,8 @@ export default function CreateRequestScreen() {
                             />
                         )}
                         {Platform.OS === "ios" && (
-                            <Pressable style={[styles.doneBtn, { backgroundColor: theme.primary }]} onPress={() => setActivePicker(null)}>
-                                <Text style={[styles.doneBtnText, { color: theme.primaryContrast }]}>{t("common.done")}</Text>
+                            <Pressable style={[styles.doneBtn, { backgroundColor: actionPrimary }]} onPress={() => setActivePicker(null)}>
+                                <Text style={[styles.doneBtnText, { color: actionPrimaryContrast }]}>{t("common.done")}</Text>
                             </Pressable>
                         )}
                     </View>
