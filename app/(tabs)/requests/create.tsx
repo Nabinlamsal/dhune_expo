@@ -1,4 +1,5 @@
 import Input from "@/components/ui/Input";
+import LeafletMapView from "@/components/maps/LeafletMapView";
 import KeyboardWrapper from "@/components/ui/KeyboardWrapper";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -25,7 +26,13 @@ import {
     Text,
     View,
 } from "react-native";
-import MapView, { Marker, Region } from "react-native-maps";
+
+type MapRegion = {
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+};
 
 type ServiceItemField = {
     id: string;
@@ -51,7 +58,7 @@ const UNIT_LABELS: Record<PricingUnit, string> = {
     ITEMS: "Item-based",
     SQFT: "Square Feet",
 };
-const DEFAULT_REGION: Region = {
+const DEFAULT_REGION: MapRegion = {
     latitude: 27.7172,
     longitude: 85.324,
     latitudeDelta: 0.02,
@@ -118,7 +125,7 @@ export default function CreateRequestScreen() {
     const [pickupAddress, setPickupAddress] = useState("");
     const [pickupLat, setPickupLat] = useState<number | null>(null);
     const [pickupLng, setPickupLng] = useState<number | null>(null);
-    const [region, setRegion] = useState<Region>(DEFAULT_REGION);
+    const [region, setRegion] = useState<MapRegion>(DEFAULT_REGION);
     const [isLoadingLocation, setIsLoadingLocation] = useState(true);
     const [pickupDate, setPickupDate] = useState(new Date());
     const [pickupRange, setPickupRange] = useState<PickupRangeKey>("MORNING");
@@ -621,26 +628,15 @@ export default function CreateRequestScreen() {
                                 <Text style={[styles.hint, { color: theme.textMuted }]}>{t("requests.loadingCurrentLocation")}</Text>
                             </View>
                         ) : (
-                            <MapView
-                                style={styles.map}
-                                region={region}
-                                onRegionChangeComplete={setRegion}
-                                onPress={(event) => {
-                                    const coordinate = event.nativeEvent.coordinate;
-                                    setCoordinates(coordinate.latitude, coordinate.longitude);
+                            <LeafletMapView
+                                latitude={pickupLat ?? region.latitude}
+                                longitude={pickupLng ?? region.longitude}
+                                mode="picker"
+                                height={240}
+                                onLocationChange={({ latitude, longitude }) => {
+                                    setCoordinates(latitude, longitude);
                                 }}
-                            >
-                                {pickupLat != null && pickupLng != null && (
-                                    <Marker
-                                        coordinate={{ latitude: pickupLat, longitude: pickupLng }}
-                                        draggable
-                                        onDragEnd={(event) => {
-                                            const coordinate = event.nativeEvent.coordinate;
-                                            setCoordinates(coordinate.latitude, coordinate.longitude);
-                                        }}
-                                    />
-                                )}
-                            </MapView>
+                            />
                         )}
                     </View>
                     <Input

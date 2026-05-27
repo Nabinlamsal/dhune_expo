@@ -1,4 +1,5 @@
 import OfferBidCard from "@/components/offers/OfferBidCard";
+import LeafletMapView from "@/components/maps/LeafletMapView";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAcceptOffer, useOffersByRequest, useRejectOffer } from "@/hooks/orders/useOffer";
@@ -96,6 +97,11 @@ export default function RequestDetailScreen() {
     const pickupFrom = formatDateTime(request?.pickup_time_from);
     const pickupTo = formatDateTime(request?.pickup_time_to);
     const pickupCoords = formatCoordinates(request?.pickup_lat, request?.pickup_lng);
+    const hasPickupCoordinates =
+        typeof request?.pickup_lat === "number" &&
+        typeof request?.pickup_lng === "number" &&
+        Number.isFinite(request.pickup_lat) &&
+        Number.isFinite(request.pickup_lng);
 
     const handleAccept = (offerId: string) => {
         Alert.alert(t("offers.acceptPromptTitle"), t("offers.acceptPromptCloseOffers"), [
@@ -267,6 +273,15 @@ export default function RequestDetailScreen() {
                         </View>
                     </View>
                     <View style={styles.detailSpacer} />
+                    {hasPickupCoordinates ? (
+                        <LeafletMapView
+                            latitude={request.pickup_lat}
+                            longitude={request.pickup_lng}
+                            mode="readonly"
+                            height={180}
+                            style={styles.detailMap}
+                        />
+                    ) : null}
                     <DetailRow label={t("common.address")} value={request.pickup_address} icon="location-outline" />
                     <DetailRow label={t("common.coordinates")} value={pickupCoords} icon="navigate-outline" />
                     <DetailRow label={t("common.created")} value={formatDateTime(request.created_at)} icon="calendar-outline" />
@@ -464,6 +479,9 @@ const styles = StyleSheet.create({
     },
     detailSpacer: {
         height: 10,
+    },
+    detailMap: {
+        marginBottom: 10,
     },
     detailRow: {
         flexDirection: "row",

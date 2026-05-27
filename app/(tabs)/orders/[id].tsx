@@ -1,4 +1,5 @@
 import ReportDisputeModal from "@/components/disputes/ReportDisputeModal";
+import LeafletMapView from "@/components/maps/LeafletMapView";
 import RateVendorModal from "@/components/ratings/RateVendorModal";
 import ExpandableSection from "@/components/ui/ExpandableSection";
 import ScreenHeader from "@/components/ui/ScreenHeader";
@@ -76,6 +77,11 @@ export default function OrderDetailScreen() {
     const pickupFrom = formatDateTime(order?.request?.pickup_time_from);
     const pickupTo = formatDateTime(order?.request?.pickup_time_to);
     const pickupCoords = formatCoordinates(order?.request?.pickup_lat, order?.request?.pickup_lng);
+    const hasPickupCoordinates =
+        typeof order?.request?.pickup_lat === "number" &&
+        typeof order?.request?.pickup_lng === "number" &&
+        Number.isFinite(order.request.pickup_lat) &&
+        Number.isFinite(order.request.pickup_lng);
 
     useEffect(() => {
         if (!orderId) return;
@@ -312,6 +318,15 @@ export default function OrderDetailScreen() {
                         </View>
                     </View>
                     <View style={styles.detailSpacer} />
+                    {hasPickupCoordinates ? (
+                        <LeafletMapView
+                            latitude={order.request.pickup_lat}
+                            longitude={order.request.pickup_lng}
+                            mode="readonly"
+                            height={180}
+                            style={styles.detailMap}
+                        />
+                    ) : null}
                     <DetailRow label={t("common.address")} value={order.request?.pickup_address} icon="location-outline" />
                     <DetailRow label={t("common.coordinates")} value={pickupCoords} icon="navigate-outline" />
                 </ExpandableSection>
@@ -710,6 +725,9 @@ const styles = StyleSheet.create({
     },
     detailSpacer: {
         height: 10,
+    },
+    detailMap: {
+        marginBottom: 10,
     },
     detailRow: {
         flexDirection: "row",
