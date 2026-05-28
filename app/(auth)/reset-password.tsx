@@ -9,6 +9,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, StyleSheet, Text, View } from "react-native";
+import { PASSWORD_HELPER_TEXT, sanitizeIntegerInput, validatePassword } from "@/utils/validation";
 
 export default function ResetPasswordScreen() {
     const params = useLocalSearchParams<{ email?: string }>();
@@ -25,6 +26,11 @@ export default function ResetPasswordScreen() {
 
         if (!trimmedEmail || !trimmedOtp || !newPassword) {
             Alert.alert(t("auth.missingDetails"), t("auth.missingFieldsMessage"));
+            return;
+        }
+        const passwordError = validatePassword(newPassword);
+        if (passwordError) {
+            Alert.alert("Weak password", passwordError);
             return;
         }
 
@@ -66,7 +72,7 @@ export default function ResetPasswordScreen() {
                     <Input
                         placeholder="123456"
                         value={otp}
-                        onChangeText={setOtp}
+                        onChangeText={(value) => setOtp(sanitizeIntegerInput(value).slice(0, 6))}
                         keyboardType="number-pad"
                         maxLength={6}
                     />
@@ -79,6 +85,7 @@ export default function ResetPasswordScreen() {
                         value={newPassword}
                         onChangeText={setNewPassword}
                     />
+                    <Text style={[styles.helper, { color: theme.textMuted }]}>{PASSWORD_HELPER_TEXT}</Text>
                 </View>
 
                 <Button
@@ -98,5 +105,9 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: "700",
+    },
+    helper: {
+        fontSize: 11,
+        fontWeight: "500",
     },
 });

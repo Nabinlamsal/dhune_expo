@@ -15,6 +15,9 @@ export type SignupRequest = {
     owner_name?: string;
     business_type?: string;
     address?: string;
+    business_latitude?: number;
+    business_longitude?: number;
+    service_radius_km?: number;
     registration_number?: string;
     documents?: SignupDocument[];
 };

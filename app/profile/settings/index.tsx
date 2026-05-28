@@ -34,6 +34,7 @@ import {
 } from "react-native";
 import SettingsOptionTile from "./components/SettingsOptionTile";
 import SettingsSwitchTile from "./components/SettingsSwitchTile";
+import { PASSWORD_HELPER_TEXT, sanitizeIntegerInput, validatePassword } from "@/utils/validation";
 
 type ExpandableKey =
     | "changePassword"
@@ -249,6 +250,11 @@ export default function ProfileSettingsScreen() {
             Alert.alert(t("settings.missingFields"), t("settings.missingPasswordFields"));
             return;
         }
+        const passwordError = validatePassword(newPassword);
+        if (passwordError) {
+            Alert.alert("Weak password", passwordError);
+            return;
+        }
 
         try {
             await changePassword.mutateAsync({
@@ -290,6 +296,11 @@ export default function ProfileSettingsScreen() {
 
         if (!resetOtp.trim() || !resetNewPassword) {
             Alert.alert(t("settings.missingFields"), t("settings.missingResetFields"));
+            return;
+        }
+        const passwordError = validatePassword(resetNewPassword);
+        if (passwordError) {
+            Alert.alert("Weak password", passwordError);
             return;
         }
 
@@ -454,6 +465,7 @@ export default function ProfileSettingsScreen() {
                                     value={newPassword}
                                     onChangeText={setNewPassword}
                                 />
+                                <Text style={[styles.helper, { color: colors.textMuted }]}>{PASSWORD_HELPER_TEXT}</Text>
                             </View>
                             <Button
                                 title={changePassword.isPending ? t("settings.updating") : t("settings.changePassword")}
@@ -488,7 +500,7 @@ export default function ProfileSettingsScreen() {
                                 <Input
                                     placeholder="Enter 6-digit OTP"
                                     value={resetOtp}
-                                    onChangeText={setResetOtp}
+                                    onChangeText={(value) => setResetOtp(sanitizeIntegerInput(value).slice(0, 6))}
                                     keyboardType="number-pad"
                                     maxLength={6}
                                 />
@@ -500,6 +512,7 @@ export default function ProfileSettingsScreen() {
                                     value={resetNewPassword}
                                     onChangeText={setResetNewPassword}
                                 />
+                                <Text style={[styles.helper, { color: colors.textMuted }]}>{PASSWORD_HELPER_TEXT}</Text>
                             </View>
                             <Button
                                 title={forgotPassword.isPending ? t("common.sending") : t("settings.sendOtp")}
@@ -796,6 +809,11 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: "700",
         marginBottom: 6,
+    },
+    helper: {
+        marginTop: 6,
+        fontSize: 11,
+        fontWeight: "500",
     },
     infoPanel: {
         flexDirection: "row",

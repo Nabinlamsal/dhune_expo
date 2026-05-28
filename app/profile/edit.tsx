@@ -24,9 +24,10 @@ import {
     Text,
     View,
 } from "react-native";
+import { isValidNepalPhone, NEPAL_PHONE_HELPER_TEXT, sanitizePhoneInput } from "@/utils/validation";
 
 function normalizePhone(value: string) {
-    return value.replace(/\D/g, "").slice(0, 10);
+    return sanitizePhoneInput(value);
 }
 
 function extractProfileImage(profile: MyProfile): string | null {
@@ -204,7 +205,7 @@ export default function EditProfileScreen() {
             return;
         }
 
-        if (normalizedPhone.length !== 10) {
+        if (!isValidNepalPhone(normalizedPhone)) {
             Alert.alert(t("profileEdit.invalidPhone"), t("profileEdit.phoneLengthMessage"));
             return;
         }
@@ -228,74 +229,75 @@ export default function EditProfileScreen() {
                 scrollViewProps={{ showsVerticalScrollIndicator: false }}
                 dismissOnTap={false}
             >
-                    <ScreenHeader
-                        title={t("profileEdit.title")}
-                        subtitle={t("profileEdit.subtitle")}
-                        backHref="/(tabs)/profile"
-                    />
+                <ScreenHeader
+                    title={t("profileEdit.title")}
+                    subtitle={t("profileEdit.subtitle")}
+                    backHref="/(tabs)/profile"
+                />
 
-                    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                        <View style={[styles.photoCard, { borderBottomColor: theme.border }]}>
-                            <Pressable
-                                style={({ pressed }) => [styles.avatarWrap, pressed && styles.pressed]}
-                                onPress={openPhotoActions}
-                            >
-                                <View style={[styles.avatar, { backgroundColor: theme.surfaceMuted, borderColor: theme.borderStrong }]}>
-                                    {localAvatarUri ? (
-                                        <Image source={{ uri: localAvatarUri }} style={styles.avatarImage} />
-                                    ) : (
-                                        <Ionicons name="person-outline" size={34} color={theme.primary} />
-                                    )}
-                                </View>
-                                <View style={[styles.avatarBadge, { backgroundColor: theme.primary, borderColor: theme.card }]}>
-                                    <Ionicons
-                                        name={uploadProfileImage.isPending ? "sync" : "camera-outline"}
-                                        size={13}
-                                        color="#ffffff"
-                                    />
-                                </View>
-                            </Pressable>
-                            <Text style={[styles.photoTitle, { color: theme.primary }]}>
-                                {t("profileEdit.profilePicture")}
-                            </Text>
-                            <Text style={[styles.photoSubtitle, { color: theme.textMuted }]}>
-                                {uploadProfileImage.isPending
-                                    ? t("profileEdit.uploadingImage")
-                                    : deleteProfileImage.isPending
-                                        ? t("profileEdit.deletingImage")
-                                        : t("profileEdit.photoHint")}
-                            </Text>
-                        </View>
+                <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <View style={[styles.photoCard, { borderBottomColor: theme.border }]}>
+                        <Pressable
+                            style={({ pressed }) => [styles.avatarWrap, pressed && styles.pressed]}
+                            onPress={openPhotoActions}
+                        >
+                            <View style={[styles.avatar, { backgroundColor: theme.surfaceMuted, borderColor: theme.borderStrong }]}>
+                                {localAvatarUri ? (
+                                    <Image source={{ uri: localAvatarUri }} style={styles.avatarImage} />
+                                ) : (
+                                    <Ionicons name="person-outline" size={34} color={theme.primary} />
+                                )}
+                            </View>
+                            <View style={[styles.avatarBadge, { backgroundColor: theme.primary, borderColor: theme.card }]}>
+                                <Ionicons
+                                    name={uploadProfileImage.isPending ? "sync" : "camera-outline"}
+                                    size={13}
+                                    color="#ffffff"
+                                />
+                            </View>
+                        </Pressable>
+                        <Text style={[styles.photoTitle, { color: theme.primary }]}>
+                            {t("profileEdit.profilePicture")}
+                        </Text>
+                        <Text style={[styles.photoSubtitle, { color: theme.textMuted }]}>
+                            {uploadProfileImage.isPending
+                                ? t("profileEdit.uploadingImage")
+                                : deleteProfileImage.isPending
+                                    ? t("profileEdit.deletingImage")
+                                    : t("profileEdit.photoHint")}
+                        </Text>
+                    </View>
 
-                        <View style={styles.field}>
-                            <Text style={[styles.label, { color: theme.primary }]}>{t("common.name")}</Text>
-                            <Input
-                                placeholder={t("forms.enterName")}
-                                value={name}
-                                onChangeText={setName}
-                                autoCapitalize="words"
-                            />
-                        </View>
-
-                        <View style={styles.field}>
-                            <Text style={[styles.label, { color: theme.primary }]}>{t("common.phone")}</Text>
-                            <Input
-                                placeholder={t("forms.phoneShortPlaceholder")}
-                                value={phone}
-                                onChangeText={(value) => setPhone(normalizePhone(value))}
-                                keyboardType="phone-pad"
-                                maxLength={10}
-                            />
-                            <Text style={[styles.helper, { color: theme.textMuted }]}>
-                                {t("profileEdit.phoneLengthHelper")}
-                            </Text>
-                        </View>
-
-                        <Button
-                            title={updateProfile.isPending ? t("common.saving") : t("profileEdit.saveChanges")}
-                            onPress={handleSave}
+                    <View style={styles.field}>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("common.name")}</Text>
+                        <Input
+                            placeholder={t("forms.enterName")}
+                            value={name}
+                            onChangeText={setName}
+                            autoCapitalize="words"
                         />
                     </View>
+
+                    <View style={styles.field}>
+                        <Text style={[styles.label, { color: theme.primary }]}>{t("common.phone")}</Text>
+                        <Text style={[styles.phonePrefix, { color: theme.textMuted }]}>🇳🇵 +977</Text>
+                        <Input
+                            placeholder={t("forms.phoneShortPlaceholder")}
+                            value={phone}
+                            onChangeText={(value) => setPhone(normalizePhone(value))}
+                            keyboardType="phone-pad"
+                            maxLength={10}
+                        />
+                        <Text style={[styles.helper, { color: theme.textMuted }]}>
+                            {NEPAL_PHONE_HELPER_TEXT}
+                        </Text>
+                    </View>
+
+                    <Button
+                        title={updateProfile.isPending ? t("common.saving") : t("profileEdit.saveChanges")}
+                        onPress={handleSave}
+                    />
+                </View>
             </KeyboardWrapper>
         </SafeAreaView>
     );
@@ -371,6 +373,11 @@ const styles = StyleSheet.create({
         marginTop: 6,
         fontSize: 11,
         fontWeight: "500",
+    },
+    phonePrefix: {
+        marginBottom: 6,
+        fontSize: 11,
+        fontWeight: "700",
     },
     pressed: {
         opacity: 0.85,

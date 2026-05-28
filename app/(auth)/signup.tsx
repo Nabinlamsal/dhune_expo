@@ -16,6 +16,7 @@ import AuthScreen from "@/components/ui/AuthScreen";
 import PasswordInput from "@/components/ui/PasswordInput";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
+import { isValidNepalPhone, NEPAL_PHONE_HELPER_TEXT, PASSWORD_HELPER_TEXT, sanitizePhoneInput, validatePassword } from "@/utils/validation";
 
 type AccountType = "user" | "business";
 
@@ -35,7 +36,7 @@ const buildSignupFormData = (params: {
     formData.append("role", params.accountType);
     formData.append("display_name", params.name.trim());
     formData.append("email", params.email.trim());
-    formData.append("phone", params.phone.trim());
+    formData.append("phone", sanitizePhoneInput(params.phone));
     formData.append("password", params.password);
 
     if (params.accountType === "business") {
@@ -80,10 +81,19 @@ export default function SignupScreen() {
     const handleSignup = async () => {
         const trimmedName = name.trim();
         const trimmedEmail = email.trim();
-        const trimmedPhone = phone.trim();
+        const trimmedPhone = sanitizePhoneInput(phone);
 
         if (!trimmedName || !trimmedEmail || !trimmedPhone || !password) {
             Alert.alert(t("auth.missingDetails"), t("auth.missingRequiredFields"));
+            return;
+        }
+        if (!isValidNepalPhone(trimmedPhone)) {
+            Alert.alert("Invalid phone number", "Phone number must be exactly 10 digits.");
+            return;
+        }
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+            Alert.alert("Weak password", passwordError);
             return;
         }
 
@@ -209,13 +219,17 @@ export default function SignupScreen() {
 
                     <View style={styles.field}>
                         <Text style={[styles.label, { color: theme.primary }]}>{t("common.phone")}</Text>
+                        <Text style={[styles.prefix, { color: theme.textMuted }]}>🇳🇵 +977</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
                             placeholderTextColor={theme.inputPlaceholder}
                             placeholder={t("forms.phonePlaceholder")}
                             value={phone}
-                            onChangeText={setPhone}
+                            onChangeText={(value) => setPhone(sanitizePhoneInput(value))}
+                            keyboardType="phone-pad"
+                            maxLength={10}
                         />
+                        <Text style={[styles.helper, { color: theme.textMuted }]}>{NEPAL_PHONE_HELPER_TEXT}</Text>
                     </View>
 
                     <View style={styles.field}>
@@ -238,6 +252,7 @@ export default function SignupScreen() {
                             value={password}
                             onChangeText={setPassword}
                         />
+                        <Text style={[styles.helper, { color: theme.textMuted }]}>{PASSWORD_HELPER_TEXT}</Text>
                     </View>
                 </>
             )}
@@ -315,13 +330,17 @@ export default function SignupScreen() {
 
                     <View style={styles.field}>
                         <Text style={[styles.label, { color: theme.primary }]}>{t("common.phone")}</Text>
+                        <Text style={[styles.prefix, { color: theme.textMuted }]}>🇳🇵 +977</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.inputText }]}
                             placeholderTextColor={theme.inputPlaceholder}
                             placeholder={t("forms.phonePlaceholder")}
                             value={phone}
-                            onChangeText={setPhone}
+                            onChangeText={(value) => setPhone(sanitizePhoneInput(value))}
+                            keyboardType="phone-pad"
+                            maxLength={10}
                         />
+                        <Text style={[styles.helper, { color: theme.textMuted }]}>{NEPAL_PHONE_HELPER_TEXT}</Text>
                     </View>
 
                     <View style={styles.field}>
@@ -331,6 +350,7 @@ export default function SignupScreen() {
                             value={password}
                             onChangeText={setPassword}
                         />
+                        <Text style={[styles.helper, { color: theme.textMuted }]}>{PASSWORD_HELPER_TEXT}</Text>
                     </View>
                 </>
             )}
@@ -379,6 +399,16 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: "700",
         marginBottom: 8,
+    },
+    prefix: {
+        fontSize: 12,
+        fontWeight: "700",
+        marginBottom: 6,
+    },
+    helper: {
+        fontSize: 11,
+        fontWeight: "500",
+        marginTop: 6,
     },
     input: {
         padding: 14,

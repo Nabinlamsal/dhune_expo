@@ -11,6 +11,9 @@ export interface BusinessProfile {
 export interface VendorProfile {
     OwnerName: string;
     Address: string;
+    BusinessLatitude?: number | null;
+    BusinessLongitude?: number | null;
+    ServiceRadiusKm?: number | null;
     RegistrationNumber: string;
     ApprovalStatus: ApprovalStatus;
 }

@@ -10,8 +10,8 @@ export type LegalSection = {
 
 type T = (key: string) => string;
 
-export const SUPPORT_EMAIL = "support@dhune.app";
-export const SUPPORT_PHONE = "+977-9800000000";
+export const SUPPORT_EMAIL = "dhune.business@gmail.com";
+export const SUPPORT_PHONE = "+977-9869793130";
 
 export const getHelpCenterFaqs = (t: T): FAQItem[] =>
     ["resetPassword", "reportContent", "deleteAccount", "notifications", "updateProfile"].map(

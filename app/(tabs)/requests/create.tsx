@@ -15,6 +15,7 @@ import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { MINIMUM_ORDER_HINT, PICKUP_DELIVERY_OFFER_HINT, sanitizeDecimalInput, sanitizeIntegerInput } from "@/utils/validation";
 import {
     ActivityIndicator,
     Alert,
@@ -399,6 +400,11 @@ export default function CreateRequestScreen() {
                     backHref="/(tabs)/requests"
                 />
 
+                <View style={[styles.guidanceCard, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}>
+                    <Text style={[styles.guidanceText, { color: theme.text }]}>{MINIMUM_ORDER_HINT}</Text>
+                    <Text style={[styles.guidanceText, { color: theme.textMuted }]}>{PICKUP_DELIVERY_OFFER_HINT}</Text>
+                </View>
+
                 <View style={styles.servicesHeader}>
                     <Text style={[styles.sectionTitle, { color: theme.primary }]}>{t("requests.services")}</Text>
                     <Pressable style={[styles.addServiceBtn, { borderColor: theme.border, backgroundColor: theme.surfaceMuted }]} onPress={addService}>
@@ -543,7 +549,7 @@ export default function CreateRequestScreen() {
                                         keyboardType="decimal-pad"
                                         value={service.quantity_value}
                                         onChangeText={(value) =>
-                                            updateService(service.id, { quantity_value: value })
+                                            updateService(service.id, { quantity_value: sanitizeDecimalInput(value) })
                                         }
                                         placeholder="e.g. 12"
                                     />
@@ -556,7 +562,7 @@ export default function CreateRequestScreen() {
                                     <Input
                                         keyboardType="decimal-pad"
                                         value={service.sqft}
-                                        onChangeText={(value) => updateService(service.id, { sqft: value })}
+                                        onChangeText={(value) => updateService(service.id, { sqft: sanitizeDecimalInput(value) })}
                                         placeholder="e.g. 150"
                                     />
                                 </>
@@ -590,7 +596,7 @@ export default function CreateRequestScreen() {
                                                 keyboardType="numeric"
                                                 value={item.pieces}
                                                 onChangeText={(value) =>
-                                                    updateItemRow(service.id, item.id, { pieces: value })
+                                                    updateItemRow(service.id, item.id, { pieces: sanitizeIntegerInput(value) })
                                                 }
                                                 placeholder={t("forms.pieces")}
                                             />
@@ -945,6 +951,18 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: "#9ca3af",
         marginTop: 4,
+    },
+    guidanceCard: {
+        borderWidth: 1,
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 12,
+        gap: 4,
+    },
+    guidanceText: {
+        fontSize: 12,
+        lineHeight: 18,
+        fontWeight: "600",
     },
     servicesHeader: {
         flexDirection: "row",

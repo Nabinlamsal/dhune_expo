@@ -13,6 +13,7 @@ import { extractErrorMessage, isEmailNotVerifiedError } from "@/services/auth/au
 import { useLogin } from "../../hooks/auth/useLogin";
 import { LoginRequest } from "../../types/auth/login";
 import { useTranslation } from "react-i18next";
+import { NEPAL_PHONE_HELPER_TEXT, sanitizePhoneInput } from "@/utils/validation";
 
 export default function LoginScreen() {
     const { mutate, isPending } = useLogin();
@@ -86,9 +87,10 @@ export default function LoginScreen() {
                     <Input
                         placeholder="example@gmail.com"
                         value={emailOrPhone}
-                        onChangeText={setEmailOrPhone}
+                        onChangeText={(value) => setEmailOrPhone(/^\d+$/.test(value) ? sanitizePhoneInput(value) : value)}
                         autoCapitalize="none"
                     />
+                    <Text style={[styles.helper, { color: theme.textMuted }]}>Phone login: +977 98XXXXXXXX. {NEPAL_PHONE_HELPER_TEXT}</Text>
                 </View>
 
                 <View style={styles.field}>
@@ -173,6 +175,10 @@ const styles = StyleSheet.create({
     forgot: {
         fontSize: 13,
         fontWeight: "600",
+    },
+    helper: {
+        fontSize: 11,
+        fontWeight: "500",
     },
     dividerRow: {
         flexDirection: "row",

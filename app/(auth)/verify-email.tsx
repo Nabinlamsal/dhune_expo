@@ -9,6 +9,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, StyleSheet, Text, View } from "react-native";
+import { sanitizeIntegerInput } from "@/utils/validation";
 
 export default function VerifyEmailScreen() {
     const params = useLocalSearchParams<{
@@ -99,7 +100,7 @@ export default function VerifyEmailScreen() {
                     <Input
                         placeholder="123456"
                         value={otp}
-                        onChangeText={setOtp}
+                        onChangeText={(value) => setOtp(sanitizeIntegerInput(value).slice(0, 6))}
                         keyboardType="number-pad"
                         maxLength={6}
                     />
