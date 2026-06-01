@@ -112,34 +112,6 @@ export default function LoginScreen() {
                     title={isPending ? t("auth.loggingIn") : t("auth.login")}
                     onPress={handleLogin}
                 />
-
-                <View style={styles.dividerRow}>
-                    <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-                    <Text style={[styles.dividerText, { color: theme.textMuted }]}>{t("auth.or")}</Text>
-                    <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-                </View>
-
-                <Pressable
-                    onPress={() =>
-                        Alert.alert(
-                            t("auth.googleLoginUnavailable"),
-                            t("auth.googleLoginUnavailableMessage")
-                        )
-                    }
-                    style={({ pressed }) => [
-                        styles.googleButton,
-                        {
-                            backgroundColor: theme.surfaceMuted,
-                            borderColor: theme.border,
-                        },
-                        pressed && styles.googlePressed,
-                    ]}
-                >
-                    <View style={[styles.googleIconWrap, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                        <Text style={styles.googleIcon}>G</Text>
-                    </View>
-                    <Text style={[styles.googleText, { color: theme.text }]}>{t("auth.continueWithGoogle")}</Text>
-                </Pressable>
             </AuthScreen>
         </KeyboardWrapper>
 
@@ -179,50 +151,6 @@ const styles = StyleSheet.create({
     helper: {
         fontSize: 11,
         fontWeight: "500",
-    },
-    dividerRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 10,
-    },
-    dividerLine: {
-        flex: 1,
-        height: 1,
-    },
-    dividerText: {
-        fontSize: 12,
-        fontWeight: "700",
-        letterSpacing: 1.2,
-    },
-    googleButton: {
-        minHeight: 54,
-        borderRadius: 14,
-        borderWidth: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 12,
-        paddingHorizontal: 18,
-    },
-    googlePressed: {
-        opacity: 0.82,
-    },
-    googleIconWrap: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        alignItems: "center",
-        justifyContent: "center",
-        borderWidth: 1,
-    },
-    googleIcon: {
-        fontSize: 18,
-        fontWeight: "800",
-        color: "#ea4335",
-    },
-    googleText: {
-        fontSize: 15,
-        fontWeight: "700",
     },
     signupContainer: {
         marginTop: 22,
