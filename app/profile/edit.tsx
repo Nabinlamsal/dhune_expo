@@ -24,10 +24,9 @@ import {
     Text,
     View,
 } from "react-native";
-import { isValidNepalPhone, NEPAL_PHONE_HELPER_TEXT, sanitizePhoneInput } from "@/utils/validation";
 
 function normalizePhone(value: string) {
-    return sanitizePhoneInput(value);
+    return value.replace(/\D/g, "").slice(0, 10);
 }
 
 function extractProfileImage(profile: MyProfile): string | null {
@@ -205,7 +204,7 @@ export default function EditProfileScreen() {
             return;
         }
 
-        if (!isValidNepalPhone(normalizedPhone)) {
+        if (normalizedPhone.length !== 10) {
             Alert.alert(t("profileEdit.invalidPhone"), t("profileEdit.phoneLengthMessage"));
             return;
         }
@@ -280,7 +279,6 @@ export default function EditProfileScreen() {
 
                     <View style={styles.field}>
                         <Text style={[styles.label, { color: theme.primary }]}>{t("common.phone")}</Text>
-                        <Text style={[styles.phonePrefix, { color: theme.textMuted }]}>🇳🇵 +977</Text>
                         <Input
                             placeholder={t("forms.phoneShortPlaceholder")}
                             value={phone}
@@ -289,7 +287,7 @@ export default function EditProfileScreen() {
                             maxLength={10}
                         />
                         <Text style={[styles.helper, { color: theme.textMuted }]}>
-                            {NEPAL_PHONE_HELPER_TEXT}
+                            {t("profileEdit.phoneLengthHelper")}
                         </Text>
                     </View>
 
@@ -373,11 +371,6 @@ const styles = StyleSheet.create({
         marginTop: 6,
         fontSize: 11,
         fontWeight: "500",
-    },
-    phonePrefix: {
-        marginBottom: 6,
-        fontSize: 11,
-        fontWeight: "700",
     },
     pressed: {
         opacity: 0.85,
